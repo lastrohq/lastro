@@ -128,7 +128,7 @@ func (r cobrancas) Criar(_ context.Context, c domain.Cobranca) error {
 	if _, ok := r.s.d.cobrancas[k]; ok {
 		return fmt.Errorf("cobrança %s: %w", k, ports.ErrJaExiste)
 	}
-	c.Revisao = 1
+	c.Revisao = 0
 	r.s.d.cobrancas[k] = c
 	r.s.d.ordem = append(r.s.d.ordem, k)
 	return nil
