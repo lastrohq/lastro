@@ -9,7 +9,9 @@ import (
 	"syscall"
 
 	"github.com/lastrohq/lastro/internal/adapters/psp"
+	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
 	"github.com/lastrohq/lastro/internal/cli"
+	"github.com/lastrohq/lastro/internal/platform/clock"
 )
 
 // version é preenchida no build pelo goreleaser (-ldflags "-X main.version=...").
@@ -21,7 +23,7 @@ func main() {
 	err := cli.Run(ctx, os.Args[1:], cli.Ambiente{
 		Saida:  os.Stdout,
 		Getenv: os.Getenv,
-		PSPs:   psp.NewRegistry(),
+		PSPs:   psp.NewRegistry(sandbox.New(clock.Sistema{})),
 		Versao: version,
 	})
 	if err != nil {

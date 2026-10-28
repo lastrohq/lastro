@@ -46,6 +46,7 @@ regulatório.
 |---|---|
 | [Regras de negócio](./docs/REGRAS-DE-NEGOCIO.md) | O que o Lastro garante e o que recusa |
 | [Arquitetura](./docs/ARQUITETURA.md) | Hexagonal, pastas, padrões, testes |
+| [Sandbox](./docs/SANDBOX.md) | Testar sem conta PJ, com valores mágicos |
 | [Design system](./docs/DESIGN-SYSTEM.md) | Tokens, componentes e telas do painel |
 | [Manual do projeto](./docs/EQUIPE.md) | Board, fluxo, DoR e DoD |
 | [ADRs](./docs/adr/) | Decisões registradas e o porquê |
