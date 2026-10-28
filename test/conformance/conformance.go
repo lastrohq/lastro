@@ -76,6 +76,47 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 	})
 
+	t.Run("cob: revisar altera o valor e remover encerra", func(t *testing.T) {
+		a := novo(t)
+		exigir(t, a, ports.CapCob)
+		ctx := context.Background()
+		c, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, "conformidade0000000000005"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		c.Valor = 3000
+		rev, err := a.PSP.RevisarCob(ctx, a.Conta, c)
+		if err != nil || rev.Valor != 3000 || rev.Status != domain.CobrancaAtiva {
+			t.Fatalf("revisão de valor: %+v, %v", rev, err)
+		}
+		rev.Status = domain.CobrancaRemovidaPeloUsuarioRecebedor
+		if rev, err = a.PSP.RevisarCob(ctx, a.Conta, rev); err != nil || rev.Status != domain.CobrancaRemovidaPeloUsuarioRecebedor {
+			t.Fatalf("remoção: %+v, %v", rev, err)
+		}
+		rev.Valor = 1
+		if _, err := a.PSP.RevisarCob(ctx, a.Conta, rev); err == nil {
+			t.Fatal("aceitou revisar cobrança removida")
+		}
+	})
+
+	t.Run("pagamento: cob removida não é paga", func(t *testing.T) {
+		a := novo(t)
+		exigir(t, a, ports.CapCob)
+		if a.Pagar == nil {
+			t.Skip("alvo não simula pagamento")
+		}
+		ctx := context.Background()
+		c, _ := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, "conformidade0000000000006"))
+		c.Status = domain.CobrancaRemovidaPeloUsuarioRecebedor
+		if _, err := a.PSP.RevisarCob(ctx, a.Conta, c); err != nil {
+			t.Fatal(err)
+		}
+		a.Pagar(t, c.Txid)
+		if got, _ := a.PSP.ConsultarCob(ctx, a.Conta, c.Txid); got.Status != domain.CobrancaRemovidaPeloUsuarioRecebedor {
+			t.Fatalf("cobrança removida virou %s", got.Status)
+		}
+	})
+
 	t.Run("pagamento: cob paga vira CONCLUIDA e aparece em ListarPix", func(t *testing.T) {
 		a := novo(t)
 		exigir(t, a, ports.CapCob)

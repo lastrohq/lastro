@@ -62,6 +62,33 @@ func (q *Queries) BuscarConta(ctx context.Context, id string) (BuscarContaRow, e
 	return i, err
 }
 
+const buscarContaPorChave = `-- name: BuscarContaPorChave :one
+SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas WHERE chave_pix = ?
+`
+
+type BuscarContaPorChaveRow struct {
+	ID       string
+	Nome     string
+	Psp      string
+	ChavePix string
+	Ambiente string
+	Ativa    int64
+}
+
+func (q *Queries) BuscarContaPorChave(ctx context.Context, chavePix string) (BuscarContaPorChaveRow, error) {
+	row := q.db.QueryRowContext(ctx, buscarContaPorChave, chavePix)
+	var i BuscarContaPorChaveRow
+	err := row.Scan(
+		&i.ID,
+		&i.Nome,
+		&i.Psp,
+		&i.ChavePix,
+		&i.Ambiente,
+		&i.Ativa,
+	)
+	return i, err
+}
+
 const buscarCredenciais = `-- name: BuscarCredenciais :one
 SELECT credenciais FROM contas WHERE id = ?
 `

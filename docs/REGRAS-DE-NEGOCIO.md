@@ -56,7 +56,10 @@ chave Pix + credenciais (client id/secret e certificado) + ambiente
 - Se o cliente não informar, o Lastro gera (aleatório criptográfico, 32 caracteres).
 - Se informar, o Lastro valida antes de chamar o banco — erro de formato nunca
   vira chamada de rede.
-- txid é único **por conta**.
+- txid é único **na instância inteira** — mais estrito que a spec (que exige
+  unicidade por recebedor), para que `GET /cob/{txid}` não precise saber a conta.
+- A conta da cobrança é a dona da `chave` informada no corpo. Chave Pix é única
+  na instância, como no DICT.
 
 ### RN-11 · Idempotência
 

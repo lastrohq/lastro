@@ -14,8 +14,10 @@ type Devedor struct {
 
 // Cobranca é uma cobrança imediata (cob).
 type Cobranca struct {
-	Txid               Txid
-	ContaID            string
+	Txid    Txid
+	ContaID string
+	// Chave é a chave Pix da conta no momento da criação.
+	Chave              string
 	Status             StatusCobranca
 	Valor              Money
 	PermiteAlteracao   bool

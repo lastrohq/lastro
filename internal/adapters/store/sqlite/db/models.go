@@ -23,6 +23,7 @@ type Cobranca struct {
 	BrCode             string
 	CriadaEm           int64
 	Revisao            int64
+	Chave              string
 }
 
 type Conta struct {

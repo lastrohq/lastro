@@ -27,6 +27,7 @@ type Ambiente struct {
 	Saida  io.Writer
 	Getenv func(string) string
 	PSPs   ports.Registry
+	Clock  ports.Clock
 	Versao string
 }
 
@@ -191,9 +192,18 @@ func trimFinal(b []byte) []byte {
 
 func serve(ctx context.Context, amb Ambiente) error {
 	addr := getenv(amb, "LASTRO_ADDR", ":8080")
+	store, err := sqlite.Open(ctx, getenv(amb, "LASTRO_DB", "lastro.db"))
+	if err != nil {
+		return err
+	}
+	defer func() { _ = store.Close() }()
 	srv := &http.Server{
-		Addr:              addr,
-		Handler:           httpapi.NewRouter(amb.Versao),
+		Addr: addr,
+		Handler: httpapi.NewRouter(httpapi.Opcoes{
+			Versao:    amb.Versao,
+			Cobrancas: app.Cobrancas{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
+			Clock:     amb.Clock,
+		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		BaseContext:       func(net.Listener) context.Context { return ctx },
 	}

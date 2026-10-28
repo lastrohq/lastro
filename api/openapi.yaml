@@ -67,6 +67,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CobSolicitada"
       responses:
+        default:
+          $ref: "#/components/responses/Erro"
         "201":
           description: Cobrança criada.
           content:
@@ -94,6 +96,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CobRevisada"
       responses:
+        default:
+          $ref: "#/components/responses/Erro"
         "200":
           description: Cobrança revisada.
           content:
@@ -123,6 +127,8 @@ paths:
             format: int32
             minimum: 0
       responses:
+        default:
+          $ref: "#/components/responses/Erro"
         "200":
           description: Cobrança encontrada.
           content:
@@ -150,6 +156,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CobSolicitada"
       responses:
+        default:
+          $ref: "#/components/responses/Erro"
         "201":
           description: Cobrança criada.
           content:
@@ -186,6 +194,8 @@ paths:
         - $ref: "#/components/parameters/PaginaAtual"
         - $ref: "#/components/parameters/ItensPorPagina"
       responses:
+        default:
+          $ref: "#/components/responses/Erro"
         "200":
           description: Página de cobranças.
           content:
@@ -215,6 +225,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CobVSolicitada"
       responses:
+        default:
+          $ref: "#/components/responses/Erro"
         "201":
           description: Cobrança criada.
           content:
@@ -242,6 +254,8 @@ paths:
             schema:
               $ref: "#/components/schemas/CobVRevisada"
       responses:
+        default:
+          $ref: "#/components/responses/Erro"
         "200":
           description: Cobrança revisada.
           content:
@@ -271,6 +285,8 @@ paths:
             format: int32
             minimum: 0
       responses:
+        default:
+          $ref: "#/components/responses/Erro"
         "200":
           description: Cobrança encontrada.
           content:
@@ -305,6 +321,8 @@ paths:
         - $ref: "#/components/parameters/PaginaAtual"
         - $ref: "#/components/parameters/ItensPorPagina"
       responses:
+        default:
+          $ref: "#/components/responses/Erro"
         "200":
           description: Página de cobranças.
           content:
@@ -395,6 +413,14 @@ components:
         default: 100
 
   responses:
+    Erro:
+      description: |
+        Qualquer outro erro, sempre como `Problema`. Os mais comuns: `502` quando o
+        banco recusa ou falha (`PSPIndisponivel`) e `500` para erro interno.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problema"
     RequisicaoInvalida:
       description: Requisição fora do formato ou violando uma regra de negócio.
       content:

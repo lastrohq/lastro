@@ -52,6 +52,9 @@ type PSP interface {
 
 	CriarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error)
 	ConsultarCob(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.Cobranca, error)
+	// RevisarCob envia o novo estado da cobrança (valor, devedor, expiração,
+	// solicitação ou remoção pelo recebedor) e devolve o que o PSP gravou.
+	RevisarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error)
 	ListarPix(ctx context.Context, conta domain.Conta, j Janela) ([]domain.PixRecebido, error)
 	Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error)
 	ConfigurarWebhook(ctx context.Context, conta domain.Conta, url string) error

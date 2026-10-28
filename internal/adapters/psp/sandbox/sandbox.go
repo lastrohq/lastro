@@ -119,6 +119,38 @@ func (p *PSP) ConsultarCob(_ context.Context, conta domain.Conta, txid domain.Tx
 	return c, nil
 }
 
+// RevisarCob aplica a revisão. Cobrança já paga ou removida não muda mais.
+func (p *PSP) RevisarCob(_ context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	k := chave(conta.ID, c.Txid)
+	atual, ok := p.cobs[k]
+	if !ok {
+		return domain.Cobranca{}, fmt.Errorf("sandbox: txid %s: %w", c.Txid, ports.ErrNaoEncontrado)
+	}
+	if p.paga(atual) {
+		atual.Status = domain.CobrancaConcluida
+	}
+	if c.Status != atual.Status {
+		if err := atual.Transitar(c.Status); err != nil {
+			return domain.Cobranca{}, fmt.Errorf("sandbox: %w", err)
+		}
+	} else if atual.Status != domain.CobrancaAtiva {
+		return domain.Cobranca{}, fmt.Errorf("sandbox: cobrança %s está %s: %w", c.Txid, atual.Status, domain.ErrTransicaoInvalida)
+	}
+	atual.Valor, atual.Devedor, atual.Expiracao = c.Valor, c.Devedor, c.Expiracao
+	atual.PermiteAlteracao, atual.SolicitacaoPagador = c.PermiteAlteracao, c.SolicitacaoPagador
+	if atual.Status == domain.CobrancaAtiva {
+		code, err := brcode.Encode(brcode.Pix{URL: atual.Location, Nome: nomeBRCode(conta.Nome), Cidade: "SANDBOX", Valor: int64(atual.Valor)})
+		if err != nil {
+			return domain.Cobranca{}, fmt.Errorf("sandbox: gerando BR Code: %w", err)
+		}
+		atual.BRCode = code
+	}
+	p.cobs[k] = atual
+	return atual, nil
+}
+
 // paga diz se a cobrança já foi "paga" no instante atual do relógio.
 func (p *PSP) paga(c domain.Cobranca) bool {
 	if c.Valor == ValorNuncaPaga || c.Status != domain.CobrancaAtiva {
