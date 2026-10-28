@@ -1,0 +1,29 @@
+name: 🔍 Estudo
+description: Uma pergunta que precisa de resposta antes de escrever código
+labels: ["tipo:estudo"]
+body:
+  - type: textarea
+    id: pergunta
+    attributes:
+      label: Qual a pergunta
+      description: Precisa caber numa frase e ter resposta verificável.
+    validations:
+      required: true
+
+  - type: textarea
+    id: porque
+    attributes:
+      label: O que depende da resposta
+      description: Qual decisão, fase ou issue fica travada sem ela.
+    validations:
+      required: true
+
+  - type: textarea
+    id: entrega
+    attributes:
+      label: O que o estudo entrega
+      value: |
+        - [ ] Resposta registrada na issue, com fonte e data
+        - [ ] Decisão tomada (ou ADR, se mudar a arquitetura)
+    validations:
+      required: true

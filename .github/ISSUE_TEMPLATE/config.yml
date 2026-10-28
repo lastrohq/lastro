@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Reportar vulnerabilidade
+    url: https://github.com/lastrohq/lastro/security/advisories/new
+    about: Falha de segurança nunca vai em issue pública
+  - name: 🧭 Manual do projeto
+    url: https://github.com/lastrohq/lastro/blob/develop/docs/EQUIPE.md
+    about: Board, fluxo de trabalho, Definition of Ready e Definition of Done
+  - name: 💬 Dúvidas e ideias
+    url: https://github.com/lastrohq/lastro/discussions
+    about: Perguntas de uso e propostas ainda sem forma de issue
