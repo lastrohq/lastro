@@ -2,6 +2,8 @@ module github.com/lastrohq/lastro
 
 go 1.26.0
 
+toolchain go1.26.5
+
 require (
 	github.com/pressly/goose/v3 v3.29.0
 	modernc.org/sqlite v1.61.0
