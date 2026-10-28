@@ -26,10 +26,11 @@ análise jurídica própria antes de existir.
 
 ### RN-02 · Dinheiro é inteiro, em centavos
 
-Valores trafegam e são armazenados como `int64` em centavos. `float` não
-aparece em nenhuma camada. A spec do BCB usa string decimal (`"10.50"`); a
-conversão acontece só na borda (adapter e API) e recusa mais de duas casas,
-sinal negativo e separador de milhar.
+Valores trafegam e são armazenados como `int64` em centavos (`domain.Money`).
+`float` não aparece em nenhuma camada. A spec do BCB usa string decimal no
+formato `^\d{1,10}\.\d{2}$` (`"10.50"`); a conversão acontece só na borda
+(adapter e API) e aceita **exatamente** esse formato — sem sinal, vírgula,
+separador de milhar ou casas a mais ou a menos. Máximo: R$ 9.999.999.999,99.
 
 ### RN-03 · Uma instância, N contas
 
