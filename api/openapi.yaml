@@ -336,6 +336,84 @@ paths:
         "403":
           $ref: "#/components/responses/AcessoNegado"
 
+  /lastro/v1/contas:
+    post:
+      tags: [Lastro]
+      operationId: criarConta
+      summary: Cadastrar conta recebedora
+      description: |
+        Exige o escopo `conta:admin`. As credenciais são cifradas antes de gravar
+        (RN-61) e **nunca** voltam em resposta nenhuma. Use só sobre TLS.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContaSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Conta criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conta"
+    get:
+      tags: [Lastro]
+      operationId: listarContas
+      summary: Listar contas
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Contas da instância.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [contas]
+                properties:
+                  contas:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Conta"
+
+  /lastro/v1/contas/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ContaIdPath"
+    get:
+      tags: [Lastro]
+      operationId: consultarConta
+      summary: Consultar conta
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Conta encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conta"
+
+  /lastro/v1/contas/{id}/desativar:
+    parameters:
+      - $ref: "#/components/parameters/ContaIdPath"
+    post:
+      tags: [Lastro]
+      operationId: desativarConta
+      summary: Desativar conta
+      description: Novas cobranças passam a ser recusadas; as existentes continuam valendo.
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Conta desativada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conta"
+
 components:
   securitySchemes:
     apiKey:
@@ -344,6 +422,13 @@ components:
       description: "API key do Lastro, com escopos (RN-60). Envie `Authorization: Bearer lst_...`"
 
   parameters:
+    ContaIdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-z0-9][a-z0-9-]{0,62}$"
     TxidPath:
       name: txid
       in: path
@@ -459,6 +544,54 @@ components:
             $ref: "#/components/schemas/Problema"
 
   schemas:
+    Conta:
+      type: object
+      required: [id, nome, psp, chave, ambiente, ativa]
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+        psp:
+          type: string
+        chave:
+          $ref: "#/components/schemas/Chave"
+        ambiente:
+          type: string
+          enum: [homologacao, producao]
+        ativa:
+          type: boolean
+    ContaSolicitada:
+      type: object
+      required: [id, nome, psp, chave, ambiente]
+      properties:
+        id:
+          type: string
+          pattern: "^[a-z0-9][a-z0-9-]{0,62}$"
+        nome:
+          type: string
+          minLength: 1
+        psp:
+          type: string
+          minLength: 1
+        chave:
+          $ref: "#/components/schemas/Chave"
+        ambiente:
+          type: string
+          enum: [homologacao, producao]
+        credenciais:
+          type: object
+          properties:
+            clientId:
+              type: string
+            clientSecret:
+              type: string
+            certificado:
+              type: string
+              format: byte
+              description: Certificado do mTLS (.p12 ou .pem) em base64.
+            senhaCertificado:
+              type: string
     Health:
       type: object
       required: [status, version]

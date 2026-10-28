@@ -102,6 +102,42 @@ func (e CobVStatus) Valid() bool {
 	}
 }
 
+// Defines values for ContaAmbiente.
+const (
+	ContaAmbienteHomologacao ContaAmbiente = "homologacao"
+	ContaAmbienteProducao    ContaAmbiente = "producao"
+)
+
+// Valid indicates whether the value is a known member of the ContaAmbiente enum.
+func (e ContaAmbiente) Valid() bool {
+	switch e {
+	case ContaAmbienteHomologacao:
+		return true
+	case ContaAmbienteProducao:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for ContaSolicitadaAmbiente.
+const (
+	ContaSolicitadaAmbienteHomologacao ContaSolicitadaAmbiente = "homologacao"
+	ContaSolicitadaAmbienteProducao    ContaSolicitadaAmbiente = "producao"
+)
+
+// Valid indicates whether the value is a known member of the ContaSolicitadaAmbiente enum.
+func (e ContaSolicitadaAmbiente) Valid() bool {
+	switch e {
+	case ContaSolicitadaAmbienteHomologacao:
+		return true
+	case ContaSolicitadaAmbienteProducao:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for HealthStatus.
 const (
 	Ok HealthStatus = "ok"
@@ -399,6 +435,42 @@ type CobsConsultadas struct {
 	Parametros ParametrosConsulta `json:"parametros"`
 }
 
+// Conta defines model for Conta.
+type Conta struct {
+	Ambiente ContaAmbiente `json:"ambiente"`
+	Ativa    bool          `json:"ativa"`
+
+	// Chave Chave Pix do recebedor (telefone, e-mail, CPF/CNPJ ou EVP).
+	Chave Chave  `json:"chave"`
+	Id    string `json:"id"`
+	Nome  string `json:"nome"`
+	Psp   string `json:"psp"`
+}
+
+// ContaAmbiente defines model for Conta.Ambiente.
+type ContaAmbiente string
+
+// ContaSolicitada defines model for ContaSolicitada.
+type ContaSolicitada struct {
+	Ambiente ContaSolicitadaAmbiente `json:"ambiente"`
+
+	// Chave Chave Pix do recebedor (telefone, e-mail, CPF/CNPJ ou EVP).
+	Chave       Chave `json:"chave"`
+	Credenciais *struct {
+		// Certificado Certificado do mTLS (.p12 ou .pem) em base64.
+		Certificado      *[]byte `json:"certificado,omitempty"`
+		ClientId         *string `json:"clientId,omitempty"`
+		ClientSecret     *string `json:"clientSecret,omitempty"`
+		SenhaCertificado *string `json:"senhaCertificado,omitempty"`
+	} `json:"credenciais,omitempty"`
+	Id   string `json:"id"`
+	Nome string `json:"nome"`
+	Psp  string `json:"psp"`
+}
+
+// ContaSolicitadaAmbiente defines model for ContaSolicitada.Ambiente.
+type ContaSolicitadaAmbiente string
+
 // Cpf defines model for Cpf.
 type Cpf = string
 
@@ -523,6 +595,9 @@ type Violacao struct {
 // CnpjFiltro Aceita o CNPJ alfanumérico.
 type CnpjFiltro = Cnpj
 
+// ContaIdPath defines model for ContaIdPath.
+type ContaIdPath = string
+
 // CpfFiltro defines model for CpfFiltro.
 type CpfFiltro = Cpf
 
@@ -635,6 +710,9 @@ type RevisarCobvJSONRequestBody = CobVRevisada
 // CriarCobvJSONRequestBody defines body for CriarCobv for application/json ContentType.
 type CriarCobvJSONRequestBody = CobVSolicitada
 
+// CriarContaJSONRequestBody defines body for CriarConta for application/json ContentType.
+type CriarContaJSONRequestBody = ContaSolicitada
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// ListarCobs Listar cobranças imediatas
@@ -667,6 +745,18 @@ type ServerInterface interface {
 	// Health Saúde da instância
 	// (GET /health)
 	Health(w http.ResponseWriter, r *http.Request)
+	// ListarContas Listar contas
+	// (GET /lastro/v1/contas)
+	ListarContas(w http.ResponseWriter, r *http.Request)
+	// CriarConta Cadastrar conta recebedora
+	// (POST /lastro/v1/contas)
+	CriarConta(w http.ResponseWriter, r *http.Request)
+	// ConsultarConta Consultar conta
+	// (GET /lastro/v1/contas/{id})
+	ConsultarConta(w http.ResponseWriter, r *http.Request, id ContaIdPath)
+	// DesativarConta Desativar conta
+	// (POST /lastro/v1/contas/{id}/desativar)
+	DesativarConta(w http.ResponseWriter, r *http.Request, id ContaIdPath)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -1221,6 +1311,86 @@ func (siw *ServerInterfaceWrapper) Health(w http.ResponseWriter, r *http.Request
 	handler.ServeHTTP(w, r)
 }
 
+// ListarContas operation middleware
+func (siw *ServerInterfaceWrapper) ListarContas(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListarContas(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CriarConta operation middleware
+func (siw *ServerInterfaceWrapper) CriarConta(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CriarConta(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConsultarConta operation middleware
+func (siw *ServerInterfaceWrapper) ConsultarConta(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ContaIdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConsultarConta(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DesativarConta operation middleware
+func (siw *ServerInterfaceWrapper) DesativarConta(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id ContaIdPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DesativarConta(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 type UnescapedCookieParamError struct {
 	ParamName string
 	Err       error
@@ -1351,6 +1521,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/cobv/{txid}", wrapper.RevisarCobv)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/cobv/{txid}", wrapper.CriarCobv)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cobv", wrapper.ListarCobvs)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lastro/v1/contas", wrapper.ListarContas)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lastro/v1/contas", wrapper.CriarConta)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lastro/v1/contas/{id}", wrapper.ConsultarConta)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lastro/v1/contas/{id}/desativar", wrapper.DesativarConta)
 
 	return m
 }
@@ -2342,6 +2516,163 @@ func (response Health200JSONResponse) VisitHealthResponse(w http.ResponseWriter)
 	return err
 }
 
+type ListarContasRequestObject struct {
+}
+
+type ListarContasResponseObject interface {
+	VisitListarContasResponse(w http.ResponseWriter) error
+}
+
+type ListarContas200JSONResponse struct {
+	Contas []Conta `json:"contas"`
+}
+
+func (response ListarContas200JSONResponse) VisitListarContasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListarContasdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response ListarContasdefaultApplicationProblemPlusJSONResponse) VisitListarContasResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarContaRequestObject struct {
+	Body *CriarContaJSONRequestBody
+}
+
+type CriarContaResponseObject interface {
+	VisitCriarContaResponse(w http.ResponseWriter) error
+}
+
+type CriarConta201JSONResponse Conta
+
+func (response CriarConta201JSONResponse) VisitCriarContaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarContadefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response CriarContadefaultApplicationProblemPlusJSONResponse) VisitCriarContaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarContaRequestObject struct {
+	Id ContaIdPath `json:"id"`
+}
+
+type ConsultarContaResponseObject interface {
+	VisitConsultarContaResponse(w http.ResponseWriter) error
+}
+
+type ConsultarConta200JSONResponse Conta
+
+func (response ConsultarConta200JSONResponse) VisitConsultarContaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarContadefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response ConsultarContadefaultApplicationProblemPlusJSONResponse) VisitConsultarContaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DesativarContaRequestObject struct {
+	Id ContaIdPath `json:"id"`
+}
+
+type DesativarContaResponseObject interface {
+	VisitDesativarContaResponse(w http.ResponseWriter) error
+}
+
+type DesativarConta200JSONResponse Conta
+
+func (response DesativarConta200JSONResponse) VisitDesativarContaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type DesativarContadefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response DesativarContadefaultApplicationProblemPlusJSONResponse) VisitDesativarContaResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// ListarCobs Listar cobranças imediatas
@@ -2374,6 +2705,18 @@ type StrictServerInterface interface {
 	// Health Saúde da instância
 	// (GET /health)
 	Health(ctx context.Context, request HealthRequestObject) (HealthResponseObject, error)
+	// ListarContas Listar contas
+	// (GET /lastro/v1/contas)
+	ListarContas(ctx context.Context, request ListarContasRequestObject) (ListarContasResponseObject, error)
+	// CriarConta Cadastrar conta recebedora
+	// (POST /lastro/v1/contas)
+	CriarConta(ctx context.Context, request CriarContaRequestObject) (CriarContaResponseObject, error)
+	// ConsultarConta Consultar conta
+	// (GET /lastro/v1/contas/{id})
+	ConsultarConta(ctx context.Context, request ConsultarContaRequestObject) (ConsultarContaResponseObject, error)
+	// DesativarConta Desativar conta
+	// (POST /lastro/v1/contas/{id}/desativar)
+	DesativarConta(ctx context.Context, request DesativarContaRequestObject) (DesativarContaResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -2712,74 +3055,189 @@ func (sh *strictHandler) Health(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// ListarContas operation middleware
+func (sh *strictHandler) ListarContas(w http.ResponseWriter, r *http.Request) {
+	var request ListarContasRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListarContas(ctx, request.(ListarContasRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListarContas")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListarContasResponseObject); ok {
+		if err := validResponse.VisitListarContasResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CriarConta operation middleware
+func (sh *strictHandler) CriarConta(w http.ResponseWriter, r *http.Request) {
+	var request CriarContaRequestObject
+
+	var body CriarContaJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CriarConta(ctx, request.(CriarContaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CriarConta")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CriarContaResponseObject); ok {
+		if err := validResponse.VisitCriarContaResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConsultarConta operation middleware
+func (sh *strictHandler) ConsultarConta(w http.ResponseWriter, r *http.Request, id ContaIdPath) {
+	var request ConsultarContaRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConsultarConta(ctx, request.(ConsultarContaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConsultarConta")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConsultarContaResponseObject); ok {
+		if err := validResponse.VisitConsultarContaResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DesativarConta operation middleware
+func (sh *strictHandler) DesativarConta(w http.ResponseWriter, r *http.Request, id ContaIdPath) {
+	var request DesativarContaRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DesativarConta(ctx, request.(DesativarContaRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DesativarConta")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DesativarContaResponseObject); ok {
+		if err := validResponse.VisitDesativarContaResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"7FzNdtvIcn6VOshdSApEkZLt8fCuZEpOlCgWr2RzcS1lWASKUvsC3XB3gyONjs7JQ+QB4mQxZxazml22",
+	"fJM8SU43AAIkmiRkSxrPPV7ZFPqnqvrr6q8aVbj1AhEnghPXyuveeglKjEmTtL96PPnwmkVaCvOLca/r",
+	"fUxJ3ni+xzEmr+sFPPng+Z4KrihG0+hPksZe1/uHnXLcneyp2jHDeXd3vtcTXONR2Ed9NRs4MT9m47LQ",
+	"8z1JH1MmKfS6WqZUnSVBrUmabv/+Hrd/am9/f5H/u31x2/Zf7N79yfM9fZOYsZSWjF9mEyfjNfok4+bq",
+	"JGM76GsWLxtuzOKVeoyFjFF7XS9ETduaxeQU+yikOBGaeHDzr3RjOoakAskSzYSZ9ZSIT5iAQMSAEJOK",
+	"EYIrnBBQDKinv8DuM7iCkCYimhAgSFKJUBpBSHbJOEawcfpmu9PZbHl+psgVYUiy1KQiwraRYZVWMV4f",
+	"E780i7v7/LnvxYwXvzs19XzvejtCZdfEDFRT9yQJmOAYfSVqP6CanAVsKRJZ9vQh0KOJq76QfTQ6L5sv",
+	"sU8DFC023746Y0hjTCPtdTvttl/Oz7je2/V8YxEWp7F93LYGyX/OxGJc0yVJK1c2/r5Os7VdLVRSaeyU",
+	"yClPIUDbKcDba7bKB+nrNV5olXMwY3t3ZhYLOq7IetT9gJQSb+gSQ7vygeCauDb/xSSJWIAG2zuJFKOI",
+	"4n/8oAzQbxvO2c96YTbv/F7Zh/3+EfyNboBP/0eAphgEkApEIoCTkWr6STLR8jL3PI6YfloBjbXhw/QT",
+	"0DVTmnyQNGHKyBqSQrPu7CcM0QeRwsKuBEmpZtlz6wxEqqWABG8igaFV6VDKp1XnLylGBsy5LCSl8EFR",
+	"nEgyIgoYFr2HLThRECNT5kHKVReGz9u7Q/iYIg8FiHM+Qh4IkBSkCo3+Y4yuEDaG/bP+EQ+ZwRebUDTc",
+	"BDJ920Mw57idFAzgJRetc27s8AbFfmoswIInR2COP0wVcU1GD8Yn008RC7GVy3bIjTjyqUU7pSCVSmRb",
+	"g2YyFFKdpYmQ+qmFOoH+WR8sornGTDYxJkkBASmFEGCCAQsxJHuMPW9vWoFPjb9SLEBxxCdorPvEtrTT",
+	"T3828o6FRAjtvzFqYdZ8wkRkcZ3G5kC+NA0IOF1Ofwus/7krXGxGQTEiHqJkYkA8YDHxzC8lUiQkNcvc",
+	"aogaD2i+xdzp6DkO5Mw4Ie0nQs13nR0qe+1F9Q4Ymn0qJQuFAkymvykQMJl1N9TjY0qAjIcIiQgJFElI",
+	"8BINybjvEVUePu/rSl7MuojRBwq09d2G/9Spkv0z9Nm1WQ0DoRGFQsKGpojGgpMPtB0ji3zo9V/v9N70",
+	"/8Ws1eGgb6lRhel8953DkpbY1+bcD4gZrgV2OIzGyNN4+otkgTCDVjl8e/v7/e2/Xtx2nrmIuzmRRj0R",
+	"JxFpi02MopOx132/hp+L0T+RxBC9O38RMAm7tqe+plitRTu7NjLkQqGUeGPXZsH2F5mc+ZQ1iAYzIDue",
+	"SWZITlNO53t0nTBZ61Jgag2Oitmqw7igFBRQWmlk28h6gYmB1Lr2B3mzmRIh1pFzeG0oqD37BRxb1tyC",
+	"NwgqoQCMQxxZp8h4irD/9miwDyElginjSbJR5Z+BlCYIME4EJCJNDBCD6acoSCOR0f49i+1c7ZEQESH3",
+	"HDyd8bHYD5mNQphqDJujSreoDiDfi0SwboxjEeQtMTPNbR0LCbvuiYThYU9Ei3HJ886uAz2WWaFweAkR",
+	"0/RnND6sDQSBJBWQMWrH/KljTG8oFkaaJFoPf2+f5ntKRCxg2sCuj4YHS6daSqNO1xq5J0ZnWUNjYMO5",
+	"G/Fy6/zXg7UnRgPbrraFys3sl3FCZtWZ6MUkxU5yumsxOrX97usyVnuANZHXk2/1h9pCMV4fZR2ft5du",
+	"qHlDZZCoWujFM6+ZVdxIrWyvzrO2vwq5xM0avPdOD//tZHB0sP9D//D45Id3Z+/2T49Ofjg97B2+Ojw4",
+	"Oa0gY46d3BOgLnCd5Sp8EbxmdOjli2ftGiMa5DTKuAhFlym3xMhEIJpJy18ly5xF1e1+g+zXBNkH9IaN",
+	"fN5ZbYvYY9zzvd7Jm97xu6MD8/9122axRf+s79xKRvDPoo+D34E/DpoRyIY6uKKnujb35J9L+OSFU6XH",
+	"3Kf5ogrvq2Bpn0PE8kBs3Qyns4bz9O13pl6DR+Zen0O+CgTdl4YNmvKwz9hvf7hN8I1nrQKjEz7NmdY3",
+	"AP3RWE8DP1S6nWbe5ukZ0KDQdt7sOEK97Fo1FmFO7t2HTfG6b3c1fc9t0ie59ih1W7oiR3Usl21NbCJm",
+	"17jVOOWdIiieHqDG1+waYaMcWkEHCHY37SV1MQds7AHCi00feMoDBKEgFEzZ+8v5G+iFkee2Tv2yuukF",
+	"9ZdYzc6zzl7lRt2zi5j/6NQ3bVMwvHg6MLgU+pBKoT4fyi+/HijHaaRxnSbzGO9kyIUxuxY+7EJCMiCu",
+	"U4zcMfdXuIGL1IzPm2jWe5nfdTvBUr59e7e5ePFRu/ToGNPGTBOgsC93QiHze1EJIluF1SbvrCPrj2wI",
+	"1RNcGYSF6NgugRg1P/3n4mtHCJUnleX7cmWoPGtZSFdTrDKYn4m5RMOHVfCr04+7fAPGI0ZcU5VXXIlY",
+	"ROIyf+WTSBGm89F6eeCgZhOshITFS5F7E9CMy9XG5yIm9zsMlTj+vmAZG+jZIbIOhVB+qXahwlKTrWLp",
+	"X2i8+1kokBQahp+z7AVwmv+OZykaCy9pyocQCojfHp/BRivp7Bri0koo3gSKYYSKXjybc0GjGzfNCCKj",
+	"9pF7ybKHZxRI0u7LAuJX2JsXuL6OtdXIEPJZeZwljtZk3OWoWtnq/hhzYisZL6hzfh7edjpu8Q/K8Gx+",
+	"afuklEAYT39VLEDYCJKxpaMfUjn9Ncz+xJMPmy0wAZeMCdIYwqWcNMhfy6/PyfVt4muTfNeK8Svpj+32",
+	"OsPaXi7TLQahje82y7v6+vZJFgR86YL9jEOt0cT3KEYWOdEfiUuJoUiz7LK1A6XjxWb++s1yced7/0wY",
+	"ZYmK86rW70DE39zXHCSV+w3ywkKVt2Z5D9eizcf7NakcEHm+MgD/DCwVvV3iHbvuF+6dZNHwQmLN63nN",
+	"EtETo+oSBWKUne0Tx1LVHZJLw36RGOu4R6ml+66m9sl8Gu5qUvoxRa7txjmgbAK1foay01uhMTogm5G8",
+	"brIaL6omANdylF2CLZ3ZbdEaNatD6FEc6jirH2gIylnSeLP2BTb7klRBbursLqnCaTWBLRrOXcCuwXCR",
+	"yp6VQ5STOdche7O2YPh7cSvi4VtxyMMjF8fY3/6roRm3e0u4xZWQxUVt0xUZ3+vWsXhT8nnXke5or6Jx",
+	"eQFZaOK0cpHBWc+9klIAL1M2wzztKhTwqvcKNk5f9+C7l+3vNh18Q0hJkYXbEjYZkl52ktbAVHEgmunI",
+	"HThkf6gsVSqZ8yqNiQgDQc1jvoHtkQG99uq2anv7sJBxpofL6KfV131OyrKCpNQfPYozmic0zSM48+A1",
+	"co2KobNBRn0aRAZvr9mqfbv7wt977t66s8sdukbDJr2u12m3nrfnk00tM/c77bvz85b5/xI/MFv/2lqZ",
+	"X5LR0oWR+BOK1Tt8rRlsYBWkkumbM7NAeYSaMGf9V5FaP8uW9G0ZRFbeoWzazYv2ZgsO+YQRDPdTfSUk",
+	"+8nu1C68IpQkIVL6h1arNSzKa+wRYR+V5rnSOsmSvo3XcwtSEULAJWr6EW9s5rGiaLx9JZSmsHXOz/m+",
+	"Aik0KvtwY7gTiNHQB/vvZNhqtTbBpoBubRm0op7+OqGsRgLQFrPk2cyvkAfinPeIa4nR1hZsWH812W11",
+	"2q32ZtcWhgkIMGb8SvjZT5Vlhqr8Z+nt6JyTlKIFf0kptvUommLIomACq6wWkFUIQO4atRSB+fHu9NjG",
+	"3UCA5xyLOossURIOlSZA+TFlEwHTX2ZjJRQVFoP/+4//zBL9p79AMP0tYbjgf63hTmyG+azT1hZmmZpc",
+	"49YWTP8r6zChGGKU9p7AGG1YJLZ2QcuUht1zLiCrd4PhQkXNEMz4WfLssMjTHfqQCAl0TXESCSvJqV0/",
+	"I01WOmFLd2LgucwbtnRB+UXtkfIBQ8P5lM7zRzdhwoygFJ/z4U4m386ks2OACBv7B6fb7fbepp3rgPEr",
+	"YlKAljimS8zKaLItBCEFLMYog/01aozteoUpmpVWqGBjeJ55g3NvaAb0fC9iAXFlN3Fe8rWfYHBF27st",
+	"4zNSGeWQV92dnR9//LGF9nFLyMudvK/aOT7qHb45O7R9yqPKy9amEkZ1vXark7URCXFMmNf19lrt1l7m",
+	"nq7sDjfgN/9eZrctxu3MzlPvmCmNsidGyvPnKnWXRMplk5281tDEymtavmZxk2ZlJW2TxmUdsWntqvSr",
+	"8dRqod0iYV02yCx2bVjAWyYPN1CiWq7YoPlC1eXdxUIl4G67vaIu5371OIu33Y6ynP70k5EDQoJAjCTy",
+	"6c+obL3Qs0wQ1/gzgXccRUW2a2d914WSM9ttb323uUpJq07+LmZdR1vqZw/QNI5R3sw2TkVxYDGFDLUN",
+	"EjVemj3kmSj9wgRDQjk2X08yu/fuv/Xmi7czIHxMSelXIrx5SAxULrfv5llqXsmwAMDOQ05epErWodcr",
+	"zG4zgfNivz8I6p61v1/faVYve+d7zxsKV9YUfiG2LS5LaM+QbY9CW1R7aVZmjmfUQH/n25Nn59Z0uFt6",
+	"ABU+xr0PXB65UhRRL1tvVAP3yH6zfK+3CrizmtACvE+JwGeN5qqUzn4poopVdqDK5S7v5Q1nNfdmYRPU",
+	"wVUdZlkmZg6yR/KVs2zPRp6y/dSeUubi/bF85ecg9d4e9kugnSOrIbBTXY9wT2D2oQIWGpONmY39ZkUu",
+	"PhDXJhiqx1TTX0DkHzMB/Jiy6tdH3GSjJ+K3WYLzl3CO2RdUvnGPb9zjablHSGPGWcE+8muUZfRjsj7y",
+	"nXwLfR8q9B383cS+g2/B772CX7M7yy9WzO/GQWU73iccmPydxAODbwFBo4BgHYYeNy6YPF5gMPgdI4PB",
+	"t9DgKwoNGkA8XXFROPkDsPbB70rbB994+9fB25sQgqtZBqKTC+QJio/oH/MZnN82ZFzp6X/zgCGQ0tNP",
+	"wAWgbM29R/e67y+qRjjD6f+GBCFWeldUz29KM+XLF5PZG821gQrPXi18kTEWk2uKiRuWLHBXscJiCWM2",
+	"aD1ZxbUjTdN5c7UejJvy+VcxM+OXb2MWvxDFLqn8guXQjtC1L5eHLdhXUMmvz9IIAjY2zkYBck32S1GX",
+	"Eicoz7lNj+hsAsHWlq3y29qCiYg0xkBx+c1YTvwqjbEF7xSBmv4GSowkwdvjs+xtsvMU4PZm6XG893w5",
+	"w5O7b76MI3M957W/yFGZFdOygEj55brGO3XntmEEU6zUo7G7lfZaiCceiq1zjUt21b2ISfV73TYd3W3m",
+	"HfulVjZBufgp8ftOsWzbvxETG7/OQtkElcIY0H5kMftAaojqz4AqT0axm734WFwME1uzLeo3rgeF6L83",
+	"EgobPgASZjotR8LCAVmmmL2/MKugSE6KBSzTYbo7O5EIMLoSSndftl+27YrlY98uZXLF7WCrvA7oiZG9",
+	"T1pK/uaIyXzHgaNnlo9UyUDLPkA6n0JVjpKb4e7i7v8DAAD//w==",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

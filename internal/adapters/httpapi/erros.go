@@ -32,10 +32,18 @@ func problemaDe(ctx context.Context, err error) gen.Problema {
 		}
 		pr.Violacoes = &vs
 		return pr
+	case errors.Is(err, domain.ErrNaoAutenticado):
+		pr := p(http.StatusUnauthorized, "NaoAutenticado", "Envie uma API key válida em Authorization: Bearer lst_...")
+		pr.Detail = nil // não diz se a chave existe, está revogada ou malformada
+		return pr
+	case errors.Is(err, domain.ErrSemEscopo):
+		return p(http.StatusForbidden, "AcessoNegado", "A API key não tem o escopo necessário")
+	case errors.Is(err, domain.ErrContaInvalida), errors.Is(err, domain.ErrAPIKeyInvalida), errors.Is(err, ports.ErrPSPDesconhecido):
+		return p(http.StatusBadRequest, "RequisicaoInvalida", "A requisição viola uma regra de negócio")
 	case errors.Is(err, ports.ErrNaoEncontrado):
-		return p(http.StatusNotFound, "CobNaoEncontrado", "Cobrança não encontrada")
+		return p(http.StatusNotFound, "NaoEncontrado", "Recurso não encontrado")
 	case errors.Is(err, ports.ErrJaExiste):
-		return p(http.StatusConflict, "CobOperacaoInvalida", "Já existe uma cobrança com esse txid")
+		return p(http.StatusConflict, "JaExiste", "Já existe um recurso com esse identificador")
 	case errors.Is(err, ports.ErrConflito):
 		return p(http.StatusConflict, "CobOperacaoInvalida", "A cobrança mudou durante a operação; tente de novo")
 	case errors.Is(err, domain.ErrTransicaoInvalida):

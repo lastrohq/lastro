@@ -223,3 +223,34 @@ func TestConsultarTxidInvalidoOuInexistente(t *testing.T) {
 		t.Fatalf("inexistente: err = %v", err)
 	}
 }
+
+func TestAcessoRestritoAUmaContaNaoEnxergaAsOutras(t *testing.T) {
+	c := novoCenario(t)
+	if err := c.store.Contas().Criar(context.Background(), domain.Conta{ID: "outra", Nome: "Outra", PSP: "sandbox", ChavePix: "outra@example.com", Ambiente: domain.Homologacao, Ativa: true}); err != nil {
+		t.Fatal(err)
+	}
+	daLoja := app.ComAcesso(context.Background(), app.Acesso{ContaID: "loja"})
+	daOutra := app.ComAcesso(context.Background(), app.Acesso{ContaID: "outra"})
+
+	cob, err := c.svc.Criar(daLoja, pedido())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := c.svc.Consultar(daOutra, string(cob.Txid)); !errors.Is(err, ports.ErrNaoEncontrado) {
+		t.Fatalf("outra conta enxergou a cobrança: err = %v", err)
+	}
+	valor := "1.00"
+	if _, err := c.svc.Revisar(daOutra, string(cob.Txid), app.RevisaoCob{Valor: &valor}); !errors.Is(err, ports.ErrNaoEncontrado) {
+		t.Fatalf("outra conta revisou: err = %v", err)
+	}
+	if _, err := c.svc.Criar(daOutra, pedido()); !errors.Is(err, app.ErrRequisicaoInvalida) {
+		t.Fatalf("outra conta cobrou na chave da loja: err = %v", err)
+	}
+	pag, _ := c.svc.Listar(daOutra, app.ConsultaCobs{Inicio: c.clock.Now().Add(-time.Hour), Fim: c.clock.Now().Add(time.Hour)})
+	if pag.TotalItens != 0 {
+		t.Fatalf("listagem vazou %d cobranças de outra conta", pag.TotalItens)
+	}
+	if _, err := c.svc.Consultar(daLoja, string(cob.Txid)); err != nil {
+		t.Fatalf("a própria conta não enxergou: %v", err)
+	}
+}

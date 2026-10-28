@@ -39,6 +39,13 @@ const uso = `uso: lastro <comando>
   conta criar  [flags]           cadastra uma conta recebedora
   conta listar                   lista as contas
   conta desativar <id>           impede novas cobranças na conta
+  apikey criar --nome N --escopo E [--escopo E...] [--conta ID]
+                                 cria uma API key (o token aparece uma vez só)
+  apikey listar                  lista as API keys
+  apikey revogar <id>            revoga uma API key na hora
+
+escopos: cob:read cob:write cobv:read cobv:write pix:read devolucao:write
+         rec:read rec:write webhook:admin conta:admin
 
 variáveis: LASTRO_DB (padrão lastro.db), LASTRO_MASTER_KEY, LASTRO_ADDR (padrão :8080)`
 
@@ -61,6 +68,8 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 		return err
 	case "conta":
 		return conta(ctx, args[1:], amb)
+	case "apikey":
+		return apikey(ctx, args[1:], amb)
 	case "help", "-h", "--help":
 		_, err := fmt.Fprintln(amb.Saida, uso)
 		return err
@@ -192,16 +201,19 @@ func trimFinal(b []byte) []byte {
 
 func serve(ctx context.Context, amb Ambiente) error {
 	addr := getenv(amb, "LASTRO_ADDR", ":8080")
-	store, err := sqlite.Open(ctx, getenv(amb, "LASTRO_DB", "lastro.db"))
+	contas, fechar, err := abrir(ctx, amb)
 	if err != nil {
 		return err
 	}
-	defer func() { _ = store.Close() }()
+	defer fechar()
+	store := contas.Store
 	srv := &http.Server{
 		Addr: addr,
 		Handler: httpapi.NewRouter(httpapi.Opcoes{
 			Versao:    amb.Versao,
 			Cobrancas: app.Cobrancas{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
+			Contas:    contas,
+			APIKeys:   app.APIKeys{Store: store, Clock: amb.Clock},
 			Clock:     amb.Clock,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
@@ -219,4 +231,76 @@ func serve(ctx context.Context, amb Ambiente) error {
 		return err
 	}
 	return nil
+}
+
+// escopos é a flag repetível --escopo.
+type escopos []domain.Escopo
+
+func (e *escopos) String() string { return fmt.Sprint(*e) }
+
+func (e *escopos) Set(v string) error {
+	*e = append(*e, domain.Escopo(v))
+	return nil
+}
+
+func apikey(ctx context.Context, args []string, amb Ambiente) error {
+	if len(args) == 0 {
+		return errors.New("use: lastro apikey criar|listar|revogar")
+	}
+	contas, fechar, err := abrir(ctx, amb)
+	if err != nil {
+		return err
+	}
+	defer fechar()
+	keys := app.APIKeys{Store: contas.Store, Clock: amb.Clock}
+
+	switch args[0] {
+	case "criar":
+		fs := flag.NewFlagSet("apikey criar", flag.ContinueOnError)
+		fs.SetOutput(amb.Saida)
+		var nome, conta string
+		var es escopos
+		fs.StringVar(&nome, "nome", "", "para que serve a chave (ex.: loja-producao)")
+		fs.StringVar(&conta, "conta", "", "restringe a chave a uma conta")
+		fs.Var(&es, "escopo", "escopo concedido (repetível)")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		k, token, err := keys.Criar(ctx, nome, es, conta)
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintf(amb.Saida, "api key %s criada com %v\n\n  %s\n\nGuarde agora: este token não aparece de novo.\n", k.ID, k.Escopos, token)
+		return err
+	case "listar":
+		lista, err := keys.Listar(ctx)
+		if err != nil {
+			return err
+		}
+		tw := tabwriter.NewWriter(amb.Saida, 0, 4, 2, ' ', 0)
+		_, _ = fmt.Fprintln(tw, "ID\tNOME\tCONTA\tESCOPOS\tCRIADA\tREVOGADA")
+		for _, k := range lista {
+			revogada := "-"
+			if k.RevogadaEm != nil {
+				revogada = k.RevogadaEm.Format(time.DateTime)
+			}
+			conta := k.ContaID
+			if conta == "" {
+				conta = "(todas)"
+			}
+			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%v\t%s\t%s\n", k.ID, k.Nome, conta, k.Escopos, k.CriadaEm.Format(time.DateTime), revogada)
+		}
+		return tw.Flush()
+	case "revogar":
+		if len(args) != 2 {
+			return errors.New("use: lastro apikey revogar <id>")
+		}
+		if err := keys.Revogar(ctx, args[1]); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintf(amb.Saida, "api key %s revogada\n", args[1])
+		return err
+	default:
+		return fmt.Errorf("subcomando desconhecido %q (use criar, listar ou revogar)", args[0])
+	}
 }

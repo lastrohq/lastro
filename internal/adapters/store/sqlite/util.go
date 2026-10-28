@@ -21,6 +21,11 @@ func unico(err error) bool {
 	return errors.As(err, &e) && (e.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE || e.Code() == sqlite3.SQLITE_CONSTRAINT_PRIMARYKEY)
 }
 
+func chaveEstrangeira(err error) bool {
+	var e *sqlite.Error
+	return errors.As(err, &e) && e.Code() == sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY
+}
+
 func boolInt(b bool) int64 {
 	if b {
 		return 1

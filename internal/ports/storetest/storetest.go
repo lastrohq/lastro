@@ -223,6 +223,42 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 	})
 
+	t.Run("api key: cria, busca, lista e revoga", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		geral := domain.APIKey{ID: "aaaaaaaaaaaa", Nome: "geral", Hash: []byte{1, 2, 3}, Escopos: []domain.Escopo{domain.EscopoCobRead, domain.EscopoCobWrite}, CriadaEm: base}
+		presa := domain.APIKey{ID: "bbbbbbbbbbbb", Nome: "presa", Hash: []byte{4}, Escopos: []domain.Escopo{domain.EscopoCobRead}, ContaID: "c1", CriadaEm: base.Add(time.Minute)}
+		for _, k := range []domain.APIKey{geral, presa} {
+			if err := s.APIKeys().Criar(ctx, k); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if err := s.APIKeys().Criar(ctx, geral); !errors.Is(err, ports.ErrJaExiste) {
+			t.Fatalf("duplicada: err = %v", err)
+		}
+		got, err := s.APIKeys().Buscar(ctx, "bbbbbbbbbbbb")
+		if err != nil || got.ContaID != "c1" || string(got.Hash) != string([]byte{4}) || len(got.Escopos) != 1 || !got.CriadaEm.Equal(presa.CriadaEm) || got.RevogadaEm != nil {
+			t.Fatalf("Buscar = %+v, %v", got, err)
+		}
+		if lista, _ := s.APIKeys().Listar(ctx); len(lista) != 2 || lista[0].ID != geral.ID {
+			t.Fatalf("Listar = %+v", lista)
+		}
+		quando := base.Add(time.Hour)
+		if err := s.APIKeys().Revogar(ctx, geral.ID, quando); err != nil {
+			t.Fatal(err)
+		}
+		_ = s.APIKeys().Revogar(ctx, geral.ID, quando.Add(time.Hour))
+		got, _ = s.APIKeys().Buscar(ctx, geral.ID)
+		if got.RevogadaEm == nil || !got.RevogadaEm.Equal(quando) {
+			t.Fatalf("revogação: %v", got.RevogadaEm)
+		}
+		if err := s.APIKeys().Revogar(ctx, "nada", quando); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("revogar inexistente: err = %v", err)
+		}
+		if _, err := s.APIKeys().Buscar(ctx, "nada"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("buscar inexistente: err = %v", err)
+		}
+	})
+
 	t.Run("transação: erro desfaz tudo, sucesso grava tudo", func(t *testing.T) {
 		s, ctx := comContas(t, novo), context.Background()
 		falha := errors.New("falhou no meio")

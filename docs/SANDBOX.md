@@ -13,15 +13,18 @@ lastro conta criar --id teste --nome "Minha Loja" --psp sandbox --chave teste@ex
 ```bash
 export LASTRO_MASTER_KEY=$(lastro chave gerar)
 lastro conta criar --id loja --nome "Minha Loja" --psp sandbox --chave loja@example.com
+lastro apikey criar --nome teste --escopo cob:read --escopo cob:write   # copie o token lst_...
+export LASTRO_TOKEN=lst_...
 lastro serve &
 
 curl -X PUT localhost:8080/cob/pedido00000000000000000000001 \
+  -H "Authorization: Bearer $LASTRO_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"loja@example.com"}'
 # → 201, status ATIVA, com o pixCopiaECola
 
 sleep 5
-curl localhost:8080/cob/pedido00000000000000000000001
+curl -H "Authorization: Bearer $LASTRO_TOKEN" localhost:8080/cob/pedido00000000000000000000001
 # → status CONCLUIDA, revisao 1
 ```
 
