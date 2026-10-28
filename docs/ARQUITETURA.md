@@ -70,24 +70,21 @@ comunidade sem medo.
 - **Functional options** — na configuração de adapters e do servidor.
 - **Erros de domínio tipados** — `domain.ErrTransicaoInvalida` etc., mapeados para o formato de erro da spec do BCB (`type`, `title`, `status`, `detail`, `violacoes`) num lugar só.
 
-## O port PSP (rascunho)
+## Ports
 
-```go
-type PSP interface {
-    Capabilities() Capabilities
-    CriarCob(ctx context.Context, conta Conta, c domain.Cobranca) (domain.Cobranca, error)
-    ConsultarCob(ctx context.Context, conta Conta, txid domain.Txid) (domain.Cobranca, error)
-    CriarCobv(ctx context.Context, conta Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error)
-    ListarPix(ctx context.Context, conta Conta, janela Janela) ([]domain.PixRecebido, error)
-    Devolver(ctx context.Context, conta Conta, d domain.Devolucao) (domain.Devolucao, error)
-    ConfigurarWebhook(ctx context.Context, conta Conta, url string) error
-    // Pix Automático: só se Capabilities().Rec
-    CriarRec(ctx context.Context, conta Conta, r domain.Recorrencia) (domain.Recorrencia, error)
-    // ...
-}
-```
+Definidos em `internal/ports` (#11):
 
-O formato final sai da F2, junto com o adapter `sandbox`.
+| Port | O que faz |
+|---|---|
+| `PSP` | Adapter do banco: `CriarCob`, `ConsultarCob`, `ListarPix`, `Devolver`, `ConfigurarWebhook`, mais `Capabilities()` (RN-50). Pix Automático entra como interface opcional na F6 |
+| `Store` | `Contas()`, `Cobrancas()`, `Outbox()` e `WithTx`. Atualização com **revisão otimista**: escrita sobre revisão velha falha com `ErrConflito` |
+| `OutboxRepo` | É o lado "publicar" do Notifier: o evento entra na mesma transação da mudança de estado (ADR-005). A entrega fica no adapter `notifier` |
+| `Clock` | Fonte de tempo injetável |
+| `Vault` | Cifrar/decifrar segredos em repouso (RN-61) |
+
+Fakes em memória ficam em `internal/ports/fake`. **`internal/ports/storetest` é a suíte de
+contrato do Store**: o fake passa nela hoje, e o SQLite (#12) e o Postgres precisam passar nos
+mesmos testes.
 
 ## Testes
 
