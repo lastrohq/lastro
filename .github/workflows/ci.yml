@@ -21,6 +21,8 @@ jobs:
         uses: golangci/golangci-lint-action@v8
         with:
           version: latest
+      - name: Código gerado pelo sqlc está em dia
+        run: go tool sqlc diff
       - name: Testes
         run: go test -race -coverprofile=coverage.out ./...
       - name: govulncheck
