@@ -1,0 +1,47 @@
+name: 🏦 Novo adapter de banco
+description: Pedir (ou se oferecer para escrever) o suporte a um banco/PSP
+labels: ["tipo:feature", "area:adapters"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Todo adapter implementa o port `PSP` e **só entra se passar na suíte de conformidade** (`test/conformance`).
+        O passo a passo está no [CONTRIBUTING.md](https://github.com/lastrohq/lastro/blob/develop/CONTRIBUTING.md#escrevendo-um-adapter-de-banco).
+
+  - type: input
+    id: banco
+    attributes:
+      label: Banco / PSP
+      placeholder: Itaú, Santander, Bradesco, Mercado Pago...
+    validations:
+      required: true
+
+  - type: input
+    id: docs
+    attributes:
+      label: Link da documentação da API Pix do banco
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: capacidades
+    attributes:
+      label: O que a API do banco expõe (se souber)
+      options:
+        - label: "cob — cobrança imediata"
+        - label: "cobv — cobrança com vencimento"
+        - label: "devolução"
+        - label: "webhook"
+        - label: "rec / cobr — Pix Automático"
+        - label: "ambiente de homologação/sandbox"
+
+  - type: dropdown
+    id: quem
+    attributes:
+      label: Você vai escrever?
+      options:
+        - Sim, quero escrever este adapter
+        - Posso testar com minha conta PJ
+        - Só estou pedindo
+    validations:
+      required: true
