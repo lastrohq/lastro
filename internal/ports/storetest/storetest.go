@@ -60,6 +60,40 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 	})
 
+	t.Run("conta: atualiza campos editáveis, mas não troca o PSP", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		c, _ := s.Contas().Buscar(ctx, "c1")
+		c.Nome, c.Ativa, c.Ambiente, c.PSP = "Outro nome", false, domain.Producao, "efi"
+		if err := s.Contas().Atualizar(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+		got, _ := s.Contas().Buscar(ctx, "c1")
+		if got.Nome != "Outro nome" || got.Ativa || got.Ambiente != domain.Producao || got.PSP != "sandbox" {
+			t.Fatalf("depois de atualizar: %+v", got)
+		}
+		if err := s.Contas().Atualizar(ctx, domain.Conta{ID: "nada", Ambiente: domain.Producao}); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("inexistente: err = %v", err)
+		}
+	})
+
+	t.Run("conta: credenciais cifradas vão e voltam intactas", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		if _, err := s.Contas().BuscarCredenciais(ctx, "c1"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("sem credenciais: err = %v", err)
+		}
+		blob := []byte{1, 0, 255, 42, 7}
+		if err := s.Contas().SalvarCredenciais(ctx, "c1", blob); err != nil {
+			t.Fatal(err)
+		}
+		got, err := s.Contas().BuscarCredenciais(ctx, "c1")
+		if err != nil || string(got) != string(blob) {
+			t.Fatalf("BuscarCredenciais = %v, %v", got, err)
+		}
+		if err := s.Contas().SalvarCredenciais(ctx, "nada", blob); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("conta inexistente: err = %v", err)
+		}
+	})
+
 	t.Run("cobrança: txid é único por conta", func(t *testing.T) {
 		s, ctx := comContas(t, novo), context.Background()
 		if err := s.Cobrancas().Criar(ctx, cob("c1", "txid00000000000000000000001", 0)); err != nil {

@@ -36,7 +36,15 @@ separador de milhar ou casas a mais ou a menos. Máximo: R$ 9.999.999.999,99.
 
 Uma instância do Lastro atende várias **contas recebedoras**. Conta = PSP +
 chave Pix + credenciais (client id/secret e certificado) + ambiente
-(homologação ou produção). Toda cobrança pertence a exatamente uma conta.
+(homologação ou produção). Toda cobrança pertence a exatamente uma conta
+(chave estrangeira no banco).
+
+- O ID da conta é `[a-z0-9-]`, até 63 caracteres, e não muda. O PSP também não.
+- Conta nasce ativa. **Conta desativada recusa novas cobranças**; as existentes
+  continuam valendo e recebendo webhook.
+- O cadastro é pela CLI (`lastro conta criar|listar|desativar`). As rotas
+  `/lastro/v1/contas` entram junto com as API keys (#16), com o escopo `conta:admin`.
+- Segredos vêm de **arquivo**, nunca de flag, porque flag fica no histórico do shell.
 
 ---
 

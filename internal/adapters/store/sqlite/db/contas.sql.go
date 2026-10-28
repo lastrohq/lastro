@@ -9,13 +9,48 @@ import (
 	"context"
 )
 
+const atualizarConta = `-- name: AtualizarConta :execrows
+UPDATE contas SET nome = ?, chave_pix = ?, ambiente = ?, ativa = ? WHERE id = ?
+`
+
+type AtualizarContaParams struct {
+	Nome     string
+	ChavePix string
+	Ambiente string
+	Ativa    int64
+	ID       string
+}
+
+func (q *Queries) AtualizarConta(ctx context.Context, arg AtualizarContaParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, atualizarConta,
+		arg.Nome,
+		arg.ChavePix,
+		arg.Ambiente,
+		arg.Ativa,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const buscarConta = `-- name: BuscarConta :one
 SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas WHERE id = ?
 `
 
-func (q *Queries) BuscarConta(ctx context.Context, id string) (Conta, error) {
+type BuscarContaRow struct {
+	ID       string
+	Nome     string
+	Psp      string
+	ChavePix string
+	Ambiente string
+	Ativa    int64
+}
+
+func (q *Queries) BuscarConta(ctx context.Context, id string) (BuscarContaRow, error) {
 	row := q.db.QueryRowContext(ctx, buscarConta, id)
-	var i Conta
+	var i BuscarContaRow
 	err := row.Scan(
 		&i.ID,
 		&i.Nome,
@@ -25,6 +60,17 @@ func (q *Queries) BuscarConta(ctx context.Context, id string) (Conta, error) {
 		&i.Ativa,
 	)
 	return i, err
+}
+
+const buscarCredenciais = `-- name: BuscarCredenciais :one
+SELECT credenciais FROM contas WHERE id = ?
+`
+
+func (q *Queries) BuscarCredenciais(ctx context.Context, id string) ([]byte, error) {
+	row := q.db.QueryRowContext(ctx, buscarCredenciais, id)
+	var credenciais []byte
+	err := row.Scan(&credenciais)
+	return credenciais, err
 }
 
 const criarConta = `-- name: CriarConta :exec
@@ -56,15 +102,24 @@ const listarContas = `-- name: ListarContas :many
 SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas ORDER BY id
 `
 
-func (q *Queries) ListarContas(ctx context.Context) ([]Conta, error) {
+type ListarContasRow struct {
+	ID       string
+	Nome     string
+	Psp      string
+	ChavePix string
+	Ambiente string
+	Ativa    int64
+}
+
+func (q *Queries) ListarContas(ctx context.Context) ([]ListarContasRow, error) {
 	rows, err := q.db.QueryContext(ctx, listarContas)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Conta
+	var items []ListarContasRow
 	for rows.Next() {
-		var i Conta
+		var i ListarContasRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Nome,
@@ -84,4 +139,21 @@ func (q *Queries) ListarContas(ctx context.Context) ([]Conta, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const salvarCredenciais = `-- name: SalvarCredenciais :execrows
+UPDATE contas SET credenciais = ? WHERE id = ?
+`
+
+type SalvarCredenciaisParams struct {
+	Credenciais []byte
+	ID          string
+}
+
+func (q *Queries) SalvarCredenciais(ctx context.Context, arg SalvarCredenciaisParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, salvarCredenciais, arg.Credenciais, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

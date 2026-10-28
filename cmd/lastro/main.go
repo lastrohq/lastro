@@ -2,55 +2,30 @@
 package main
 
 import (
-	"errors"
+	"context"
 	"fmt"
-	"log/slog"
-	"net/http"
 	"os"
-	"time"
+	"os/signal"
+	"syscall"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi"
+	"github.com/lastrohq/lastro/internal/adapters/psp"
+	"github.com/lastrohq/lastro/internal/cli"
 )
 
 // version é preenchida no build pelo goreleaser (-ldflags "-X main.version=...").
 var version = "dev"
 
 func main() {
-	if err := run(os.Args[1:]); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	err := cli.Run(ctx, os.Args[1:], cli.Ambiente{
+		Saida:  os.Stdout,
+		Getenv: os.Getenv,
+		PSPs:   psp.NewRegistry(),
+		Versao: version,
+	})
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "erro:", err)
 		os.Exit(1)
 	}
-}
-
-func run(args []string) error {
-	cmd := "serve"
-	if len(args) > 0 {
-		cmd = args[0]
-	}
-	switch cmd {
-	case "version":
-		fmt.Println(version)
-		return nil
-	case "serve":
-		return serve()
-	default:
-		return fmt.Errorf("comando desconhecido %q (use: serve, version)", cmd)
-	}
-}
-
-func serve() error {
-	addr := os.Getenv("LASTRO_ADDR")
-	if addr == "" {
-		addr = ":8080"
-	}
-	srv := &http.Server{
-		Addr:              addr,
-		Handler:           httpapi.NewRouter(version),
-		ReadHeaderTimeout: 10 * time.Second,
-	}
-	slog.Info("lastro no ar", "addr", addr, "version", version)
-	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return err
-	}
-	return nil
 }

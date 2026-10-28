@@ -56,3 +56,11 @@ type PSP interface {
 	Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error)
 	ConfigurarWebhook(ctx context.Context, conta domain.Conta, url string) error
 }
+
+// ErrPSPDesconhecido indica um nome de PSP que nenhum adapter registrou.
+var ErrPSPDesconhecido = errors.New("psp desconhecido")
+
+// Registry encontra o adapter de PSP pelo nome gravado na conta.
+type Registry interface {
+	PSP(nome string) (PSP, error)
+}

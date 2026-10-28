@@ -15,6 +15,7 @@ import (
 
 type dados struct {
 	contas    map[string]domain.Conta
+	creds     map[string][]byte
 	cobrancas map[string]domain.Cobranca // chave: contaID + "/" + txid
 	ordem     []string                   // chaves de cobrança em ordem de criação
 	outbox    []domain.Evento
@@ -23,6 +24,7 @@ type dados struct {
 func (d *dados) clonar() *dados {
 	return &dados{
 		contas:    maps.Clone(d.contas),
+		creds:     maps.Clone(d.creds),
 		cobrancas: maps.Clone(d.cobrancas),
 		ordem:     slices.Clone(d.ordem),
 		outbox:    slices.Clone(d.outbox),
@@ -41,7 +43,7 @@ var _ ports.Store = (*Store)(nil)
 
 // NewStore cria um Store vazio.
 func NewStore() *Store {
-	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, cobrancas: map[string]domain.Cobranca{}}}
+	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, cobrancas: map[string]domain.Cobranca{}}}
 }
 
 // Eventos devolve o que foi publicado no outbox, para asserções.
@@ -115,6 +117,38 @@ func (r contas) Listar(_ context.Context) ([]domain.Conta, error) {
 	out := slices.Collect(maps.Values(r.s.d.contas))
 	slices.SortFunc(out, func(a, b domain.Conta) int { return cmp.Compare(a.ID, b.ID) })
 	return out, nil
+}
+
+func (r contas) Atualizar(_ context.Context, c domain.Conta) error {
+	r.s.lock()
+	defer r.s.unlock()
+	atual, ok := r.s.d.contas[c.ID]
+	if !ok {
+		return fmt.Errorf("conta %s: %w", c.ID, ports.ErrNaoEncontrado)
+	}
+	c.PSP = atual.PSP
+	r.s.d.contas[c.ID] = c
+	return nil
+}
+
+func (r contas) SalvarCredenciais(_ context.Context, id string, cifrado []byte) error {
+	r.s.lock()
+	defer r.s.unlock()
+	if _, ok := r.s.d.contas[id]; !ok {
+		return fmt.Errorf("conta %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	r.s.d.creds[id] = slices.Clone(cifrado)
+	return nil
+}
+
+func (r contas) BuscarCredenciais(_ context.Context, id string) ([]byte, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	c, ok := r.s.d.creds[id]
+	if !ok {
+		return nil, fmt.Errorf("credenciais da conta %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	return slices.Clone(c), nil
 }
 
 type cobrancas struct{ s *Store }
