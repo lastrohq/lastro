@@ -87,6 +87,9 @@ func (s *Store) Contas() ports.ContaRepo { return contas{s.q} }
 // Cobrancas devolve o repositório de cobranças.
 func (s *Store) Cobrancas() ports.CobrancaRepo { return cobrancas{s.q} }
 
+// APIKeys devolve o repositório de API keys.
+func (s *Store) APIKeys() ports.APIKeyRepo { return apikeys{s.q} }
+
 // Outbox devolve o repositório do outbox.
 func (s *Store) Outbox() ports.OutboxRepo { return outbox{s.q} }
 

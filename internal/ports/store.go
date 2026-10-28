@@ -3,6 +3,7 @@ package ports
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/lastrohq/lastro/internal/domain"
 )
@@ -20,6 +21,7 @@ type Store interface {
 	Contas() ContaRepo
 	Cobrancas() CobrancaRepo
 	Outbox() OutboxRepo
+	APIKeys() APIKeyRepo
 	// WithTx executa fn numa transação: erro em fn desfaz tudo.
 	WithTx(ctx context.Context, fn func(Store) error) error
 }
@@ -73,4 +75,13 @@ type CobrancaRepo interface {
 // OutboxRepo guarda eventos a entregar, na mesma transação da mudança de estado (ADR-005).
 type OutboxRepo interface {
 	Adicionar(ctx context.Context, e domain.Evento) error
+}
+
+// APIKeyRepo guarda as API keys. Só o hash do segredo é gravado (RN-60).
+type APIKeyRepo interface {
+	Criar(ctx context.Context, k domain.APIKey) error
+	Buscar(ctx context.Context, id string) (domain.APIKey, error)
+	Listar(ctx context.Context) ([]domain.APIKey, error)
+	// Revogar marca a chave como revogada em quando; revogar de novo não muda a data.
+	Revogar(ctx context.Context, id string, quando time.Time) error
 }

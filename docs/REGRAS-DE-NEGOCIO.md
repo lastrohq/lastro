@@ -201,10 +201,20 @@ em avisar.
 
 ### RN-60 · API keys
 
-- Com escopo (`cob:read`, `cob:write`, `cobv:write`, `pix:read`, `devolucao:write`,
-  `rec:write`, `webhook:admin`, `conta:admin`).
-- Guardadas apenas como hash; o valor aparece **uma vez**, na criação.
-- Podem ser restritas a uma conta.
+- Toda rota, exceto `/health`, exige `Authorization: Bearer lst_<id>_<segredo>`.
+- Escopos: `cob:read`, `cob:write`, `cobv:read`, `cobv:write`, `pix:read`,
+  `devolucao:write`, `rec:read`, `rec:write`, `webhook:admin`, `conta:admin`.
+  Cada rota exige exatamente um; rota sem escopo mapeado é **recusada** (falha
+  fechado), e um teste aponta a rota esquecida.
+- O segredo aparece **uma vez**, na criação. Só o hash SHA-256 é gravado: com
+  190 bits de entropia, hash lento não acrescenta proteção.
+- Chave restrita a uma conta só enxerga as cobranças dela. Cobrança de outra
+  conta responde **404**, sem revelar que existe; chave de outra conta no corpo é
+  tratada como chave desconhecida. Chave restrita não pode ter `conta:admin`.
+- Revogação vale na hora. 401 não diz se a chave existe, está revogada ou
+  malformada.
+- Criação e revogação de chaves é pela CLI (`lastro apikey ...`), que é também
+  como se cria a primeira chave de uma instância nova.
 
 ### RN-61 · Segredos em repouso
 

@@ -8,6 +8,16 @@ import (
 	"database/sql"
 )
 
+type ApiKey struct {
+	ID         string
+	Nome       string
+	Hash       []byte
+	Escopos    string
+	ContaID    sql.NullString
+	CriadaEm   int64
+	RevogadaEm sql.NullInt64
+}
+
 type Cobranca struct {
 	Seq                int64
 	ContaID            string

@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/lastrohq/lastro/internal/domain"
 	"github.com/lastrohq/lastro/internal/ports"
@@ -19,6 +20,7 @@ type dados struct {
 	cobrancas map[string]domain.Cobranca // chave: contaID + "/" + txid
 	ordem     []string                   // chaves de cobrança em ordem de criação
 	outbox    []domain.Evento
+	apikeys   map[string]domain.APIKey
 }
 
 func (d *dados) clonar() *dados {
@@ -28,6 +30,7 @@ func (d *dados) clonar() *dados {
 		cobrancas: maps.Clone(d.cobrancas),
 		ordem:     slices.Clone(d.ordem),
 		outbox:    slices.Clone(d.outbox),
+		apikeys:   maps.Clone(d.apikeys),
 	}
 }
 
@@ -43,7 +46,7 @@ var _ ports.Store = (*Store)(nil)
 
 // NewStore cria um Store vazio.
 func NewStore() *Store {
-	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, cobrancas: map[string]domain.Cobranca{}}}
+	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}}}
 }
 
 // Eventos devolve o que foi publicado no outbox, para asserções.
@@ -85,6 +88,9 @@ func (s *Store) Contas() ports.ContaRepo { return contas{s} }
 
 // Cobrancas devolve o repositório de cobranças.
 func (s *Store) Cobrancas() ports.CobrancaRepo { return cobrancas{s} }
+
+// APIKeys devolve o repositório de API keys.
+func (s *Store) APIKeys() ports.APIKeyRepo { return apikeys{s} }
 
 // Outbox devolve o repositório do outbox.
 func (s *Store) Outbox() ports.OutboxRepo { return outbox{s} }
@@ -294,5 +300,55 @@ func (r outbox) Adicionar(_ context.Context, e domain.Evento) error {
 	r.s.lock()
 	defer r.s.unlock()
 	r.s.d.outbox = append(r.s.d.outbox, e)
+	return nil
+}
+
+type apikeys struct{ s *Store }
+
+func (r apikeys) Criar(_ context.Context, k domain.APIKey) error {
+	r.s.lock()
+	defer r.s.unlock()
+	if _, ok := r.s.d.apikeys[k.ID]; ok {
+		return fmt.Errorf("api key %s: %w", k.ID, ports.ErrJaExiste)
+	}
+	if k.ContaID != "" {
+		if _, ok := r.s.d.contas[k.ContaID]; !ok {
+			return fmt.Errorf("conta %s: %w", k.ContaID, ports.ErrNaoEncontrado)
+		}
+	}
+	k.Escopos, k.Hash = slices.Clone(k.Escopos), slices.Clone(k.Hash)
+	r.s.d.apikeys[k.ID] = k
+	return nil
+}
+
+func (r apikeys) Buscar(_ context.Context, id string) (domain.APIKey, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	k, ok := r.s.d.apikeys[id]
+	if !ok {
+		return k, fmt.Errorf("api key %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	return k, nil
+}
+
+func (r apikeys) Listar(_ context.Context) ([]domain.APIKey, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	out := slices.Collect(maps.Values(r.s.d.apikeys))
+	slices.SortFunc(out, func(a, b domain.APIKey) int { return a.CriadaEm.Compare(b.CriadaEm) })
+	return out, nil
+}
+
+func (r apikeys) Revogar(_ context.Context, id string, quando time.Time) error {
+	r.s.lock()
+	defer r.s.unlock()
+	k, ok := r.s.d.apikeys[id]
+	if !ok {
+		return fmt.Errorf("api key %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	if k.RevogadaEm == nil {
+		k.RevogadaEm = &quando
+		r.s.d.apikeys[id] = k
+	}
 	return nil
 }

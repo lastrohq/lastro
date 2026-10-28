@@ -16,6 +16,7 @@ import (
 	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
 	"github.com/lastrohq/lastro/internal/app"
 	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/lastrohq/lastro/internal/platform/vault"
 	"github.com/lastrohq/lastro/internal/ports/fake"
 )
 
@@ -23,6 +24,10 @@ type api struct {
 	h     http.Handler
 	r     routers.Router
 	clock *fake.Clock
+	store *fake.Store
+	keys  app.APIKeys
+	// token é a API key usada por padrão nas chamadas (todos os escopos, sem restrição).
+	token string
 	t     *testing.T
 }
 
@@ -34,26 +39,55 @@ func novaAPI(t *testing.T) *api {
 	if err != nil {
 		t.Fatal(err)
 	}
+	v, err := vault.New(vault.NovaChave())
+	if err != nil {
+		t.Fatal(err)
+	}
+	registry := psp.NewRegistry(sandbox.New(clock))
+	keys := app.APIKeys{Store: store, Clock: clock}
 	h := NewRouter(Opcoes{
 		Versao:    "v-test",
-		Cobrancas: app.Cobrancas{Store: store, PSPs: psp.NewRegistry(sandbox.New(clock)), Clock: clock},
+		Cobrancas: app.Cobrancas{Store: store, PSPs: registry, Clock: clock},
+		Contas:    app.Contas{Store: store, Vault: v, PSPs: registry},
+		APIKeys:   keys,
 		Clock:     clock,
 	})
 	_, r := carregarContrato(t)
-	return &api{h: h, r: r, clock: clock, t: t}
+	_, token, err := keys.Criar(context.Background(), "testes", domain.TodosEscopos, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return &api{h: h, r: r, clock: clock, store: store, keys: keys, token: token, t: t}
 }
 
-// chamar faz a requisição, valida a resposta contra o contrato e decodifica o corpo em out.
-func (a *api) chamar(metodo, caminho, corpo string, header map[string]string, out any) int {
+// novoToken cria uma API key com os escopos e a conta dados.
+func (a *api) novoToken(conta string, escopos ...domain.Escopo) string {
+	a.t.Helper()
+	_, token, err := a.keys.Criar(context.Background(), "teste", escopos, conta)
+	if err != nil {
+		a.t.Fatal(err)
+	}
+	return token
+}
+
+// chamarBruto faz a requisição validada contra o contrato e devolve o recorder.
+func (a *api) chamarBruto(metodo, caminho, corpo string, header map[string]string) *httptest.ResponseRecorder {
 	a.t.Helper()
 	req := httptest.NewRequestWithContext(a.t.Context(), metodo, caminho, strings.NewReader(corpo))
 	if corpo != "" {
 		req.Header.Set("Content-Type", "application/json")
 	}
+	req.Header.Set("Authorization", "Bearer "+a.token)
 	for k, v := range header {
 		req.Header.Set(k, v)
 	}
-	rec := conferirResposta(a.t, a.r, a.h, req)
+	return conferirResposta(a.t, a.r, a.h, req)
+}
+
+// chamar faz a requisição, valida a resposta contra o contrato e decodifica o corpo em out.
+func (a *api) chamar(metodo, caminho, corpo string, header map[string]string, out any) int {
+	a.t.Helper()
+	rec := a.chamarBruto(metodo, caminho, corpo, header)
 	if out != nil {
 		if err := json.Unmarshal(rec.Body.Bytes(), out); err != nil {
 			a.t.Fatalf("corpo não decodifica (%d): %s", rec.Code, rec.Body)

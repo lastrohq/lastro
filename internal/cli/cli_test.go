@@ -7,10 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/lastrohq/lastro/internal/adapters/psp"
 	"github.com/lastrohq/lastro/internal/platform/vault"
 	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/lastrohq/lastro/internal/ports/fake"
 )
 
 type pspFalso struct{ ports.PSP }
@@ -20,7 +22,7 @@ func (pspFalso) Nome() string { return "sandbox" }
 func ambiente(t *testing.T, env map[string]string) (Ambiente, *bytes.Buffer) {
 	t.Helper()
 	var out bytes.Buffer
-	return Ambiente{Saida: &out, Getenv: func(k string) string { return env[k] }, PSPs: psp.NewRegistry(pspFalso{}), Versao: "v-test"}, &out
+	return Ambiente{Saida: &out, Getenv: func(k string) string { return env[k] }, PSPs: psp.NewRegistry(pspFalso{}), Clock: fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)), Versao: "v-test"}, &out
 }
 
 func envComBanco(t *testing.T) map[string]string {
@@ -110,5 +112,34 @@ func TestComandoDesconhecido(t *testing.T) {
 	amb, _ := ambiente(t, nil)
 	if err := Run(context.Background(), []string{"voar"}, amb); err == nil || !strings.Contains(err.Error(), "uso:") {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestAPIKeyCriarListarRevogar(t *testing.T) {
+	amb, out := ambiente(t, envComBanco(t))
+	ctx := context.Background()
+	if err := Run(ctx, []string{"apikey", "criar", "--nome", "loja", "--escopo", "cob:read", "--escopo", "cob:write"}, amb); err != nil {
+		t.Fatal(err)
+	}
+	var token, id string
+	for _, campo := range strings.Fields(out.String()) {
+		if strings.HasPrefix(campo, "lst_") {
+			token = campo
+		}
+	}
+	id = strings.Fields(out.String())[2]
+	if token == "" {
+		t.Fatalf("token não apareceu: %s", out)
+	}
+	out.Reset()
+	_ = Run(ctx, []string{"apikey", "listar"}, amb)
+	if !strings.Contains(out.String(), id) || strings.Contains(out.String(), token) {
+		t.Fatalf("listar: %s", out)
+	}
+	if err := Run(ctx, []string{"apikey", "revogar", id}, amb); err != nil {
+		t.Fatal(err)
+	}
+	if err := Run(ctx, []string{"apikey", "criar", "--nome", "x", "--escopo", "tudo"}, amb); err == nil {
+		t.Fatal("aceitou escopo inventado")
 	}
 }

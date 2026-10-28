@@ -55,6 +55,11 @@ func (s Contas) Desativar(ctx context.Context, id string) error {
 	})
 }
 
+// Buscar devolve uma conta, sem credenciais.
+func (s Contas) Buscar(ctx context.Context, id string) (domain.Conta, error) {
+	return s.Store.Contas().Buscar(ctx, id)
+}
+
 // Listar devolve as contas, sem credenciais.
 func (s Contas) Listar(ctx context.Context) ([]domain.Conta, error) {
 	return s.Store.Contas().Listar(ctx)

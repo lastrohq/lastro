@@ -81,6 +81,10 @@ func (s Cobrancas) Criar(ctx context.Context, p PedidoCob) (domain.Cobranca, err
 	}
 
 	conta, err := s.Store.Contas().BuscarPorChave(ctx, p.Chave)
+	if err == nil && !AcessoDe(ctx).enxerga(conta.ID) {
+		// Para quem não enxerga a conta, a chave é tão desconhecida quanto uma que não existe.
+		err = ports.ErrNaoEncontrado
+	}
 	if errors.Is(err, ports.ErrNaoEncontrado) {
 		return domain.Cobranca{}, &ErroValidacao{Violacoes: []Violacao{{Propriedade: "chave", Razao: "não pertence a nenhuma conta desta instância", Valor: p.Chave}}}
 	}
@@ -129,6 +133,9 @@ func (s Cobrancas) Consultar(ctx context.Context, txid string) (domain.Cobranca,
 		return domain.Cobranca{}, &ErroValidacao{Violacoes: []Violacao{{Propriedade: "txid", Razao: err.Error(), Valor: txid}}}
 	}
 	c, err := s.Store.Cobrancas().BuscarPorTxid(ctx, tx)
+	if err == nil && !AcessoDe(ctx).enxerga(c.ContaID) {
+		return domain.Cobranca{}, fmt.Errorf("cobrança %s: %w", tx, ports.ErrNaoEncontrado)
+	}
 	if err != nil || c.Status != domain.CobrancaAtiva {
 		return c, err
 	}
@@ -271,7 +278,7 @@ func (s Cobrancas) Listar(ctx context.Context, q ConsultaCobs) (PaginaCobs, erro
 	if err := v.err(); err != nil {
 		return PaginaCobs{}, err
 	}
-	f := ports.FiltroCobrancas{Status: q.Status, Documento: q.Documento, Janela: ports.Janela{Inicio: q.Inicio, Fim: q.Fim}}
+	f := ports.FiltroCobrancas{ContaID: AcessoDe(ctx).ContaID, Status: q.Status, Documento: q.Documento, Janela: ports.Janela{Inicio: q.Inicio, Fim: q.Fim}}
 	total, err := s.Store.Cobrancas().Contar(ctx, f)
 	if err != nil {
 		return PaginaCobs{}, err
