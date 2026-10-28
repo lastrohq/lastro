@@ -1,0 +1,17 @@
+/bin/
+/dist/
+*.db
+*.db-shm
+*.db-wal
+*.p12
+*.pfx
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+coverage.out
+node_modules/
+web/dist/
+.idea/
+.vscode/
