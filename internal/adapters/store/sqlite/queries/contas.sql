@@ -2,7 +2,16 @@
 INSERT INTO contas (id, nome, psp, chave_pix, ambiente, ativa) VALUES (?, ?, ?, ?, ?, ?);
 
 -- name: BuscarConta :one
-SELECT * FROM contas WHERE id = ?;
+SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas WHERE id = ?;
 
 -- name: ListarContas :many
-SELECT * FROM contas ORDER BY id;
+SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas ORDER BY id;
+
+-- name: AtualizarConta :execrows
+UPDATE contas SET nome = ?, chave_pix = ?, ambiente = ?, ativa = ? WHERE id = ?;
+
+-- name: SalvarCredenciais :execrows
+UPDATE contas SET credenciais = ? WHERE id = ?;
+
+-- name: BuscarCredenciais :one
+SELECT credenciais FROM contas WHERE id = ?;

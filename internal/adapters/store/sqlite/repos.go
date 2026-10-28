@@ -37,13 +37,48 @@ func (r contas) Listar(ctx context.Context) ([]domain.Conta, error) {
 	}
 	out := make([]domain.Conta, len(rows))
 	for i, row := range rows {
-		out[i] = paraConta(row)
+		out[i] = paraConta(db.BuscarContaRow(row))
 	}
 	return out, nil
 }
 
-func paraConta(r db.Conta) domain.Conta {
+func paraConta(r db.BuscarContaRow) domain.Conta {
 	return domain.Conta{ID: r.ID, Nome: r.Nome, PSP: r.Psp, ChavePix: r.ChavePix, Ambiente: domain.Ambiente(r.Ambiente), Ativa: r.Ativa == 1}
+}
+
+func (r contas) Atualizar(ctx context.Context, c domain.Conta) error {
+	n, err := r.q.AtualizarConta(ctx, db.AtualizarContaParams{
+		Nome: c.Nome, ChavePix: c.ChavePix, Ambiente: string(c.Ambiente), Ativa: boolInt(c.Ativa), ID: c.ID,
+	})
+	if err != nil {
+		return traduzir(err, "conta "+c.ID)
+	}
+	if n == 0 {
+		return fmt.Errorf("conta %s: %w", c.ID, ports.ErrNaoEncontrado)
+	}
+	return nil
+}
+
+func (r contas) SalvarCredenciais(ctx context.Context, id string, cifrado []byte) error {
+	n, err := r.q.SalvarCredenciais(ctx, db.SalvarCredenciaisParams{Credenciais: cifrado, ID: id})
+	if err != nil {
+		return traduzir(err, "credenciais da conta "+id)
+	}
+	if n == 0 {
+		return fmt.Errorf("conta %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	return nil
+}
+
+func (r contas) BuscarCredenciais(ctx context.Context, id string) ([]byte, error) {
+	blob, err := r.q.BuscarCredenciais(ctx, id)
+	if err != nil {
+		return nil, traduzir(err, "conta "+id)
+	}
+	if blob == nil {
+		return nil, fmt.Errorf("credenciais da conta %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	return blob, nil
 }
 
 type cobrancas struct{ q *db.Queries }

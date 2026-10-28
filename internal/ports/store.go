@@ -24,11 +24,17 @@ type Store interface {
 	WithTx(ctx context.Context, fn func(Store) error) error
 }
 
-// ContaRepo guarda as contas recebedoras.
+// ContaRepo guarda as contas recebedoras e as credenciais delas, já cifradas.
 type ContaRepo interface {
 	Criar(ctx context.Context, c domain.Conta) error
 	Buscar(ctx context.Context, id string) (domain.Conta, error)
 	Listar(ctx context.Context) ([]domain.Conta, error)
+	// Atualizar grava nome, chave, ambiente e ativa. ID e PSP não mudam.
+	Atualizar(ctx context.Context, c domain.Conta) error
+	// SalvarCredenciais grava o blob cifrado pelo Vault; o Store nunca vê o segredo em claro.
+	SalvarCredenciais(ctx context.Context, contaID string, cifrado []byte) error
+	// BuscarCredenciais devolve o blob cifrado, ou ErrNaoEncontrado se a conta não tiver credenciais.
+	BuscarCredenciais(ctx context.Context, contaID string) ([]byte, error)
 }
 
 // FiltroCobrancas restringe a listagem; zero vale "sem filtro".

@@ -26,12 +26,13 @@ type Cobranca struct {
 }
 
 type Conta struct {
-	ID       string
-	Nome     string
-	Psp      string
-	ChavePix string
-	Ambiente string
-	Ativa    int64
+	ID          string
+	Nome        string
+	Psp         string
+	ChavePix    string
+	Ambiente    string
+	Ativa       int64
+	Credenciais []byte
 }
 
 type Outbox struct {

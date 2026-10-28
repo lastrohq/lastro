@@ -22,7 +22,8 @@ comunidade sem medo.
 
 | Caminho | O que vive ali | Pode importar |
 |---|---|---|
-| `cmd/lastro` | `main`: `serve`, `migrate`, `sandbox`, `mcp`, `version` | tudo |
+| `cmd/lastro` | `main`: monta o registry de PSPs e chama a CLI | tudo |
+| `internal/cli` | Comandos (`serve`, `conta`, `chave`, `version`...), testáveis sem processo | `app`, `adapters`, `platform` |
 | `internal/domain` | Entidades, máquinas de estado, `Money`, `Txid` | só stdlib |
 | `internal/app` | Casos de uso (`CriarCobranca`, `Devolver`, `CriarRecorrencia`...) | `domain`, `ports` |
 | `internal/ports` | Interfaces `PSP`, `Store`, `Notifier`, `Vault`, `Clock` | `domain` |
@@ -31,7 +32,8 @@ comunidade sem medo.
 | `internal/adapters/store/*` | `sqlite` (padrão), `postgres` (v0.3) | `ports`, `domain` |
 | `internal/adapters/notifier` | Outbox, entrega, retry, DLQ, assinatura | `ports`, `domain` |
 | `internal/adapters/mcp` | Ferramentas MCP sobre os casos de uso | `app` |
-| `internal/platform` | Config, mTLS, cache de token OAuth2, cripto, log | só stdlib/libs |
+| `internal/platform` | `vault` (AES-256-GCM), e depois mTLS e cache de token OAuth2 | só stdlib/libs |
+| `internal/adapters/psp` | `Registry` + um subpacote por banco | `ports` |
 | `pkg/brcode` | Lib pública de BR Code | só stdlib |
 | `api/openapi.yaml` | Contrato da API (fonte da verdade) | — |
 | `web/` | Painel React + design system | — |
