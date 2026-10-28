@@ -30,6 +30,14 @@ func (r contas) Buscar(ctx context.Context, id string) (domain.Conta, error) {
 	return paraConta(row), nil
 }
 
+func (r contas) BuscarPorChave(ctx context.Context, chave string) (domain.Conta, error) {
+	row, err := r.q.BuscarContaPorChave(ctx, chave)
+	if err != nil {
+		return domain.Conta{}, traduzir(err, "conta da chave "+chave)
+	}
+	return paraConta(db.BuscarContaRow(row)), nil
+}
+
 func (r contas) Listar(ctx context.Context) ([]domain.Conta, error) {
 	rows, err := r.q.ListarContas(ctx)
 	if err != nil {
@@ -86,7 +94,7 @@ type cobrancas struct{ q *db.Queries }
 func (r cobrancas) Criar(ctx context.Context, c domain.Cobranca) error {
 	doc, nome := devedor(c.Devedor)
 	err := r.q.CriarCobranca(ctx, db.CriarCobrancaParams{
-		ContaID: c.ContaID, Txid: string(c.Txid), Status: string(c.Status), Valor: int64(c.Valor),
+		ContaID: c.ContaID, Txid: string(c.Txid), Chave: c.Chave, Status: string(c.Status), Valor: int64(c.Valor),
 		PermiteAlteracao: boolInt(c.PermiteAlteracao), ExpiracaoS: int64(c.Expiracao / time.Second),
 		DevedorDocumento: doc, DevedorNome: nome, SolicitacaoPagador: c.SolicitacaoPagador,
 		Location: c.Location, BrCode: c.BRCode, CriadaEm: c.CriadaEm.UnixNano(),
@@ -100,6 +108,23 @@ func (r cobrancas) Buscar(ctx context.Context, contaID string, txid domain.Txid)
 		return domain.Cobranca{}, traduzir(err, "cobrança "+string(txid))
 	}
 	return paraCobranca(row), nil
+}
+
+func (r cobrancas) BuscarPorTxid(ctx context.Context, txid domain.Txid) (domain.Cobranca, error) {
+	row, err := r.q.BuscarCobrancaPorTxid(ctx, string(txid))
+	if err != nil {
+		return domain.Cobranca{}, traduzir(err, "cobrança "+string(txid))
+	}
+	return paraCobranca(row), nil
+}
+
+func (r cobrancas) Contar(ctx context.Context, f ports.FiltroCobrancas) (int, error) {
+	p := filtros(f)
+	n, err := r.q.ContarCobrancas(ctx, db.ContarCobrancasParams{ContaID: p.ContaID, Status: p.Status, Documento: p.Documento, Inicio: p.Inicio, Fim: p.Fim})
+	if err != nil {
+		return 0, traduzir(err, "cobranças")
+	}
+	return int(n), nil
 }
 
 func (r cobrancas) Atualizar(ctx context.Context, c *domain.Cobranca) error {
@@ -137,19 +162,8 @@ func (r cobrancas) Listar(ctx context.Context, f ports.FiltroCobrancas) ([]domai
 	if limite <= 0 {
 		limite = 100
 	}
-	p := db.ListarCobrancasParams{DepoisDe: depoisDe, Limite: int64(limite) + 1}
-	if f.ContaID != "" {
-		p.ContaID = f.ContaID
-	}
-	if f.Status != "" {
-		p.Status = string(f.Status)
-	}
-	if !f.Janela.Inicio.IsZero() {
-		p.Inicio = f.Janela.Inicio.UnixNano()
-	}
-	if !f.Janela.Fim.IsZero() {
-		p.Fim = f.Janela.Fim.UnixNano()
-	}
+	p := filtros(f)
+	p.DepoisDe, p.Limite, p.Pular = depoisDe, int64(limite)+1, int64(f.Pular)
 	rows, err := r.q.ListarCobrancas(ctx, p)
 	if err != nil {
 		return nil, "", traduzir(err, "cobranças")
@@ -166,6 +180,27 @@ func (r cobrancas) Listar(ctx context.Context, f ports.FiltroCobrancas) ([]domai
 	return out, prox, nil
 }
 
+// filtros converte o filtro do port nos parâmetros opcionais do sqlc (nil = sem filtro).
+func filtros(f ports.FiltroCobrancas) db.ListarCobrancasParams {
+	var p db.ListarCobrancasParams
+	if f.ContaID != "" {
+		p.ContaID = f.ContaID
+	}
+	if f.Status != "" {
+		p.Status = string(f.Status)
+	}
+	if f.Documento != "" {
+		p.Documento = f.Documento
+	}
+	if !f.Janela.Inicio.IsZero() {
+		p.Inicio = f.Janela.Inicio.UnixNano()
+	}
+	if !f.Janela.Fim.IsZero() {
+		p.Fim = f.Janela.Fim.UnixNano()
+	}
+	return p
+}
+
 func devedor(d *domain.Devedor) (sql.NullString, sql.NullString) {
 	if d == nil {
 		return sql.NullString{}, sql.NullString{}
@@ -175,7 +210,7 @@ func devedor(d *domain.Devedor) (sql.NullString, sql.NullString) {
 
 func paraCobranca(r db.Cobranca) domain.Cobranca {
 	c := domain.Cobranca{
-		Txid: domain.Txid(r.Txid), ContaID: r.ContaID, Status: domain.StatusCobranca(r.Status), Valor: domain.Money(r.Valor),
+		Txid: domain.Txid(r.Txid), ContaID: r.ContaID, Chave: r.Chave, Status: domain.StatusCobranca(r.Status), Valor: domain.Money(r.Valor),
 		PermiteAlteracao: r.PermiteAlteracao == 1, Expiracao: time.Duration(r.ExpiracaoS) * time.Second,
 		SolicitacaoPagador: r.SolicitacaoPagador, Location: r.Location, BRCode: r.BrCode,
 		CriadaEm: time.Unix(0, r.CriadaEm).UTC(), Revisao: int(r.Revisao),

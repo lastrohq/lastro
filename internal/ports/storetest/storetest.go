@@ -16,7 +16,7 @@ var base = time.Date(2026, 10, 28, 12, 0, 0, 0, time.UTC)
 
 func cob(conta, txid string, minuto int) domain.Cobranca {
 	return domain.Cobranca{
-		Txid: domain.Txid(txid), ContaID: conta, Status: domain.CobrancaAtiva, Valor: 1050,
+		Txid: domain.Txid(txid), ContaID: conta, Chave: conta + "@example.com", Status: domain.CobrancaAtiva, Valor: 1050,
 		Expiracao: domain.ExpiracaoPadrao, CriadaEm: base.Add(time.Duration(minuto) * time.Minute),
 		Devedor: &domain.Devedor{Documento: "12345678909", Nome: "Fulano"},
 	}
@@ -94,7 +94,22 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 	})
 
-	t.Run("cobrança: txid é único por conta", func(t *testing.T) {
+	t.Run("conta: chave Pix é única e encontra a conta", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		got, err := s.Contas().BuscarPorChave(ctx, "c2@example.com")
+		if err != nil || got.ID != "c2" {
+			t.Fatalf("BuscarPorChave = %+v, %v", got, err)
+		}
+		if _, err := s.Contas().BuscarPorChave(ctx, "ninguem@example.com"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("chave sem dono: err = %v", err)
+		}
+		dup := domain.Conta{ID: "c3", Nome: "X", PSP: "sandbox", ChavePix: "c1@example.com", Ambiente: domain.Homologacao, Ativa: true}
+		if err := s.Contas().Criar(ctx, dup); !errors.Is(err, ports.ErrJaExiste) {
+			t.Fatalf("chave repetida: err = %v", err)
+		}
+	})
+
+	t.Run("cobrança: txid é único na instância", func(t *testing.T) {
 		s, ctx := comContas(t, novo), context.Background()
 		if err := s.Cobrancas().Criar(ctx, cob("c1", "txid00000000000000000000001", 0)); err != nil {
 			t.Fatal(err)
@@ -102,8 +117,15 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		if err := s.Cobrancas().Criar(ctx, cob("c1", "txid00000000000000000000001", 1)); !errors.Is(err, ports.ErrJaExiste) {
 			t.Fatalf("mesma conta: err = %v", err)
 		}
-		if err := s.Cobrancas().Criar(ctx, cob("c2", "txid00000000000000000000001", 1)); err != nil {
-			t.Fatalf("outra conta deveria aceitar o mesmo txid: %v", err)
+		if err := s.Cobrancas().Criar(ctx, cob("c2", "txid00000000000000000000001", 1)); !errors.Is(err, ports.ErrJaExiste) {
+			t.Fatalf("outra conta: err = %v", err)
+		}
+		got, err := s.Cobrancas().BuscarPorTxid(ctx, "txid00000000000000000000001")
+		if err != nil || got.ContaID != "c1" {
+			t.Fatalf("BuscarPorTxid = %+v, %v", got, err)
+		}
+		if _, err := s.Cobrancas().BuscarPorTxid(ctx, "txidinexistente000000000001"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("inexistente: err = %v", err)
 		}
 	})
 
@@ -115,7 +137,7 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.Valor != c.Valor || got.Status != c.Status || !got.CriadaEm.Equal(c.CriadaEm) || got.Devedor == nil || *got.Devedor != *c.Devedor || got.Revisao != 0 {
+		if got.Chave != c.Chave || got.Valor != c.Valor || got.Status != c.Status || !got.CriadaEm.Equal(c.CriadaEm) || got.Devedor == nil || *got.Devedor != *c.Devedor || got.Revisao != 0 {
 			t.Fatalf("Buscar = %+v", got)
 		}
 		if _, err := s.Cobrancas().Buscar(ctx, "c2", c.Txid); !errors.Is(err, ports.ErrNaoEncontrado) {
@@ -182,6 +204,22 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		pag, _, _ := s.Cobrancas().Listar(ctx, ports.FiltroCobrancas{Janela: ports.Janela{Inicio: base.Add(time.Minute), Fim: base.Add(3 * time.Minute)}})
 		if len(pag) != 2 {
 			t.Fatalf("janela [1min, 3min) devolveu %d cobranças, quer 2", len(pag))
+		}
+
+		filtro := ports.FiltroCobrancas{ContaID: "c1", Status: domain.CobrancaAtiva}
+		if n, err := s.Cobrancas().Contar(ctx, filtro); err != nil || n != 4 {
+			t.Fatalf("Contar = %d, %v", n, err)
+		}
+		filtro.Pular, filtro.Limite = 2, 10
+		pag, _, _ = s.Cobrancas().Listar(ctx, filtro)
+		if len(pag) != 2 || pag[0].Txid != "txid0000000000000000000000d" {
+			t.Fatalf("Pular 2 devolveu %+v", pag)
+		}
+		if n, _ := s.Cobrancas().Contar(ctx, ports.FiltroCobrancas{Documento: "12345678909"}); n != 6 {
+			t.Fatalf("filtro por documento contou %d, quer 6", n)
+		}
+		if n, _ := s.Cobrancas().Contar(ctx, ports.FiltroCobrancas{Documento: "00000000000"}); n != 0 {
+			t.Fatalf("documento sem cobrança contou %d", n)
 		}
 	})
 

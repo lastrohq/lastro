@@ -9,6 +9,7 @@ type TipoEvento string
 const (
 	EventoCobrancaCriada      TipoEvento = "cobranca.criada"
 	EventoCobrancaConcluida   TipoEvento = "cobranca.concluida"
+	EventoCobrancaRevisada    TipoEvento = "cobranca.revisada"
 	EventoCobrancaRemovida    TipoEvento = "cobranca.removida"
 	EventoPixRecebido         TipoEvento = "pix.recebido"
 	EventoDevolucaoAtualizada TipoEvento = "devolucao.atualizada"

@@ -56,7 +56,7 @@ func (q *Queries) AtualizarCobranca(ctx context.Context, arg AtualizarCobrancaPa
 }
 
 const buscarCobranca = `-- name: BuscarCobranca :one
-SELECT seq, conta_id, txid, status, valor, permite_alteracao, expiracao_s, devedor_documento, devedor_nome, solicitacao_pagador, location, br_code, criada_em, revisao FROM cobrancas WHERE conta_id = ? AND txid = ?
+SELECT seq, conta_id, txid, status, valor, permite_alteracao, expiracao_s, devedor_documento, devedor_nome, solicitacao_pagador, location, br_code, criada_em, revisao, chave FROM cobrancas WHERE conta_id = ? AND txid = ?
 `
 
 type BuscarCobrancaParams struct {
@@ -82,20 +82,79 @@ func (q *Queries) BuscarCobranca(ctx context.Context, arg BuscarCobrancaParams) 
 		&i.BrCode,
 		&i.CriadaEm,
 		&i.Revisao,
+		&i.Chave,
 	)
 	return i, err
 }
 
+const buscarCobrancaPorTxid = `-- name: BuscarCobrancaPorTxid :one
+SELECT seq, conta_id, txid, status, valor, permite_alteracao, expiracao_s, devedor_documento, devedor_nome, solicitacao_pagador, location, br_code, criada_em, revisao, chave FROM cobrancas WHERE txid = ?
+`
+
+func (q *Queries) BuscarCobrancaPorTxid(ctx context.Context, txid string) (Cobranca, error) {
+	row := q.db.QueryRowContext(ctx, buscarCobrancaPorTxid, txid)
+	var i Cobranca
+	err := row.Scan(
+		&i.Seq,
+		&i.ContaID,
+		&i.Txid,
+		&i.Status,
+		&i.Valor,
+		&i.PermiteAlteracao,
+		&i.ExpiracaoS,
+		&i.DevedorDocumento,
+		&i.DevedorNome,
+		&i.SolicitacaoPagador,
+		&i.Location,
+		&i.BrCode,
+		&i.CriadaEm,
+		&i.Revisao,
+		&i.Chave,
+	)
+	return i, err
+}
+
+const contarCobrancas = `-- name: ContarCobrancas :one
+SELECT COUNT(*) FROM cobrancas
+WHERE (?1 IS NULL OR conta_id = ?1)
+  AND (?2 IS NULL OR status = ?2)
+  AND (?3 IS NULL OR devedor_documento = ?3)
+  AND (?4 IS NULL OR criada_em >= ?4)
+  AND (?5 IS NULL OR criada_em < ?5)
+`
+
+type ContarCobrancasParams struct {
+	ContaID   interface{}
+	Status    interface{}
+	Documento interface{}
+	Inicio    interface{}
+	Fim       interface{}
+}
+
+func (q *Queries) ContarCobrancas(ctx context.Context, arg ContarCobrancasParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, contarCobrancas,
+		arg.ContaID,
+		arg.Status,
+		arg.Documento,
+		arg.Inicio,
+		arg.Fim,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const criarCobranca = `-- name: CriarCobranca :exec
 INSERT INTO cobrancas (
-    conta_id, txid, status, valor, permite_alteracao, expiracao_s, devedor_documento, devedor_nome,
+    conta_id, txid, chave, status, valor, permite_alteracao, expiracao_s, devedor_documento, devedor_nome,
     solicitacao_pagador, location, br_code, criada_em, revisao
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
 `
 
 type CriarCobrancaParams struct {
 	ContaID            string
 	Txid               string
+	Chave              string
 	Status             string
 	Valor              int64
 	PermiteAlteracao   int64
@@ -112,6 +171,7 @@ func (q *Queries) CriarCobranca(ctx context.Context, arg CriarCobrancaParams) er
 	_, err := q.db.ExecContext(ctx, criarCobranca,
 		arg.ContaID,
 		arg.Txid,
+		arg.Chave,
 		arg.Status,
 		arg.Valor,
 		arg.PermiteAlteracao,
@@ -127,23 +187,26 @@ func (q *Queries) CriarCobranca(ctx context.Context, arg CriarCobrancaParams) er
 }
 
 const listarCobrancas = `-- name: ListarCobrancas :many
-SELECT seq, conta_id, txid, status, valor, permite_alteracao, expiracao_s, devedor_documento, devedor_nome, solicitacao_pagador, location, br_code, criada_em, revisao FROM cobrancas
+SELECT seq, conta_id, txid, status, valor, permite_alteracao, expiracao_s, devedor_documento, devedor_nome, solicitacao_pagador, location, br_code, criada_em, revisao, chave FROM cobrancas
 WHERE seq > ?1
   AND (?2 IS NULL OR conta_id = ?2)
   AND (?3 IS NULL OR status = ?3)
-  AND (?4 IS NULL OR criada_em >= ?4)
-  AND (?5 IS NULL OR criada_em < ?5)
+  AND (?4 IS NULL OR devedor_documento = ?4)
+  AND (?5 IS NULL OR criada_em >= ?5)
+  AND (?6 IS NULL OR criada_em < ?6)
 ORDER BY seq
-LIMIT ?6
+LIMIT ?8 OFFSET ?7
 `
 
 type ListarCobrancasParams struct {
-	DepoisDe int64
-	ContaID  interface{}
-	Status   interface{}
-	Inicio   interface{}
-	Fim      interface{}
-	Limite   int64
+	DepoisDe  int64
+	ContaID   interface{}
+	Status    interface{}
+	Documento interface{}
+	Inicio    interface{}
+	Fim       interface{}
+	Pular     int64
+	Limite    int64
 }
 
 func (q *Queries) ListarCobrancas(ctx context.Context, arg ListarCobrancasParams) ([]Cobranca, error) {
@@ -151,8 +214,10 @@ func (q *Queries) ListarCobrancas(ctx context.Context, arg ListarCobrancasParams
 		arg.DepoisDe,
 		arg.ContaID,
 		arg.Status,
+		arg.Documento,
 		arg.Inicio,
 		arg.Fim,
+		arg.Pular,
 		arg.Limite,
 	)
 	if err != nil {
@@ -177,6 +242,7 @@ func (q *Queries) ListarCobrancas(ctx context.Context, arg ListarCobrancasParams
 			&i.BrCode,
 			&i.CriadaEm,
 			&i.Revisao,
+			&i.Chave,
 		); err != nil {
 			return nil, err
 		}

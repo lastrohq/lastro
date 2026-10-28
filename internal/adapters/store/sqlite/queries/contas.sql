@@ -15,3 +15,6 @@ UPDATE contas SET credenciais = ? WHERE id = ?;
 
 -- name: BuscarCredenciais :one
 SELECT credenciais FROM contas WHERE id = ?;
+
+-- name: BuscarContaPorChave :one
+SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas WHERE chave_pix = ?;

@@ -33,11 +33,11 @@ func carregarContrato(t *testing.T) (*openapi3.T, routers.Router) {
 	return spec, r
 }
 
-// conferirResposta faz a requisição no roteador real e valida a resposta contra o contrato.
-func conferirResposta(t *testing.T, r routers.Router, req *http.Request) *httptest.ResponseRecorder {
+// conferirResposta faz a requisição no handler e valida a resposta contra o contrato.
+func conferirResposta(t *testing.T, r routers.Router, h http.Handler, req *http.Request) *httptest.ResponseRecorder {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	NewRouter("v0.0.0-test").ServeHTTP(rec, req)
+	h.ServeHTTP(rec, req)
 
 	rota, params, err := r.FindRoute(req)
 	if err != nil {
@@ -66,16 +66,8 @@ func TestContratoEValido(t *testing.T) {
 func TestHealthSegueOContrato(t *testing.T) {
 	_, r := carregarContrato(t)
 	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/health", nil)
-	if rec := conferirResposta(t, r, req); rec.Code != http.StatusOK {
-		t.Fatalf("status = %d", rec.Code)
-	}
-}
-
-func TestRotaPendenteResponde501ComProblema(t *testing.T) {
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequestWithContext(t.Context(), http.MethodGet, "/cob/abcdefghijklmnopqrstuvwxyz", nil)
-	NewRouter("dev").ServeHTTP(rec, req)
-	if rec.Code != http.StatusNotImplemented || rec.Header().Get("Content-Type") != "application/problem+json" {
-		t.Fatalf("status=%d content-type=%q body=%s", rec.Code, rec.Header().Get("Content-Type"), rec.Body)
+	rec := conferirResposta(t, r, novaAPI(t).h, req)
+	if rec.Code != http.StatusOK || !bytes.Contains(rec.Body.Bytes(), []byte(`"version":"v-test"`)) {
+		t.Fatalf("status = %d, corpo = %s", rec.Code, rec.Body)
 	}
 }

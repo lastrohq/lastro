@@ -97,8 +97,24 @@ func (r contas) Criar(_ context.Context, c domain.Conta) error {
 	if _, ok := r.s.d.contas[c.ID]; ok {
 		return fmt.Errorf("conta %s: %w", c.ID, ports.ErrJaExiste)
 	}
+	for _, outra := range r.s.d.contas {
+		if outra.ChavePix == c.ChavePix {
+			return fmt.Errorf("chave %s já pertence à conta %s: %w", c.ChavePix, outra.ID, ports.ErrJaExiste)
+		}
+	}
 	r.s.d.contas[c.ID] = c
 	return nil
+}
+
+func (r contas) BuscarPorChave(_ context.Context, chave string) (domain.Conta, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	for _, c := range r.s.d.contas {
+		if c.ChavePix == chave {
+			return c, nil
+		}
+	}
+	return domain.Conta{}, fmt.Errorf("conta da chave %s: %w", chave, ports.ErrNaoEncontrado)
 }
 
 func (r contas) Buscar(_ context.Context, id string) (domain.Conta, error) {
@@ -159,8 +175,10 @@ func (r cobrancas) Criar(_ context.Context, c domain.Cobranca) error {
 	r.s.lock()
 	defer r.s.unlock()
 	k := chave(c.ContaID, c.Txid)
-	if _, ok := r.s.d.cobrancas[k]; ok {
-		return fmt.Errorf("cobrança %s: %w", k, ports.ErrJaExiste)
+	for _, outra := range r.s.d.cobrancas {
+		if outra.Txid == c.Txid {
+			return fmt.Errorf("cobrança %s: %w", c.Txid, ports.ErrJaExiste)
+		}
 	}
 	c.Revisao = 0
 	r.s.d.cobrancas[k] = c
@@ -176,6 +194,29 @@ func (r cobrancas) Buscar(_ context.Context, contaID string, txid domain.Txid) (
 		return c, fmt.Errorf("cobrança %s: %w", txid, ports.ErrNaoEncontrado)
 	}
 	return c, nil
+}
+
+func (r cobrancas) BuscarPorTxid(_ context.Context, txid domain.Txid) (domain.Cobranca, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	for _, c := range r.s.d.cobrancas {
+		if c.Txid == txid {
+			return c, nil
+		}
+	}
+	return domain.Cobranca{}, fmt.Errorf("cobrança %s: %w", txid, ports.ErrNaoEncontrado)
+}
+
+func (r cobrancas) Contar(_ context.Context, f ports.FiltroCobrancas) (int, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	n := 0
+	for _, k := range r.s.d.ordem {
+		if combina(r.s.d.cobrancas[k], f) {
+			n++
+		}
+	}
+	return n, nil
 }
 
 func (r cobrancas) Atualizar(_ context.Context, c *domain.Cobranca) error {
@@ -210,9 +251,14 @@ func (r cobrancas) Listar(_ context.Context, f ports.FiltroCobrancas) ([]domain.
 		limite = 100
 	}
 	var out []domain.Cobranca
+	pular := f.Pular
 	for i := inicio; i < len(r.s.d.ordem); i++ {
 		c := r.s.d.cobrancas[r.s.d.ordem[i]]
 		if !combina(c, f) {
+			continue
+		}
+		if pular > 0 {
+			pular--
 			continue
 		}
 		if len(out) == limite {
@@ -228,6 +274,9 @@ func combina(c domain.Cobranca, f ports.FiltroCobrancas) bool {
 		return false
 	}
 	if f.Status != "" && c.Status != f.Status {
+		return false
+	}
+	if f.Documento != "" && (c.Devedor == nil || c.Devedor.Documento != f.Documento) {
 		return false
 	}
 	if !f.Janela.Inicio.IsZero() && c.CriadaEm.Before(f.Janela.Inicio) {

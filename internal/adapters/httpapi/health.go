@@ -9,33 +9,46 @@ import (
 	"net/http"
 
 	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
+	"github.com/lastrohq/lastro/internal/app"
+	"github.com/lastrohq/lastro/internal/ports"
 )
 
 // errNaoImplementado marca rotas do contrato que ainda não têm caso de uso.
 var errNaoImplementado = errors.New("rota ainda não implementada")
 
+// Opcoes são as dependências do servidor HTTP.
+type Opcoes struct {
+	Versao    string
+	Cobrancas app.Cobrancas
+	Clock     ports.Clock
+}
+
 // Server implementa gen.StrictServerInterface.
 type Server struct {
-	version string
+	version   string
+	cobrancas app.Cobrancas
+	clock     ports.Clock
 }
 
 var _ gen.StrictServerInterface = (*Server)(nil)
 
 // NewRouter monta o roteador HTTP a partir do contrato gerado.
-func NewRouter(version string) http.Handler {
-	strict := gen.NewStrictHandlerWithOptions(&Server{version: version}, nil, gen.StrictHTTPServerOptions{
+func NewRouter(o Opcoes) http.Handler {
+	s := &Server{version: o.Versao, cobrancas: o.Cobrancas, clock: o.Clock}
+	strict := gen.NewStrictHandlerWithOptions(s, nil, gen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
-			escreverProblema(w, http.StatusBadRequest, "RequisicaoInvalida", "Requisição inválida", err.Error())
+			escreverProblema(w, gen.Problema{Status: http.StatusBadRequest, Type: tipoErro("RequisicaoInvalida"), Title: "Requisição inválida", Detail: ptr(err.Error())})
 		},
-		ResponseErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
-			if errors.Is(err, errNaoImplementado) {
-				escreverProblema(w, http.StatusNotImplemented, "NaoImplementado", "Ainda não implementado", err.Error())
-				return
-			}
-			escreverProblema(w, http.StatusInternalServerError, "ErroInterno", "Erro interno", "")
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			escreverProblema(w, problemaDe(r.Context(), err))
 		},
 	})
-	return gen.Handler(strict)
+	return gen.HandlerWithOptions(strict, gen.StdHTTPServerOptions{
+		// Parâmetro de path, query ou header fora do contrato também responde como Problema.
+		ErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
+			escreverProblema(w, gen.Problema{Status: http.StatusBadRequest, Type: tipoErro("RequisicaoInvalida"), Title: "Requisição inválida", Detail: ptr(err.Error())})
+		},
+	})
 }
 
 // Health responde se a instância está no ar.
@@ -44,12 +57,8 @@ func (s *Server) Health(context.Context, gen.HealthRequestObject) (gen.HealthRes
 }
 
 // escreverProblema responde no formato de erro da spec do BCB (RFC 7807).
-func escreverProblema(w http.ResponseWriter, status int, tipo, titulo, detalhe string) {
+func escreverProblema(w http.ResponseWriter, p gen.Problema) {
 	w.Header().Set("Content-Type", "application/problem+json")
-	w.WriteHeader(status)
-	p := gen.Problema{Type: "https://lastro.dev/erros/" + tipo, Title: titulo, Status: status}
-	if detalhe != "" {
-		p.Detail = &detalhe
-	}
+	w.WriteHeader(p.Status)
 	_ = json.NewEncoder(w).Encode(p)
 }

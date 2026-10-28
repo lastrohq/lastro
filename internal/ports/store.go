@@ -28,6 +28,8 @@ type Store interface {
 type ContaRepo interface {
 	Criar(ctx context.Context, c domain.Conta) error
 	Buscar(ctx context.Context, id string) (domain.Conta, error)
+	// BuscarPorChave encontra a conta dona da chave Pix (chave é única na instância).
+	BuscarPorChave(ctx context.Context, chave string) (domain.Conta, error)
 	Listar(ctx context.Context) ([]domain.Conta, error)
 	// Atualizar grava nome, chave, ambiente e ativa. ID e PSP não mudam.
 	Atualizar(ctx context.Context, c domain.Conta) error
@@ -41,17 +43,26 @@ type ContaRepo interface {
 type FiltroCobrancas struct {
 	ContaID string
 	Status  domain.StatusCobranca
-	Janela  Janela
-	Limite  int
+	// Documento filtra pelo CPF/CNPJ do devedor.
+	Documento string
+	Janela    Janela
+	Limite    int
+	// Pular descarta os primeiros N resultados (paginação por página da spec do BCB).
+	// Com Cursor, prefira deixar zero.
+	Pular int
 	// Cursor é o valor devolvido pela página anterior; vazio começa do início.
 	Cursor string
 }
 
-// CobrancaRepo guarda cobranças imediatas. txid é único por conta (RN-10).
+// CobrancaRepo guarda cobranças imediatas. O txid é único na instância (RN-10).
 type CobrancaRepo interface {
-	// Criar falha com ErrJaExiste se o txid já existir na conta.
+	// Criar falha com ErrJaExiste se o txid já existir.
 	Criar(ctx context.Context, c domain.Cobranca) error
 	Buscar(ctx context.Context, contaID string, txid domain.Txid) (domain.Cobranca, error)
+	// BuscarPorTxid encontra a cobrança sem saber a conta.
+	BuscarPorTxid(ctx context.Context, txid domain.Txid) (domain.Cobranca, error)
+	// Contar devolve quantas cobranças casam com o filtro, ignorando Limite, Pular e Cursor.
+	Contar(ctx context.Context, f FiltroCobrancas) (int, error)
 	// Atualizar grava se c.Revisao for a revisão atual, e a incrementa;
 	// senão falha com ErrConflito.
 	Atualizar(ctx context.Context, c *domain.Cobranca) error

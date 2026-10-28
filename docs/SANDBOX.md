@@ -8,6 +8,26 @@ export LASTRO_MASTER_KEY=$(lastro chave gerar)
 lastro conta criar --id teste --nome "Minha Loja" --psp sandbox --chave teste@example.com
 ```
 
+## Do zero a um Pix pago
+
+```bash
+export LASTRO_MASTER_KEY=$(lastro chave gerar)
+lastro conta criar --id loja --nome "Minha Loja" --psp sandbox --chave loja@example.com
+lastro serve &
+
+curl -X PUT localhost:8080/cob/pedido00000000000000000000001 \
+  -H 'Content-Type: application/json' \
+  -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"loja@example.com"}'
+# → 201, status ATIVA, com o pixCopiaECola
+
+sleep 5
+curl localhost:8080/cob/pedido00000000000000000000001
+# → status CONCLUIDA, revisao 1
+```
+
+A consulta pergunta ao PSP quando a cobrança ainda está `ATIVA`; é assim que
+ela vira `CONCLUIDA` antes de os webhooks existirem (F4).
+
 ## Como ele se comporta
 
 Toda cobrança é **paga 5 segundos depois de criada**, desde que não tenha

@@ -20,10 +20,12 @@ var version = "dev"
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+	relogio := clock.Sistema{}
 	err := cli.Run(ctx, os.Args[1:], cli.Ambiente{
 		Saida:  os.Stdout,
 		Getenv: os.Getenv,
-		PSPs:   psp.NewRegistry(sandbox.New(clock.Sistema{})),
+		PSPs:   psp.NewRegistry(sandbox.New(relogio)),
+		Clock:  relogio,
 		Versao: version,
 	})
 	if err != nil {
