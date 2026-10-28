@@ -95,7 +95,7 @@ mesmos testes.
 | Casos de uso | Fakes dos ports + clock fixo | `internal/app` |
 | PSP | **Suíte de conformidade**: mesmos cenários para todo adapter — contra o sandbox sempre, contra fixtures gravadas (go-vcr) no CI, contra a homologação do banco manualmente | `test/conformance` |
 | Store | Integração em SQLite real (arquivo temporário); Postgres via testcontainers quando entrar | `internal/adapters/store` |
-| HTTP | `httptest` contra o roteador, validando respostas contra o `openapi.yaml` | `internal/adapters/httpapi` |
+| HTTP | `httptest` contra o roteador real, com **toda resposta validada contra o `openapi.yaml`** (kin-openapi). Novo handler ganha teste via `conferirResposta` | `internal/adapters/httpapi` |
 | E2E | Binário em modo sandbox: cria cobrança → paga → webhook chega num servidor de teste com assinatura válida | `test/e2e` |
 | Painel | Vitest (unidade) + Playwright (fluxos críticos) | `web/` |
 

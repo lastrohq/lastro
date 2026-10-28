@@ -3,9 +3,10 @@ package domain
 import "time"
 
 // ExpiracaoPadrao é a validade de uma cob quando o cliente não informa (RN-13).
-const ExpiracaoPadrao = 3600 * time.Second
+const ExpiracaoPadrao = 86400 * time.Second
 
-// Devedor identifica quem paga. Documento é CPF (11 dígitos) ou CNPJ (14).
+// Devedor identifica quem paga. Documento é CPF (11 dígitos) ou CNPJ
+// (14 caracteres, alfanumérico desde a mudança da Receita).
 type Devedor struct {
 	Documento string
 	Nome      string
@@ -25,7 +26,8 @@ type Cobranca struct {
 	Location string
 	BRCode   string
 	CriadaEm time.Time
-	// Revisao cresce a cada atualização e protege contra escrita concorrente.
+	// Revisao começa em 0 (como na spec do BCB), cresce a cada atualização e
+	// protege contra escrita concorrente.
 	Revisao int
 }
 

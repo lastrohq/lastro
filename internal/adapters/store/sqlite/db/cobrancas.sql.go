@@ -90,7 +90,7 @@ const criarCobranca = `-- name: CriarCobranca :exec
 INSERT INTO cobrancas (
     conta_id, txid, status, valor, permite_alteracao, expiracao_s, devedor_documento, devedor_nome,
     solicitacao_pagador, location, br_code, criada_em, revisao
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
 `
 
 type CriarCobrancaParams struct {

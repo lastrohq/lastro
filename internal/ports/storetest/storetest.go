@@ -81,7 +81,7 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if got.Valor != c.Valor || got.Status != c.Status || !got.CriadaEm.Equal(c.CriadaEm) || got.Devedor == nil || *got.Devedor != *c.Devedor || got.Revisao != 1 {
+		if got.Valor != c.Valor || got.Status != c.Status || !got.CriadaEm.Equal(c.CriadaEm) || got.Devedor == nil || *got.Devedor != *c.Devedor || got.Revisao != 0 {
 			t.Fatalf("Buscar = %+v", got)
 		}
 		if _, err := s.Cobrancas().Buscar(ctx, "c2", c.Txid); !errors.Is(err, ports.ErrNaoEncontrado) {
@@ -96,7 +96,7 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		b := a
 
 		a.Status = domain.CobrancaConcluida
-		if err := s.Cobrancas().Atualizar(ctx, &a); err != nil || a.Revisao != 2 {
+		if err := s.Cobrancas().Atualizar(ctx, &a); err != nil || a.Revisao != 1 {
 			t.Fatalf("primeira escrita: err=%v revisao=%d", err, a.Revisao)
 		}
 		b.Status = domain.CobrancaRemovidaPeloPSP

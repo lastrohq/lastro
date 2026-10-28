@@ -76,14 +76,15 @@ chamada da API do cliente.
 
 ### RN-13 · Cobrança imediata (`cob`)
 
-- Expiração padrão: **3600 s**, configurável por cobrança.
+- Expiração padrão: **86400 s** (24 h, o default da spec), configurável por cobrança.
 - Valor pode ser fixo ou permitir alteração pelo pagador (`modalidadeAlteracao`).
 - Cobrança expirada continua `ATIVA` na spec do BCB; o Lastro expõe o campo
   derivado `expirada: true` (extensão) para não obrigar o cliente a calcular.
 
 ### RN-14 · Cobrança com vencimento (`cobv`)
 
-- Exige devedor identificado (CPF ou CNPJ válido + nome).
+- Exige devedor identificado (CPF ou CNPJ válido + nome). CNPJ aceita o formato
+  alfanumérico (`^[0-9A-Z]{14}$`), como na spec.
 - `dataDeVencimento` + `validadeAposVencimento` (dias corridos) definem até
   quando pode ser paga.
 - Multa, juros, abatimento e desconto seguem as modalidades da spec; o Lastro

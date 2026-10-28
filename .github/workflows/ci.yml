@@ -25,6 +25,10 @@ jobs:
           version: latest
       - name: Código gerado pelo sqlc está em dia
         run: go tool sqlc diff
+      - name: Código gerado do openapi.yaml está em dia
+        run: |
+          go tool oapi-codegen -config api/oapi-codegen.yaml api/openapi.yaml
+          git diff --exit-code -- internal/adapters/httpapi/gen
       - name: Testes
         run: go test -race -coverprofile=coverage.out ./...
       - name: govulncheck
