@@ -1,0 +1,75 @@
+# 🎨 Lastro — Design system
+
+## Conceito
+
+**Lastro** é o que dá garantia ao dinheiro. A identidade tem que passar
+**solidez e calma**: quem abre o painel quer saber, em dois segundos, se o
+dinheiro entrou e se alguma coisa está quebrada. Nada de gradiente de fintech,
+nada de animação comemorativa. Ouro aparece como acento da marca, não como cor
+de interface.
+
+## Tokens
+
+Vivem em `web/src/design/tokens.css` como CSS custom properties. Componente
+nunca usa cor literal.
+
+### Cor
+
+| Token | Claro | Escuro | Uso |
+|---|---|---|---|
+| `--bg` | `#FFFFFF` | `#0B1120` | Fundo |
+| `--surface` | `#F8FAFC` | `#0F172A` | Cards, tabelas |
+| `--border` | `#E2E8F0` | `#1E293B` | Divisórias |
+| `--text` | `#0F172A` | `#F1F5F9` | Texto principal |
+| `--text-muted` | `#475569` | `#94A3B8` | Texto secundário |
+| `--brand` | `#B8860B` | `#D4A017` | Ouro: logo, foco, link |
+| `--success` | `#059669` | `#10B981` | Pago, concluído, devolvido |
+| `--warning` | `#B45309` | `#F59E0B` | Ativa, pendente, em processamento |
+| `--danger` | `#DC2626` | `#F87171` | Falha, DLQ, removida, rejeitada |
+| `--info` | `#2563EB` | `#60A5FA` | Recorrência, informativo |
+
+Todas as combinações texto/fundo passam **WCAG AA** (4,5:1). O par
+ouro-sobre-branco usa `#B8860B`, não `#D4A017`, justamente por isso.
+
+### Tipografia
+
+- **Inter** — interface. Escala: 12 · 14 · 16 · 20 · 24 · 32.
+- **JetBrains Mono** — txid, e2eid, chaves, JSON, BR Code. Sempre com botão de copiar.
+- Números de dinheiro em `font-variant-numeric: tabular-nums`.
+
+### Espaço, raio, sombra
+
+- Espaço em escala de 4px: `--space-1` (4) até `--space-12` (48).
+- Raio: `--radius-sm` 4px · `--radius-md` 8px · `--radius-lg` 12px.
+- Sombra só em elemento flutuante (menu, modal). Card tem borda, não sombra.
+
+## Componentes base
+
+| Componente | Regra |
+|---|---|
+| `Button` | `primary` · `secondary` · `ghost` · `danger`; estado de loading sem mudar largura |
+| `StatusBadge` | Um por estado de domínio (`ATIVA`, `CONCLUIDA`, `DEVOLVIDO`...). **Ícone + texto**, nunca só cor |
+| `Money` | Recebe centavos (`number`), formata `Intl.NumberFormat('pt-BR', {style:'currency', currency:'BRL'})`. Único jeito de mostrar dinheiro |
+| `CopyField` | Texto mono + copiar + feedback "copiado" acessível (`aria-live`) |
+| `QRCode` | BR Code renderizado + "Pix Copia e Cola" logo abaixo |
+| `Table` | Ordenável, paginação por cursor, linha clicável abre o detalhe |
+| `Card` / `Stat` | Número grande + rótulo + variação |
+| `EmptyState` | Sempre com a próxima ação ("Crie sua primeira cobrança no sandbox") |
+| `Timeline` | Histórico de estados e de tentativas de webhook |
+
+## Telas do MVP
+
+1. **Visão geral** — recebido hoje / no mês, cobranças ativas, webhooks na DLQ,
+   certificados vencendo e **"você economizou R$ X em taxas"** (estimativa
+   contra a tabela de taxas dos gateways, com fonte e data).
+2. **Cobranças** — lista + detalhe (QR, estados, Pix recebido, devoluções).
+3. **Recorrências** — Pix Automático: status, próximas cobranças, tentativas.
+4. **Webhooks** — entregas, tentativas, DLQ com reenvio.
+5. **Contas** — bancos conectados, capacidades, certificado e validade.
+6. **API keys** — criar (mostra uma vez), escopos, revogar.
+
+## Acessibilidade
+
+- Navegação inteira por teclado, foco visível em `--brand`.
+- Status nunca depende só de cor (ícone + texto).
+- Respeita `prefers-color-scheme` e `prefers-reduced-motion`.
