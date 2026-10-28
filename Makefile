@@ -1,4 +1,4 @@
-.PHONY: build test lint cover run
+.PHONY: build test lint cover run generate
 
 build:
 	go build -o bin/lastro ./cmd/lastro
@@ -15,3 +15,6 @@ cover:
 
 run:
 	go run ./cmd/lastro serve
+
+generate:
+	go tool sqlc generate

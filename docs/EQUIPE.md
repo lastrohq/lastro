@@ -177,6 +177,11 @@ chore: atualiza golangci-lint
 **Issues** — use os templates. Título descreve o resultado: *"Pix recebido sem
 webhook aparece em até 5 minutos"* vale mais que *"criar job de conciliação"*.
 
+**Migrations** — vivem em `internal/adapters/store/sqlite/migrations`, embutidas no binário e
+aplicadas pelo goose na abertura do banco. **Migration aplicada não se edita**: precisou corrigir,
+crie uma nova. O nome segue `AAAAMMDDHHMM_descricao_curta.sql` (sem segundos). Mexeu em query ou
+schema, rode `make generate` — o CI reprova se o código do `sqlc` ficar defasado.
+
 **Versão** — SemVer. Antes da `v1.0.0`, minor pode quebrar contrato — e quebra
 sempre vem anotada no release.
 

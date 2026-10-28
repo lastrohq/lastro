@@ -22,6 +22,20 @@ func cob(conta, txid string, minuto int) domain.Cobranca {
 	}
 }
 
+// comContas cria um Store novo já com as contas c1 e c2, porque cobrança
+// pertence a uma conta existente.
+func comContas(t *testing.T, novo func(t *testing.T) ports.Store) ports.Store {
+	t.Helper()
+	s := novo(t)
+	for _, id := range []string{"c1", "c2"} {
+		c := domain.Conta{ID: id, Nome: "Loja " + id, PSP: "sandbox", ChavePix: id + "@example.com", Ambiente: domain.Homologacao, Ativa: true}
+		if err := s.Contas().Criar(context.Background(), c); err != nil {
+			t.Fatalf("criando conta %s: %v", id, err)
+		}
+	}
+	return s
+}
+
 // Run executa a suíte. novo deve devolver um Store vazio a cada chamada.
 func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 	t.Run("conta: cria, busca e recusa duplicada", func(t *testing.T) {
@@ -47,7 +61,7 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 	})
 
 	t.Run("cobrança: txid é único por conta", func(t *testing.T) {
-		s, ctx := novo(t), context.Background()
+		s, ctx := comContas(t, novo), context.Background()
 		if err := s.Cobrancas().Criar(ctx, cob("c1", "txid00000000000000000000001", 0)); err != nil {
 			t.Fatal(err)
 		}
@@ -60,7 +74,7 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 	})
 
 	t.Run("cobrança: busca devolve o que foi gravado", func(t *testing.T) {
-		s, ctx := novo(t), context.Background()
+		s, ctx := comContas(t, novo), context.Background()
 		c := cob("c1", "txid00000000000000000000001", 0)
 		_ = s.Cobrancas().Criar(ctx, c)
 		got, err := s.Cobrancas().Buscar(ctx, "c1", c.Txid)
@@ -76,7 +90,7 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 	})
 
 	t.Run("cobrança: atualização com revisão desatualizada é recusada", func(t *testing.T) {
-		s, ctx := novo(t), context.Background()
+		s, ctx := comContas(t, novo), context.Background()
 		_ = s.Cobrancas().Criar(ctx, cob("c1", "txid00000000000000000000001", 0))
 		a, _ := s.Cobrancas().Buscar(ctx, "c1", "txid00000000000000000000001")
 		b := a
@@ -96,7 +110,7 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 	})
 
 	t.Run("cobrança: listagem filtra e pagina sem repetir", func(t *testing.T) {
-		s, ctx := novo(t), context.Background()
+		s, ctx := comContas(t, novo), context.Background()
 		for i, tx := range []string{"a", "b", "c", "d", "e"} {
 			c := cob("c1", "txid0000000000000000000000"+tx, i)
 			if tx == "c" {
@@ -138,7 +152,7 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 	})
 
 	t.Run("transação: erro desfaz tudo, sucesso grava tudo", func(t *testing.T) {
-		s, ctx := novo(t), context.Background()
+		s, ctx := comContas(t, novo), context.Background()
 		falha := errors.New("falhou no meio")
 		err := s.WithTx(ctx, func(tx ports.Store) error {
 			_ = tx.Cobrancas().Criar(ctx, cob("c1", "txid00000000000000000000001", 0))
