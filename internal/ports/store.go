@@ -30,6 +30,7 @@ type Store interface {
 	Recorrencias() RecorrenciaRepo
 	Solicitacoes() SolicitacaoRepo
 	CobrancasRecorrentes() CobrancaRecorrenteRepo
+	Devolucoes() DevolucaoRepo
 	// WithTx executa fn numa transação: erro em fn desfaz tudo.
 	WithTx(ctx context.Context, fn func(Store) error) error
 }
@@ -192,6 +193,23 @@ type PixRepo interface {
 	BuscarPorE2E(ctx context.Context, e2e string) (domain.PixRecebido, error)
 	// ListarPorTxid devolve os Pix de uma cobrança, em ordem de horário.
 	ListarPorTxid(ctx context.Context, txid domain.Txid) ([]domain.PixRecebido, error)
+}
+
+// DevolucaoRepo guarda as devoluções de Pix recebidos (RN-20, RN-21). O par
+// endToEndId + id é único.
+type DevolucaoRepo interface {
+	// Criar falha com ErrJaExiste se o par já existir e com ErrNaoEncontrado
+	// se o Pix não estiver gravado.
+	Criar(ctx context.Context, d domain.Devolucao) error
+	Buscar(ctx context.Context, e2e, id string) (domain.Devolucao, error)
+	// DoPix devolve as devoluções do Pix em ordem de criação.
+	DoPix(ctx context.Context, e2e string) ([]domain.Devolucao, error)
+	// Atualizar grava status, motivo, rtrId e liquidação se a revisão bater;
+	// senão, ErrConflito. Em sucesso, incrementa d.Revisao.
+	Atualizar(ctx context.Context, d *domain.Devolucao) error
+	// EmProcessamento devolve as devoluções da conta ainda sem resultado, em
+	// ordem de criação.
+	EmProcessamento(ctx context.Context, contaID string) ([]domain.Devolucao, error)
 }
 
 // DestinoRepo guarda os destinos de webhook de saída.

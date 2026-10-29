@@ -80,14 +80,3 @@ func ValidarEndToEndID(e2e string) error {
 
 // ErrPixInvalido indica um Pix recebido com dados fora do formato da spec.
 var ErrPixInvalido = errors.New("pix recebido inválido")
-
-// Devolucao é a devolução total ou parcial de um Pix recebido (RN-20, RN-21).
-type Devolucao struct {
-	ID         string
-	EndToEndID string
-	ContaID    string
-	Valor      Money
-	Status     StatusDevolucao
-	Motivo     string
-	CriadaEm   time.Time
-}

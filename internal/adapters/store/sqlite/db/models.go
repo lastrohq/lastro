@@ -93,6 +93,21 @@ type DestinosWebhook struct {
 	CriadoEm       int64
 }
 
+type Devolucao struct {
+	EndToEndID  string
+	ID          string
+	ContaID     string
+	Valor       int64
+	Natureza    string
+	Descricao   string
+	Status      string
+	Motivo      string
+	RtrID       string
+	CriadaEm    int64
+	LiquidadaEm sql.NullInt64
+	Revisao     int64
+}
+
 type EntregasWebhook struct {
 	EventoID     string
 	DestinoID    string

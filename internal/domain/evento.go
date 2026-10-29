@@ -12,6 +12,7 @@ const (
 	EventoCobrancaRevisada    TipoEvento = "cobranca.revisada"
 	EventoCobrancaRemovida    TipoEvento = "cobranca.removida"
 	EventoPixRecebido         TipoEvento = "pix.recebido"
+	EventoDevolucaoSolicitada TipoEvento = "devolucao.solicitada"
 	EventoDevolucaoAtualizada TipoEvento = "devolucao.atualizada"
 	EventoCertificadoVencendo TipoEvento = "certificado.expirando"
 	// Pix Automático (RN-40, RN-41).

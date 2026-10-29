@@ -104,12 +104,13 @@ func (p *PSP) ListarPix(ctx context.Context, conta domain.Conta, j ports.Janela)
 }
 
 type devolucaoEfi struct {
-	ID      string `json:"id,omitempty"`
-	RtrID   string `json:"rtrId,omitempty"`
-	Valor   string `json:"valor"`
-	Status  string `json:"status,omitempty"`
-	Motivo  string `json:"motivo,omitempty"`
-	Horario *struct {
+	ID       string `json:"id,omitempty"`
+	RtrID    string `json:"rtrId,omitempty"`
+	Valor    string `json:"valor"`
+	Natureza string `json:"natureza,omitempty"`
+	Status   string `json:"status,omitempty"`
+	Motivo   string `json:"motivo,omitempty"`
+	Horario  *struct {
 		Solicitacao string `json:"solicitacao"`
 	} `json:"horario,omitempty"`
 	Descricao string `json:"descricao,omitempty"`
@@ -136,6 +137,13 @@ func paraDevolucao(conta domain.Conta, r devolucaoEfi, base domain.Devolucao) (d
 	if r.Motivo != "" {
 		d.Motivo = r.Motivo
 	}
+	if r.Descricao != "" {
+		d.Descricao = r.Descricao
+	}
+	if r.Natureza != "" {
+		d.Natureza = domain.NaturezaDevolucao(r.Natureza)
+	}
+	d.RtrID = r.RtrID
 	if r.Horario != nil && r.Horario.Solicitacao != "" {
 		criada, err := parseHorario(r.Horario.Solicitacao)
 		if err != nil {
@@ -152,7 +160,7 @@ func paraDevolucao(conta domain.Conta, r devolucaoEfi, base domain.Devolucao) (d
 // idempotência pelo id, então o adapter consulta a devolução existente e a
 // devolve se o valor for o mesmo; valor diferente é ErrJaExiste.
 func (p *PSP) Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error) {
-	corpo := devolucaoEfi{Valor: d.Valor.String(), Descricao: d.Motivo}
+	corpo := devolucaoEfi{Valor: d.Valor.String(), Natureza: string(d.Natureza), Descricao: d.Descricao}
 	var r devolucaoEfi
 	err := p.chamar(ctx, conta, http.MethodPut, caminhoDevolucao(d.EndToEndID, d.ID), corpo, &r)
 	if errors.Is(err, errDevolucaoDuplicada) {
