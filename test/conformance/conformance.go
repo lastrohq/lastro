@@ -197,8 +197,11 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if len(pix) != 1 || pix[0].Txid != c.Txid || pix[0].Valor != c.Valor || len(pix[0].EndToEndID) != 32 {
-			t.Fatalf("ListarPix = %+v", pix)
+		// Contra um banco de verdade a janela pode ter Pix de outros cenários:
+		// o que importa é o desta cobrança.
+		daCob := doTxid(pix, c.Txid)
+		if len(daCob) != 1 || daCob[0].Valor != c.Valor || len(daCob[0].EndToEndID) != 32 {
+			t.Fatalf("ListarPix, Pix da cobrança %s: %+v", c.Txid, pix)
 		}
 	})
 
@@ -213,10 +216,11 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		c, _ := a.PSP.CriarCob(ctx, a.Conta, novaCobPaga(a, txid(a, "cob004")))
 		a.Pagar(t, c.Txid)
 		pix, _ := a.PSP.ListarPix(ctx, a.Conta, ports.Janela{Inicio: inicio, Fim: a.Agora().Add(time.Second)})
-		if len(pix) == 0 {
+		daCob := doTxid(pix, c.Txid)
+		if len(daCob) == 0 {
 			t.Fatal("pagamento não apareceu")
 		}
-		e2e := pix[0].EndToEndID
+		e2e := daCob[0].EndToEndID
 
 		d, err := a.PSP.Devolver(ctx, a.Conta, domain.Devolucao{ID: "d1", EndToEndID: e2e, Valor: 200})
 		if err != nil || d.Status == "" {
@@ -418,6 +422,17 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 			}
 		}
 	})
+}
+
+// doTxid filtra os Pix de uma cobrança.
+func doTxid(pix []domain.PixRecebido, txid domain.Txid) []domain.PixRecebido {
+	var out []domain.PixRecebido
+	for _, p := range pix {
+		if p.Txid == txid {
+			out = append(out, p)
+		}
+	}
+	return out
 }
 
 func exigir(t *testing.T, a Alvo, c ports.Capacidade) {

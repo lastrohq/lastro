@@ -40,6 +40,10 @@ type Banco struct {
 	// ConsultarAntesDeCriar faz CriarCob/CriarCobv consultarem o txid antes do
 	// PUT, para o banco que sobrescreve ou não sinaliza txid repetido.
 	ConsultarAntesDeCriar struct{ Cob, Cobv bool }
+	// ConsultarAntesDeDevolver faz o Devolver consultar o id antes do PUT,
+	// para o banco que não sinaliza id de devolução repetido: mesma devolução
+	// (mesmo valor) é devolvida de novo; valor diferente é ErrJaExiste.
+	ConsultarAntesDeDevolver bool
 	// HeadersWebhook vão no PUT do webhook (ex.: o skip-mTLS do Efí).
 	HeadersWebhook map[string]string
 }

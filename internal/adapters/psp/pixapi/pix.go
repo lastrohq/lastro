@@ -178,6 +178,17 @@ func (a *API) ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, i
 // devolve se o valor for o mesmo; valor diferente é ErrJaExiste.
 func (a *API) Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error) {
 	corpo := devolucaoJSON{Valor: d.Valor.String(), Natureza: string(d.Natureza), Descricao: d.Descricao}
+	if a.cfg.ConsultarAntesDeDevolver {
+		var existente devolucaoJSON
+		switch err := a.chamar(ctx, conta, http.MethodGet, a.caminhoDevolucao(d.EndToEndID, d.ID), nil, &existente); {
+		case err == nil && existente.Valor != corpo.Valor:
+			return domain.Devolucao{}, fmt.Errorf("%s: devolução %s já existe com valor %s: %w", a.cfg.Nome, d.ID, existente.Valor, ports.ErrJaExiste)
+		case err == nil:
+			return paraDevolucao(conta, existente, d)
+		case !errors.Is(err, ports.ErrNaoEncontrado):
+			return domain.Devolucao{}, err
+		}
+	}
 	var r devolucaoJSON
 	err := a.chamar(ctx, conta, http.MethodPut, a.caminhoDevolucao(d.EndToEndID, d.ID), corpo, &r)
 	if errors.Is(err, ErrDevolucaoDuplicada) {
