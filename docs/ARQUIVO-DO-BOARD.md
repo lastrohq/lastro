@@ -34,6 +34,61 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 29/10/2026 (noite) — v0.5.0: Pix Automático, ainda só no sandbox
+
+O diferencial do README começou a existir: recorrências de Pix Automático de
+ponta a ponta no sandbox, desde a criação até a aprovação do pagador, com o
+aviso perdido recuperado pela conciliação. Antes de escrever código, um estudo
+mudou o rumo, e a #79 fechou o último pedaço do épico de certificados.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#79](https://github.com/lastrohq/lastro/issues/79) | Contas cadastradas antes do v0.3.0 também recebem o aviso de vencimento do certificado | Segurança | P | Média | [#87](https://github.com/lastrohq/lastro/pull/87) `15c6d9b` | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 14:18 |
+| [#1](https://github.com/lastrohq/lastro/issues/1) | Saber quais bancos expõem /rec e /cobr (Pix Automático) em produção para PJ | Estudo | M | Alta | [#88](https://github.com/lastrohq/lastro/pull/88) `e15cc56` | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 14:46 |
+| [#31](https://github.com/lastrohq/lastro/issues/31) | Criar recorrência de Pix Automático e pedir autorização ao pagador | Core | G | Alta | [#90](https://github.com/lastrohq/lastro/pull/90) `054cc34` · [#91](https://github.com/lastrohq/lastro/pull/91) `ea30346` · [#92](https://github.com/lastrohq/lastro/pull/92) `d0145c0` · [#94](https://github.com/lastrohq/lastro/pull/94) `deda649` | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 15:20 |
+| [#93](https://github.com/lastrohq/lastro/issues/93) | Recorrência aprovada sem aviso do banco aparece no Lastro (conciliação de recorrências) | Core | M | Alta | [#95](https://github.com/lastrohq/lastro/pull/95) `8a9c095` | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 15:31 |
+
+> Release [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) com 6 binários, checksums e imagem
+> `ghcr.io/lastrohq/lastro:0.5.0` (amd64 e arm64, digest `sha256:f91ca6e8a27f…`). O binário linux/amd64 foi baixado,
+> conferido contra o `checksums.txt` e respondeu `0.5.0`. A página do release ganhou no topo os avisos de "só no
+> sandbox" e da saída nova do `lastro conciliar`.
+>
+> **Ainda não ⚠️ — imagem privada**, a mesma pendência das levas anteriores.
+
+### O estudo que mudou o rumo
+
+A #1 partia de "quais bancos já têm Pix Automático". A resposta trocou a
+pergunta: **para o banco do recebedor, oferecer é opcional** (FAQ do BCB), e só
+Efí e Inter documentam a API em público. Os dois exigem **conta PJ**. Isso virou
+a #89 (a conta do MEI do mantenedor) e a ordem da F6: sandbox primeiro.
+
+### Ler a spec, e não a memória, corrigiu duas regras
+
+A RN-40 dizia valor "fixo ou **máximo**", mas quem define o máximo é o
+pagador: o recebedor só exige um **piso** para esse máximo. E a RN-41 não sabia
+que a solicitação de confirmação tem estados próprios. As duas vieram do
+`openapi.yaml` da 2.10.0 e do Guia v1.3, baixados e lidos, e não de lembrança.
+O que a spec não diz (as transições da solicitação) ficou marcado como "a
+conferir", em vez de inventado.
+
+### Um limite dito em voz alta virou uma issue
+
+O primeiro sandbox de recorrência guardava a URL do webhook em memória: entre
+processos, que é o uso normal, o aviso nunca chegava. Em vez de esconder isso
+atrás de um teste num processo só, o limite foi escrito no PR, no `SANDBOX.md` e
+no teste, e virou a #93. A conciliação de recorrências resolveu o sandbox e,
+de quebra, protege os bancos reais contra aviso perdido, como a RN-31 já fazia
+para Pix.
+
+### Ficou aberto
+
+- [#32](https://github.com/lastrohq/lastro/issues/32) — cobrança recorrente (`/cobr`): agendamento de 2 a 10 dias e retentativas.
+- [#89](https://github.com/lastrohq/lastro/issues/89) — conta PJ (MEI) para testar Pix Automático num banco real.
+- [#27](https://github.com/lastrohq/lastro/issues/27) — teste do adapter do Efí na homologação.
+- [#21](https://github.com/lastrohq/lastro/issues/21) — fixtures gravadas da homologação para a conformidade.
+
+---
+
 ## Leva de 29/10/2026 (tarde) — v0.4.0: o primeiro banco de verdade, ainda sem falar com ele
 
 O Lastro ganhou o adapter do Efí: cob, cobv, Pix recebidos, devolução e webhook,
