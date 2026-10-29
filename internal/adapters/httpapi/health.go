@@ -22,7 +22,9 @@ type Opcoes struct {
 	Cobrancas app.Cobrancas
 	Contas    app.Contas
 	APIKeys   app.APIKeys
-	Clock     ports.Clock
+	// Idempotencia vazia (Store nil) desliga o Idempotency-Key.
+	Idempotencia app.Idempotencia
+	Clock        ports.Clock
 }
 
 // Server implementa gen.StrictServerInterface.
@@ -47,8 +49,10 @@ func NewRouter(o Opcoes) http.Handler {
 		},
 	})
 	return gen.HandlerWithOptions(strict, gen.StdHTTPServerOptions{
-		// Roda por rota, depois do roteamento: r.Pattern já diz qual escopo exigir.
-		Middlewares: []gen.MiddlewareFunc{autenticar(o.APIKeys)},
+		// Rodam por rota, depois do roteamento: r.Pattern já diz qual escopo exigir.
+		// O último da lista é o mais externo: autentica primeiro, porque a
+		// Idempotency-Key pertence à API key.
+		Middlewares: []gen.MiddlewareFunc{idempotente(o.Idempotencia), autenticar(o.APIKeys)},
 		// Parâmetro de path, query ou header fora do contrato também responde como Problema.
 		ErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			escreverProblema(w, gen.Problema{Status: http.StatusBadRequest, Type: tipoErro("RequisicaoInvalida"), Title: "Requisição inválida", Detail: ptr(err.Error())})

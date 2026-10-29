@@ -259,6 +259,37 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 	})
 
+	t.Run("idempotência: grava, substitui, isola por dono e remove", func(t *testing.T) {
+		s, ctx := novo(t), context.Background()
+		reg := domain.RegistroIdempotencia{Dono: "k1", Chave: "pedido-1", Hash: []byte{9, 9}, CriadaEm: base}
+		if _, err := s.Idempotencia().Buscar(ctx, "k1", "pedido-1"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("vazio: err = %v", err)
+		}
+		if err := s.Idempotencia().Salvar(ctx, reg); err != nil {
+			t.Fatal(err)
+		}
+		reg.Status, reg.ContentType, reg.Corpo = 201, "application/json", []byte(`{"ok":true}`)
+		if err := s.Idempotencia().Salvar(ctx, reg); err != nil {
+			t.Fatal(err)
+		}
+		got, err := s.Idempotencia().Buscar(ctx, "k1", "pedido-1")
+		if err != nil || got.Status != 201 || string(got.Corpo) != `{"ok":true}` || got.ContentType != "application/json" || string(got.Hash) != string(reg.Hash) || !got.CriadaEm.Equal(base) {
+			t.Fatalf("Buscar = %+v, %v", got, err)
+		}
+		if _, err := s.Idempotencia().Buscar(ctx, "k2", "pedido-1"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatal("chave de outro dono colidiu")
+		}
+		if err := s.Idempotencia().Remover(ctx, "k1", "pedido-1"); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Idempotencia().Remover(ctx, "k1", "pedido-1"); err != nil {
+			t.Fatalf("remover de novo: %v", err)
+		}
+		if _, err := s.Idempotencia().Buscar(ctx, "k1", "pedido-1"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatal("não removeu")
+		}
+	})
+
 	t.Run("transação: erro desfaz tudo, sucesso grava tudo", func(t *testing.T) {
 		s, ctx := comContas(t, novo), context.Background()
 		falha := errors.New("falhou no meio")

@@ -63,13 +63,21 @@ chave Pix + credenciais (client id/secret e certificado) + ambiente
 
 ### RN-11 · Idempotência
 
-Toda criação (`PUT`/`POST` que cria recurso) aceita o header `Idempotency-Key`.
+Toda criação ou alteração (`POST`, `PUT`, `PATCH`) aceita o header `Idempotency-Key`.
 
-- Mesma chave + mesmo payload em até **24h** → devolve a resposta original, sem
+- A chave pertence à **API key** que a enviou: clientes diferentes não colidem.
+- Mesma chave + mesma requisição (método, caminho e corpo) em até **24 h** →
+  devolve a resposta original, byte a byte, com `Idempotent-Replayed: true`, sem
   chamar o banco de novo.
-- Mesma chave + payload diferente → **409**.
-- Criação sem a chave é aceita no `PUT /cob/{txid}` (o txid já é idempotente) e
-  recusada no `POST /cob`.
+- Mesma chave + requisição diferente → **409** `IdempotencyKeyReutilizada`.
+- Duas requisições simultâneas com a mesma chave → a segunda recebe **409**
+  `RequisicaoEmAndamento` com `Retry-After`. Reserva sem resposta por mais de
+  **2 minutos** é considerada abandonada (processo que caiu) e liberada.
+- Resposta **5xx não é guardada**: o cliente mandou a chave justamente para
+  poder tentar de novo.
+- O header é obrigatório no `POST /cob` (o txid é gerado pelo Lastro) e opcional
+  no `PUT /cob/{txid}` (o txid já identifica a criação).
+- Corpo acima de 1 MiB com a chave → **413**.
 
 ### RN-12 · Estados da cobrança (`cob` e `cobv`)
 
