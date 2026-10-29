@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"text/tabwriter"
 	"time"
 
@@ -271,36 +272,50 @@ func serve(ctx context.Context, amb Ambiente) error {
 		return err
 	}
 	defer fechar()
+	// Os jobs param e terminam antes de o store fechar: o defer abaixo roda antes
+	// do fechar() acima, inclusive quando o servidor nem chega a subir.
+	ctxJobs, pararJobs := context.WithCancel(ctx)
+	var rodando sync.WaitGroup
+	defer func() {
+		pararJobs()
+		rodando.Wait()
+	}()
 	store := contas.Store
 	conc.Store, conc.Recebimentos.Store = store, store
 	if intervalo > 0 {
-		go jobs.Periodico(ctx, "conciliação", intervalo, func(ctx context.Context) error {
-			_, err := conc.Rodar(ctx)
-			return err
+		rodando.Go(func() {
+			jobs.Periodico(ctxJobs, "conciliação", intervalo, func(ctx context.Context) error {
+				_, err := conc.Rodar(ctx)
+				return err
+			})
 		})
 	} else {
 		slog.Warn("conciliação desligada: Pix sem aviso do banco não serão recuperados")
 	}
 	saida := app.Saida{Store: store, Vault: contas.Vault, Clock: amb.Clock, Enviador: notifier.NovoHTTP(amb.Versao)}
 	if intervaloWebhook > 0 {
-		go jobs.Periodico(ctx, "webhooks", intervaloWebhook, func(ctx context.Context) error {
-			if _, err := saida.Distribuir(ctx); err != nil {
+		rodando.Go(func() {
+			jobs.Periodico(ctxJobs, "webhooks", intervaloWebhook, func(ctx context.Context) error {
+				if _, err := saida.Distribuir(ctx); err != nil {
+					return err
+				}
+				_, err := saida.Entregar(ctx)
 				return err
-			}
-			_, err := saida.Entregar(ctx)
-			return err
+			})
 		})
 	} else {
 		slog.Warn("entrega de eventos desligada: os webhooks de saída ficam parados no outbox")
 	}
 	if intervaloCertificado > 0 {
 		certs := app.Certificados{Store: store, Clock: amb.Clock}
-		go jobs.Periodico(ctx, "vencimento de certificados", intervaloCertificado, func(ctx context.Context) error {
-			n, err := certs.AvisarVencimentos(ctx)
-			if n > 0 {
-				slog.InfoContext(ctx, "certificado perto de vencer: evento certificado.expirando publicado", "contas", n)
-			}
-			return err
+		rodando.Go(func() {
+			jobs.Periodico(ctxJobs, "vencimento de certificados", intervaloCertificado, func(ctx context.Context) error {
+				n, err := certs.AvisarVencimentos(ctx)
+				if n > 0 {
+					slog.InfoContext(ctx, "certificado perto de vencer: evento certificado.expirando publicado", "contas", n)
+				}
+				return err
+			})
 		})
 	} else {
 		slog.Warn("aviso de vencimento de certificado desligado: ninguém será avisado antes de o certificado vencer")
