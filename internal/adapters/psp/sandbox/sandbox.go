@@ -56,6 +56,7 @@ type PSP struct {
 	cobvs      map[string]domain.CobrancaVencimento
 	devolucoes map[string][]domain.Devolucao
 	webhooks   map[string]string
+	recs       map[string]domain.Recorrencia
 	locSeq     int
 }
 
@@ -73,7 +74,7 @@ func ComAtraso(d time.Duration) Opcao { return func(p *PSP) { p.atraso = d } }
 
 // New cria o sandbox com o relógio dado.
 func New(clock ports.Clock, opcoes ...Opcao) *PSP {
-	p := &PSP{clock: clock, atraso: AtrasoPadrao, cobs: map[string]domain.Cobranca{}, cobvs: map[string]domain.CobrancaVencimento{}, devolucoes: map[string][]domain.Devolucao{}, webhooks: map[string]string{}}
+	p := &PSP{clock: clock, atraso: AtrasoPadrao, cobs: map[string]domain.Cobranca{}, cobvs: map[string]domain.CobrancaVencimento{}, devolucoes: map[string][]domain.Devolucao{}, webhooks: map[string]string{}, recs: map[string]domain.Recorrencia{}}
 	for _, o := range opcoes {
 		o(p)
 	}
@@ -85,7 +86,7 @@ func (p *PSP) Nome() string { return "sandbox" }
 
 // Capabilities declara tudo o que o sandbox simula hoje.
 func (p *PSP) Capabilities() ports.Capabilities {
-	return ports.Capabilities{ports.CapCob: true, ports.CapCobv: true, ports.CapDevolucao: true, ports.CapWebhook: true}
+	return ports.Capabilities{ports.CapCob: true, ports.CapCobv: true, ports.CapDevolucao: true, ports.CapWebhook: true, ports.CapRec: true}
 }
 
 func chave(contaID string, txid domain.Txid) string { return contaID + "/" + string(txid) }

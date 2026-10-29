@@ -32,6 +32,11 @@ tags:
     description: Cobrança imediata.
   - name: CobV
     description: Cobrança com vencimento.
+  - name: Rec
+    description: >-
+      Pix Automático: recorrência e solicitação de confirmação (RN-40, RN-41). A API
+      key precisa ser restrita a uma conta: ela identifica o recebedor, como a
+      credencial do cliente na spec do BCB.
   - name: Lastro
     description: Rotas do Lastro, fora da spec do BCB.
   - name: Webhooks
@@ -143,6 +148,96 @@ paths:
           $ref: "#/components/responses/AcessoNegado"
         "404":
           $ref: "#/components/responses/NaoEncontrado"
+
+  /rec:
+    post:
+      tags: [Rec]
+      operationId: criarRec
+      summary: Criar recorrência de Pix Automático
+      description: >-
+        O idRec é gerado pelo PSP da conta. Exige API key restrita a uma conta.
+        Responde 501 se o banco da conta não oferece Pix Automático.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Recorrência criada, com status CRIADA.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+
+  /rec/{idRec}:
+    get:
+      tags: [Rec]
+      operationId: consultarRec
+      summary: Consultar recorrência
+      parameters:
+        - $ref: "#/components/parameters/IdRecPath"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Recorrência.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecGerada"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+
+  /solicrec:
+    post:
+      tags: [Rec]
+      operationId: criarSolicRec
+      summary: Pedir a confirmação da recorrência no app do pagador (jornada 1)
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SolicRecSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Solicitação criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolicRecGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
 
   /cob:
     post:
@@ -493,6 +588,12 @@ components:
       schema:
         type: string
         pattern: "^[a-z0-9][a-z0-9-]{0,62}$"
+    IdRecPath:
+      name: idRec
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/IdRec"
     TxidPath:
       name: txid
       in: path
@@ -691,6 +792,112 @@ components:
         version:
           type: string
 
+    IdRec:
+      type: string
+      description: Identificador da recorrência, gerado pelo PSP (R + R/N + ISPB + AAAAMMDD + 11 caracteres).
+      pattern: "^R[RN][0-9A-Z]{8}[0-9]{8}[a-zA-Z0-9]{11}$"
+    RecVinculo:
+      type: object
+      required: [contrato, devedor]
+      properties:
+        objeto:
+          type: string
+          maxLength: 35
+        contrato:
+          type: string
+          minLength: 1
+          maxLength: 35
+        devedor:
+          $ref: "#/components/schemas/Devedor"
+    RecCalendario:
+      type: object
+      required: [dataInicial, periodicidade]
+      properties:
+        dataInicial:
+          type: string
+          format: date
+        dataFinal:
+          type: string
+          format: date
+        periodicidade:
+          type: string
+          enum: [SEMANAL, MENSAL, TRIMESTRAL, SEMESTRAL, ANUAL]
+    RecValor:
+      type: object
+      description: >-
+        valorRec fixa o valor de toda cobrança. Sem ele, o valor varia, e o pagador
+        define um máximo na autorização; valorMinimoRecebedor é o piso desse máximo.
+        Os dois são excludentes (RN-40).
+      properties:
+        valorRec:
+          $ref: "#/components/schemas/Valor"
+        valorMinimoRecebedor:
+          $ref: "#/components/schemas/Valor"
+    RecSolicitada:
+      type: object
+      required: [vinculo, calendario, politicaRetentativa]
+      properties:
+        vinculo:
+          $ref: "#/components/schemas/RecVinculo"
+        calendario:
+          $ref: "#/components/schemas/RecCalendario"
+        valor:
+          $ref: "#/components/schemas/RecValor"
+        politicaRetentativa:
+          type: string
+          enum: [NAO_PERMITE, PERMITE_3R_7D]
+    RecGerada:
+      allOf:
+        - $ref: "#/components/schemas/RecSolicitada"
+        - type: object
+          required: [idRec, status]
+          properties:
+            idRec:
+              $ref: "#/components/schemas/IdRec"
+            status:
+              type: string
+              enum: [CRIADA, APROVADA, REJEITADA, EXPIRADA, CANCELADA]
+            motivoRejeicao:
+              type: string
+    SolicRecSolicitada:
+      type: object
+      required: [idRec, calendario, destinatario]
+      properties:
+        idRec:
+          $ref: "#/components/schemas/IdRec"
+        calendario:
+          type: object
+          required: [dataExpiracaoSolicitacao]
+          properties:
+            dataExpiracaoSolicitacao:
+              type: string
+              format: date-time
+              description: No futuro e em até 30 dias (RN-41).
+        destinatario:
+          type: object
+          required: [conta, ispbParticipante]
+          properties:
+            conta:
+              type: string
+              minLength: 1
+              maxLength: 20
+            ispbParticipante:
+              type: string
+              pattern: "^[0-9A-Z]{8}$"
+            agencia:
+              type: string
+              maxLength: 4
+    SolicRecGerada:
+      allOf:
+        - $ref: "#/components/schemas/SolicRecSolicitada"
+        - type: object
+          required: [idSolicRec, status]
+          properties:
+            idSolicRec:
+              type: string
+            status:
+              type: string
+              enum: [CRIADA, ENVIADA, RECEBIDA, ACEITA, REJEITADA, EXPIRADA, CANCELADA]
     Txid:
       type: string
       pattern: "^[a-zA-Z0-9]{26,35}$"
