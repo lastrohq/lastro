@@ -33,7 +33,7 @@ comunidade sem medo.
 | `internal/adapters/notifier` | Outbox, entrega, retry, DLQ, assinatura | `ports`, `domain` |
 | `internal/adapters/mcp` | Ferramentas MCP sobre os casos de uso | `app`, `ports`, `domain` |
 | `internal/adapters/jobs` | Laço periódico (conciliação, entrega, limpezas) | só stdlib/libs |
-| `internal/platform` | `vault` (AES-256-GCM), e depois mTLS e cache de token OAuth2 | só stdlib/libs — a checagem `var _ ports.Vault` fica no teste |
+| `internal/platform` | `vault` (AES-256-GCM), `oauth` (cache de token OAuth2 por conta), e depois mTLS | só stdlib/libs — a checagem `var _ ports.Vault` fica no teste |
 | `internal/adapters/psp` | `Registry` + um subpacote por banco | `ports`, `domain` |
 | `pkg/brcode` | Lib pública de BR Code | só stdlib |
 | `api/openapi.yaml` | Contrato da API (fonte da verdade) | — |
