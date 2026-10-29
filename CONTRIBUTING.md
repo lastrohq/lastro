@@ -35,6 +35,7 @@ Requisitos: Go 1.27+, [golangci-lint](https://golangci-lint.run/) v2, Docker (pa
 2. Crie `internal/adapters/psp/<banco>/` implementando o port `PSP` (`internal/ports`).
 3. Declare em `Capabilities()` só o que o banco realmente suporta.
 4. Trate **dentro do adapter** todo desvio do banco em relação à spec do BCB, com um comentário dizendo qual desvio e a fonte (link da doc do banco).
+   - **Token OAuth2:** não peça token a cada chamada. Escreva só a função que busca o token no banco (o formato muda de banco para banco; `oauth.LerResposta` lê a resposta padrão) e use o `oauth.Transport` de `internal/platform/oauth` no `http.Client`, com o transporte mTLS da conta como `Base`. Ele guarda o token por conta, faz uma só busca com chamadas concorrentes, renova antes de expirar e tenta de novo uma vez com token novo se o banco responder 401.
 5. Grave fixtures da homologação do banco em `test/fixtures/<banco>/` — **sem segredo e sem dado real** (o gravador mascara headers de autenticação; confira mesmo assim).
 6. Rode a suíte de conformidade: `go test ./test/conformance -run <Banco>`.
 7. Atualize a tabela de bancos suportados no README.

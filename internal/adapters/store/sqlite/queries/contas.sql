@@ -1,11 +1,11 @@
 -- name: CriarConta :exec
-INSERT INTO contas (id, nome, psp, chave_pix, ambiente, ativa) VALUES (?, ?, ?, ?, ?, ?);
+INSERT INTO contas (id, nome, psp, chave_pix, ambiente, ativa, cert_sujeito, cert_impressao_digital, cert_validade_s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: BuscarConta :one
-SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas WHERE id = ?;
+SELECT id, nome, psp, chave_pix, ambiente, ativa, cert_sujeito, cert_impressao_digital, cert_validade_s, cert_avisado_impressao FROM contas WHERE id = ?;
 
 -- name: ListarContas :many
-SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas ORDER BY id;
+SELECT id, nome, psp, chave_pix, ambiente, ativa, cert_sujeito, cert_impressao_digital, cert_validade_s, cert_avisado_impressao FROM contas ORDER BY id;
 
 -- name: AtualizarConta :execrows
 UPDATE contas SET nome = ?, chave_pix = ?, ambiente = ?, ativa = ? WHERE id = ?;
@@ -17,10 +17,13 @@ UPDATE contas SET credenciais = ? WHERE id = ?;
 SELECT credenciais FROM contas WHERE id = ?;
 
 -- name: BuscarContaPorChave :one
-SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas WHERE chave_pix = ?;
+SELECT id, nome, psp, chave_pix, ambiente, ativa, cert_sujeito, cert_impressao_digital, cert_validade_s, cert_avisado_impressao FROM contas WHERE chave_pix = ?;
 
 -- name: SalvarTokenWebhook :execrows
 UPDATE contas SET webhook_token_hash = ? WHERE id = ?;
 
 -- name: BuscarTokenWebhook :one
 SELECT webhook_token_hash FROM contas WHERE id = ?;
+
+-- name: MarcarVencimentoAvisado :execrows
+UPDATE contas SET cert_avisado_impressao = cert_impressao_digital WHERE id = ? AND cert_impressao_digital = ?;

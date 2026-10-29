@@ -63,7 +63,11 @@ func (s *Server) DesativarConta(ctx context.Context, r gen.DesativarContaRequest
 }
 
 func contaGen(c domain.Conta) gen.Conta {
-	return gen.Conta{Id: c.ID, Nome: c.Nome, Psp: c.PSP, Chave: c.ChavePix, Ambiente: gen.ContaAmbiente(c.Ambiente), Ativa: c.Ativa}
+	out := gen.Conta{Id: c.ID, Nome: c.Nome, Psp: c.PSP, Chave: c.ChavePix, Ambiente: gen.ContaAmbiente(c.Ambiente), Ativa: c.Ativa}
+	if cert := c.Certificado; cert != nil {
+		out.Certificado = &gen.ContaCertificado{Sujeito: cert.Sujeito, ImpressaoDigital: cert.ImpressaoDigital, Validade: cert.Validade}
+	}
+	return out
 }
 
 func deref(p *string) string {

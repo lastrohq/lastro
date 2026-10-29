@@ -5,6 +5,7 @@ package storetest
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -51,6 +52,67 @@ func comContas(t *testing.T, novo func(t *testing.T) ports.Store) ports.Store {
 
 // Run executa a suíte. novo deve devolver um Store vazio a cada chamada.
 func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
+	t.Run("conta: guarda os dados públicos do certificado", func(t *testing.T) {
+		s, ctx := novo(t), context.Background()
+		c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true,
+			Certificado: &domain.Certificado{Sujeito: "CN=loja,O=Lastro", ImpressaoDigital: "ab12", Validade: time.Date(2027, 6, 30, 23, 59, 59, 0, time.UTC)}}
+		// Validade "sem data definida" do RFC 5280: não cabe em nanossegundos int64.
+		sem := domain.Conta{ID: "c2", Nome: "Outra", PSP: "sandbox", ChavePix: "y@example.com", Ambiente: domain.Producao, Ativa: true,
+			Certificado: &domain.Certificado{Sujeito: "CN=outra", ImpressaoDigital: "cd34", Validade: time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC)}}
+		for _, conta := range []domain.Conta{c, sem} {
+			if err := s.Contas().Criar(ctx, conta); err != nil {
+				t.Fatal(err)
+			}
+			if got, err := s.Contas().Buscar(ctx, conta.ID); err != nil || !reflect.DeepEqual(got, conta) {
+				t.Fatalf("Buscar = %+v (%+v), %v; quer %+v", got, got.Certificado, err, conta.Certificado)
+			}
+		}
+		if got, _ := s.Contas().BuscarPorChave(ctx, "x@example.com"); !reflect.DeepEqual(got, c) {
+			t.Fatalf("BuscarPorChave perdeu o certificado: %+v", got.Certificado)
+		}
+		if lista, _ := s.Contas().Listar(ctx); len(lista) != 2 || !reflect.DeepEqual(lista[0], c) {
+			t.Fatalf("Listar perdeu o certificado: %+v", lista)
+		}
+		// Atualizar não mexe no certificado.
+		mudada := c
+		mudada.Certificado, mudada.Ativa = nil, false
+		if err := s.Contas().Atualizar(ctx, mudada); err != nil {
+			t.Fatal(err)
+		}
+		if got, _ := s.Contas().Buscar(ctx, "c1"); got.Ativa || !reflect.DeepEqual(got.Certificado, c.Certificado) {
+			t.Fatalf("depois de Atualizar: ativa=%v certificado=%+v", got.Ativa, got.Certificado)
+		}
+	})
+
+	t.Run("conta: marca o vencimento do certificado como avisado", func(t *testing.T) {
+		s, ctx := novo(t), context.Background()
+		c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true,
+			Certificado: &domain.Certificado{Sujeito: "CN=loja", ImpressaoDigital: "ab12", Validade: base.Add(24 * time.Hour)}}
+		sem := domain.Conta{ID: "c2", Nome: "Sem", PSP: "sandbox", ChavePix: "y@example.com", Ambiente: domain.Producao, Ativa: true}
+		for _, conta := range []domain.Conta{c, sem} {
+			if err := s.Contas().Criar(ctx, conta); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if got, _ := s.Contas().Buscar(ctx, "c1"); got.Certificado.VencimentoAvisado {
+			t.Fatal("conta nova já nasce avisada")
+		}
+		for nome, args := range map[string][2]string{"outro certificado": {"c1", "cd34"}, "sem certificado": {"c2", "ab12"}, "conta inexistente": {"nada", "ab12"}} {
+			if err := s.Contas().MarcarVencimentoAvisado(ctx, args[0], args[1]); !errors.Is(err, ports.ErrNaoEncontrado) {
+				t.Fatalf("%s: err = %v; quer ErrNaoEncontrado", nome, err)
+			}
+		}
+		if err := s.Contas().MarcarVencimentoAvisado(ctx, "c1", "ab12"); err != nil {
+			t.Fatal(err)
+		}
+		if got, _ := s.Contas().Buscar(ctx, "c1"); !got.Certificado.VencimentoAvisado {
+			t.Fatal("o aviso não ficou gravado")
+		}
+		if lista, _ := s.Contas().Listar(ctx); !lista[0].Certificado.VencimentoAvisado {
+			t.Fatal("Listar não mostra o aviso")
+		}
+	})
+
 	t.Run("conta: cria, busca e recusa duplicada", func(t *testing.T) {
 		s, ctx := novo(t), context.Background()
 		c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Homologacao, Ativa: true}

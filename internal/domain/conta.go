@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
+	"time"
 )
 
 // Ambiente diz se a conta fala com a homologação ou com a produção do banco.
@@ -21,6 +22,15 @@ var (
 	ErrContaInvalida = errors.New("conta inválida")
 	// ErrContaInativa indica uma conta desativada, que não aceita novas cobranças (RN-03).
 	ErrContaInativa = errors.New("conta inativa")
+	// ErrCertificadoInvalido indica certificado ilegível, senha errada ou chave que
+	// não corresponde ao certificado (RN-62). É uma ErrContaInvalida.
+	ErrCertificadoInvalido = fmt.Errorf("%w: certificado", ErrContaInvalida)
+	// ErrCertificadoVencido indica certificado com validade no passado (RN-62).
+	// É uma ErrContaInvalida.
+	ErrCertificadoVencido = fmt.Errorf("%w: certificado vencido", ErrContaInvalida)
+	// ErrCertificadoDeHomologacao indica, numa conta de produção, um certificado
+	// já cadastrado numa conta de homologação (RN-62). É uma ErrContaInvalida.
+	ErrCertificadoDeHomologacao = fmt.Errorf("%w: certificado de homologação", ErrContaInvalida)
 )
 
 var idConta = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
@@ -34,7 +44,39 @@ type Conta struct {
 	ChavePix string
 	Ambiente Ambiente
 	Ativa    bool
+	// Certificado tem os dados públicos do certificado do mTLS; nil se a conta
+	// não tiver certificado (o sandbox, por exemplo).
+	Certificado *Certificado
 }
+
+// Certificado são os dados públicos do certificado do mTLS, guardados fora do
+// blob cifrado para o alerta de vencimento e a regra de ambiente (RN-62). O
+// certificado e a chave privada continuam só nas Credenciais.
+type Certificado struct {
+	// Sujeito é o subject do certificado, como "CN=...,O=...".
+	Sujeito string
+	// ImpressaoDigital é o SHA-256 do certificado (DER), em hexadecimal minúsculo.
+	ImpressaoDigital string
+	// Validade é o NotAfter, em UTC.
+	Validade time.Time
+	// VencimentoAvisado diz se o evento certificado.expirando já saiu para este
+	// certificado. Trocar o certificado zera o aviso.
+	VencimentoAvisado bool
+}
+
+// AntecedenciaAvisoVencimento é quanto antes de vencer o certificado gera o
+// evento certificado.expirando (RN-62).
+const AntecedenciaAvisoVencimento = 30 * 24 * time.Hour
+
+// PrecisaAvisarEm diz se, no instante agora, o vencimento do certificado já
+// deveria ter sido avisado e ainda não foi. Vale também para certificado já
+// vencido, caso o Lastro tenha ficado desligado durante a janela.
+func (c Certificado) PrecisaAvisarEm(agora time.Time) bool {
+	return !c.VencimentoAvisado && !agora.Before(c.Validade.Add(-AntecedenciaAvisoVencimento))
+}
+
+// VencidoEm diz se o certificado já não vale no instante agora.
+func (c Certificado) VencidoEm(agora time.Time) bool { return !agora.Before(c.Validade) }
 
 // Validar confere os campos obrigatórios e o formato do ID.
 func (c Conta) Validar() error {

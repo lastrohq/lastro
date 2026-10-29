@@ -23,25 +23,36 @@ comunidade sem medo.
 | Caminho | O que vive ali | Pode importar |
 |---|---|---|
 | `cmd/lastro` | `main`: monta o registry de PSPs e chama a CLI | tudo |
-| `internal/cli` | Comandos (`serve`, `conta`, `chave`, `version`...), testáveis sem processo | `app`, `adapters`, `platform` |
+| `internal/cli` | Comandos (`serve`, `conta`, `chave`, `version`...), testáveis sem processo; monta as peças | tudo, menos `cmd` |
 | `internal/domain` | Entidades, máquinas de estado, `Money`, `Txid` | só stdlib |
 | `internal/app` | Casos de uso (`CriarCobranca`, `Devolver`, `CriarRecorrencia`...) | `domain`, `ports` |
-| `internal/ports` | Interfaces `PSP`, `Store`, `Notifier`, `Vault`, `Clock` | `domain` |
+| `internal/ports` | Interfaces `PSP`, `Store`, `Notifier`, `Vault`, `Certificados`, `Clock` | `domain` |
 | `internal/adapters/httpapi` | API BCB-compatível, admin, webhooks de entrada | `app`, `ports`, `domain` |
-| `internal/adapters/psp/*` | Um pacote por banco + `sandbox` | `ports`, `domain`, `platform` |
+| `internal/adapters/psp/*` | Um pacote por banco + `sandbox` | `ports`, `domain`, `platform`, o registry `adapters/psp`, `pkg` |
 | `internal/adapters/store/*` | `sqlite` (padrão), `postgres` (v0.3) | `ports`, `domain` |
 | `internal/adapters/notifier` | Outbox, entrega, retry, DLQ, assinatura | `ports`, `domain` |
-| `internal/adapters/mcp` | Ferramentas MCP sobre os casos de uso | `app` |
-| `internal/platform` | `vault` (AES-256-GCM), e depois mTLS e cache de token OAuth2 | só stdlib/libs |
-| `internal/adapters/psp` | `Registry` + um subpacote por banco | `ports` |
+| `internal/adapters/mcp` | Ferramentas MCP sobre os casos de uso | `app`, `ports`, `domain` |
+| `internal/adapters/jobs` | Laço periódico (conciliação, entrega, limpezas) | só stdlib/libs |
+| `internal/platform` | `vault` (AES-256-GCM), `oauth` (cache de token OAuth2 por conta), `certificado` (leitura de .p12/PEM), e depois mTLS | só stdlib/libs — a checagem `var _ ports.Vault` fica no teste |
+| `internal/adapters/psp` | `Registry` + um subpacote por banco | `ports`, `domain` |
 | `pkg/brcode` | Lib pública de BR Code | só stdlib |
 | `api/openapi.yaml` | Contrato da API (fonte da verdade) | — |
 | `web/` | Painel React + design system | — |
 | `test/conformance` | Suíte que todo adapter de PSP precisa passar | — |
 | `test/e2e` | Binário em modo sandbox, fluxo de ponta a ponta | — |
 
-**A regra de dependência é verificada no CI** (via `depguard`, a partir da F1):
-`domain` não importa nada de dentro do projeto; `app` não importa `adapters`.
+**A regra de dependência é verificada no CI** pelo `depguard`, configurado no
+[`.golangci.yml`](../.golangci.yml) a partir desta tabela:
+
+- `domain` e `pkg` só importam a stdlib, **inclusive nos testes**.
+- Nas outras camadas, a regra vale para o **código de produção**. Teste pode
+  montar integração real: os testes de `app` e `httpapi` usam o sandbox, o
+  notifier e o vault de verdade.
+- Um adapter não importa outro adapter. As exceções são o registry
+  `adapters/psp` para os bancos e os subpacotes do próprio adapter, como
+  `httpapi/gen` e `store/sqlite/db`.
+
+Mudou a tabela? Mude o `.golangci.yml` no mesmo PR.
 
 ## Stack
 
@@ -83,6 +94,7 @@ Definidos em `internal/ports` (#11):
 | `OutboxRepo` | É o lado "publicar" do Notifier: o evento entra na mesma transação da mudança de estado (ADR-005). A entrega fica no adapter `notifier` |
 | `Clock` | Fonte de tempo injetável |
 | `Vault` | Cifrar/decifrar segredos em repouso (RN-61) |
+| `Certificados` | Ler o certificado do mTLS (.p12/PEM) e devolver os dados públicos dele (RN-62). Implementado sobre `platform/certificado`, montado na CLI |
 
 Fakes em memória ficam em `internal/ports/fake`. **`internal/ports/storetest` é a suíte de
 contrato do Store**: o fake passa nela hoje, e o SQLite (#12) e o Postgres precisam passar nos

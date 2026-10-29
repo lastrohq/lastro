@@ -625,6 +625,27 @@ components:
           enum: [homologacao, producao]
         ativa:
           type: boolean
+        certificado:
+          $ref: "#/components/schemas/ContaCertificado"
+    ContaCertificado:
+      type: object
+      description: >-
+        Dados públicos do certificado do mTLS, conferido no cadastro (RN-62). O
+        certificado e a chave privada nunca saem do Lastro. Ausente se a conta não
+        tiver certificado.
+      required: [sujeito, impressaoDigital, validade]
+      properties:
+        sujeito:
+          type: string
+          example: CN=loja.example.com,O=Loja
+        impressaoDigital:
+          type: string
+          description: SHA-256 do certificado (DER), em hexadecimal minúsculo.
+          pattern: "^[0-9a-f]{64}$"
+        validade:
+          type: string
+          format: date-time
+          description: Fim da validade (NotAfter), em UTC.
     ContaSolicitada:
       type: object
       required: [id, nome, psp, chave, ambiente]
@@ -653,7 +674,11 @@ components:
             certificado:
               type: string
               format: byte
-              description: Certificado do mTLS (.p12 ou .pem) em base64.
+              description: >-
+                Certificado do mTLS em base64: .p12 (com senhaCertificado) ou PEM com
+                certificado e chave no mesmo arquivo. É conferido no cadastro: arquivo
+                ilegível, senha errada, chave que não corresponde ou certificado vencido
+                respondem 400.
             senhaCertificado:
               type: string
     Health:

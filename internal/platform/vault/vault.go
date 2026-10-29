@@ -9,8 +9,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-
-	"github.com/lastrohq/lastro/internal/ports"
 )
 
 // versao prefixa todo texto cifrado, para permitir trocar o algoritmo ou
@@ -23,12 +21,11 @@ var ErrChaveInvalida = errors.New("LASTRO_MASTER_KEY inválida: use 32 bytes em 
 // ErrDecifrar indica texto cifrado corrompido ou cifrado com outra chave.
 var ErrDecifrar = errors.New("não foi possível decifrar: dado corrompido ou master key diferente")
 
-// AESGCM é o ports.Vault com uma chave de 256 bits.
+// AESGCM implementa o ports.Vault com uma chave de 256 bits. A checagem fica
+// no teste, porque platform não importa o resto do projeto (ver ARQUITETURA.md).
 type AESGCM struct {
 	aead cipher.AEAD
 }
-
-var _ ports.Vault = (*AESGCM)(nil)
 
 // New cria o vault a partir da master key em base64 (32 bytes decodificados).
 func New(chaveBase64 string) (*AESGCM, error) {

@@ -25,7 +25,13 @@ func TestTodaRotaTemEscopo(t *testing.T) {
 func TestSemTokenOuTokenRuimE401(t *testing.T) {
 	a := novaAPI(t)
 	var p gen.Problema
-	for _, auth := range []string{"", "Basic abc", "Bearer lst_invalido", "Bearer " + a.token[:len(a.token)-1] + "x"} {
+	// Troca o último caractere por outro: se o token já terminar em "x", trocar
+	// por "x" não mudaria nada e o teste falharia 1 vez em 64.
+	trocado := "x"
+	if strings.HasSuffix(a.token, "x") {
+		trocado = "y"
+	}
+	for _, auth := range []string{"", "Basic abc", "Bearer lst_invalido", "Bearer " + a.token[:len(a.token)-1] + trocado} {
 		st := a.chamar(http.MethodGet, "/cob/"+txid, "", map[string]string{"Authorization": auth}, &p)
 		if st != http.StatusUnauthorized || p.Detail != nil {
 			t.Errorf("Authorization %q: status %d, detail %v", auth, st, p.Detail)

@@ -180,8 +180,22 @@ func (r contas) Atualizar(_ context.Context, c domain.Conta) error {
 	if !ok {
 		return fmt.Errorf("conta %s: %w", c.ID, ports.ErrNaoEncontrado)
 	}
-	c.PSP = atual.PSP
+	c.PSP, c.Certificado = atual.PSP, atual.Certificado // Atualizar não mexe em ID, PSP e certificado
 	r.s.d.contas[c.ID] = c
+	return nil
+}
+
+func (r contas) MarcarVencimentoAvisado(_ context.Context, id, impressao string) error {
+	r.s.lock()
+	defer r.s.unlock()
+	c, ok := r.s.d.contas[id]
+	if !ok || c.Certificado == nil || c.Certificado.ImpressaoDigital != impressao {
+		return fmt.Errorf("conta %s com o certificado %s: %w", id, impressao, ports.ErrNaoEncontrado)
+	}
+	cert := *c.Certificado // cópia: quem leu a conta antes não vê a mudança
+	cert.VencimentoAvisado = true
+	c.Certificado = &cert
+	r.s.d.contas[id] = c
 	return nil
 }
 

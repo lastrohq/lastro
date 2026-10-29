@@ -242,8 +242,8 @@ webhook (RN-30): deduplicado por `endToEndId`, concluindo a cobrança e publican
   **uma vez**, na criação, e fica cifrado pelo Vault (é preciso tê-lo em claro
   para assinar). https obrigatório (http só para localhost).
 - **Eventos:** `cobranca.criada`, `cobranca.revisada`, `cobranca.concluida`,
-  `cobranca.removida` e `pix.recebido` (com `divergente` quando o valor pago
-  difere do cobrado). O corpo é o envelope do Standard Webhooks:
+  `cobranca.removida`, `pix.recebido` (com `divergente` quando o valor pago
+  difere do cobrado) e `certificado.expirando` (RN-62). O corpo é o envelope do Standard Webhooks:
   `{"type": ..., "timestamp": ..., "data": {...}}`, normalizado, igual para
   qualquer banco.
 - **Assinatura** no padrão [Standard Webhooks](https://www.standardwebhooks.com/):
@@ -292,9 +292,37 @@ escrito em log — nem mascarado parcialmente.
 
 ### RN-62 · Certificados
 
-- Alerta (painel e webhook `certificado.expirando`) a **30 dias** do vencimento.
-- Recusa usar em conta de produção um certificado marcado como de homologação
-  (o Bradesco, por exemplo, não aceita o mesmo certificado nos dois).
+- O certificado do mTLS é **conferido no cadastro** da conta, pela CLI ou pela API:
+  .p12 com senha, ou PEM com certificado e chave no mesmo arquivo. O Lastro
+  recusa, com o motivo e sem mostrar o conteúdo, arquivo ilegível, senha errada,
+  chave privada que não corresponde ao certificado, chave PEM cifrada e
+  certificado vencido ([ADR-006](./adr/006-certificado-conferido-no-cadastro.md)).
+- Sujeito, impressão digital (SHA-256) e validade ficam visíveis na conta
+  (`conta listar`, `GET /lastro/v1/contas`). São dados públicos do certificado;
+  o certificado e a chave continuam cifrados (RN-61).
+- **Aviso de vencimento a 30 dias:** o evento `certificado.expirando` sai pelo
+  mesmo caminho dos outros webhooks de saída (RN-32), assinado e com retry,
+  quando faltam 30 dias ou menos para o certificado de uma conta **ativa**
+  vencer. Sai também para certificado que já venceu sem ter sido avisado, caso
+  o Lastro tenha ficado desligado durante a janela.
+  - **Uma vez por certificado:** o aviso é guardado pela impressão digital, na
+    mesma transação do evento. Rodar de novo não repete; trocar o certificado
+    zera o aviso.
+  - Payload: `contaId`, `sujeito`, `impressaoDigital`, `validade`,
+    `diasRestantes` (arredondado para cima; zero ou negativo depois de vencer)
+    e `vencido`. Nunca leva o certificado.
+  - A verificação roda ao subir e depois a cada hora
+    (`LASTRO_CERTIFICADO_INTERVALO`; `0` desliga). Como todo evento, sem destino
+    cadastrado na hora o aviso é descartado e não se repete.
+  - O alerta no painel entra com o painel (F8).
+- **Certificado de homologação não entra em conta de produção.** Nada no X.509
+  diz o ambiente; para o Lastro, é de homologação o certificado (pela impressão
+  digital) **já cadastrado numa conta de homologação**, mesmo que ela esteja
+  desativada. A conta de produção é recusada com o nome da conta onde ele está.
+  O contrário é aceito (certificado de produção numa conta de homologação), e
+  várias contas do mesmo ambiente podem compartilhar o certificado. Motivo: o
+  Bradesco, por exemplo, não aceita o mesmo certificado nos dois ambientes, e o
+  erro só apareceria na primeira cobrança real.
 
 ---
 
