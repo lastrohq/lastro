@@ -1,7 +1,11 @@
-.PHONY: build test lint cover run generate
+.PHONY: build web test lint cover run generate
 
-build:
+# O painel (web/) é embutido no binário: build compila os dois.
+build: web
 	go build -o bin/lastro ./cmd/lastro
+
+web:
+	cd web && npm ci && npm run build
 
 test:
 	go test -race ./...

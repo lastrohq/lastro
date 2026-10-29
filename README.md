@@ -95,6 +95,7 @@ Sicoob, Banco do Brasil) are next on the board.
 - **Refunds** — total or partial, never more than was received.
 - **Stateful sandbox** — test the full flow without a business bank account.
 - **Single binary** — `docker run` and go; SQLite by default.
+- **Dashboard** — `/painel/`: money received, active charges, what a gateway would have charged, and each charge with its QR code. Log in with an API key.
 - **Use it from your agent** — built-in MCP server (`lastro mcp`).
 
 ## Banks

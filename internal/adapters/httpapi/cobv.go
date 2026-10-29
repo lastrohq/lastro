@@ -88,6 +88,12 @@ func (s *Server) ListarCobvs(ctx context.Context, r gen.ListarCobvsRequestObject
 	cobs := make([]gen.CobVCompleta, len(pag.Cobs))
 	for i, c := range pag.Cobs {
 		cobs[i] = s.cobvCompleta(c)
+		// Como na consulta: a lista da spec é de cobranças completas, com os Pix.
+		if c.Status == domain.CobrancaConcluida {
+			if cobs[i].Pix, err = s.pixDaCobranca(ctx, c.ContaID, c.Txid); err != nil {
+				return nil, err
+			}
+		}
 	}
 	return gen.ListarCobvs200JSONResponse{
 		Cobs: cobs,

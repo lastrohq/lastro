@@ -7,6 +7,8 @@ project_name: lastro
 before:
   hooks:
     - go mod tidy
+    # O painel é embutido no binário (web/embed.go): compila antes do go build.
+    - sh -c "cd web && npm ci && npm run build"
 
 builds:
   - id: lastro

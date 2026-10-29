@@ -1,0 +1,5 @@
+node_modules/
+dist/painel/
+test-results/
+playwright-report/
+*.tsbuildinfo
