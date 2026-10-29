@@ -56,6 +56,20 @@ type Certificado struct {
 	ImpressaoDigital string
 	// Validade é o NotAfter, em UTC.
 	Validade time.Time
+	// VencimentoAvisado diz se o evento certificado.expirando já saiu para este
+	// certificado. Trocar o certificado zera o aviso.
+	VencimentoAvisado bool
+}
+
+// AntecedenciaAvisoVencimento é quanto antes de vencer o certificado gera o
+// evento certificado.expirando (RN-62).
+const AntecedenciaAvisoVencimento = 30 * 24 * time.Hour
+
+// PrecisaAvisarEm diz se, no instante agora, o vencimento do certificado já
+// deveria ter sido avisado e ainda não foi. Vale também para certificado já
+// vencido, caso o Lastro tenha ficado desligado durante a janela.
+func (c Certificado) PrecisaAvisarEm(agora time.Time) bool {
+	return !c.VencimentoAvisado && !agora.Before(c.Validade.Add(-AntecedenciaAvisoVencimento))
 }
 
 // VencidoEm diz se o certificado já não vale no instante agora.

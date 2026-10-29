@@ -2,11 +2,13 @@ package sqlite_test
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"path/filepath"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/lastrohq/lastro/internal/adapters/store/sqlite"
 	"github.com/lastrohq/lastro/internal/domain"
@@ -101,5 +103,35 @@ func TestEventoComDadosNaoSerializaveisFalha(t *testing.T) {
 	err := s.Outbox().Adicionar(t.Context(), domain.Evento{ID: "e1", Dados: make(chan int)})
 	if err == nil || errors.Is(err, ports.ErrJaExiste) {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+// Trocar o certificado da conta zera o aviso de vencimento, porque o aviso é
+// guardado pela impressão digital (RN-62). Ainda não há comando de troca; o teste
+// troca direto no banco.
+func TestTrocarCertificadoZeraOAvisoDeVencimento(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "lastro.db")
+	s := abrir(t, path)
+	ctx := t.Context()
+	c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true,
+		Certificado: &domain.Certificado{Sujeito: "CN=loja", ImpressaoDigital: "velho", Validade: time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)}}
+	if err := s.Contas().Criar(ctx, c); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Contas().MarcarVencimentoAvisado(ctx, "c1", "velho"); err != nil {
+		t.Fatal(err)
+	}
+
+	conn, err := sql.Open("sqlite", "file:"+path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = conn.Close() }()
+	if _, err := conn.ExecContext(ctx, `UPDATE contas SET cert_impressao_digital = 'novo' WHERE id = 'c1'`); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.Contas().Buscar(ctx, "c1")
+	if err != nil || got.Certificado.VencimentoAvisado {
+		t.Fatalf("depois de trocar o certificado: avisado=%v, %v; quer false", got.Certificado.VencimentoAvisado, err)
 	}
 }

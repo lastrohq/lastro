@@ -3,14 +3,19 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/lastrohq/lastro/internal/app"
 	"github.com/lastrohq/lastro/internal/domain"
 	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
 )
@@ -178,5 +183,67 @@ func TestNenhumSegredoNoLogNemNaSaida(t *testing.T) {
 		if strings.Contains(tudo, s) {
 			t.Errorf("%s apareceu no log ou na saída", nome)
 		}
+	}
+}
+
+// TestServeAvisaCertificadoPertoDeVencer cadastra uma conta com um certificado
+// real que vence em 20 dias, um destino de webhook, e sobe o serve: o evento
+// certificado.expirando tem que chegar ao destino, uma vez só.
+func TestServeAvisaCertificadoPertoDeVencer(t *testing.T) {
+	recebidos := make(chan string, 10)
+	destino := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		corpo, _ := io.ReadAll(r.Body)
+		recebidos <- string(corpo)
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	defer destino.Close()
+
+	env := envComBanco(t)
+	env["LASTRO_ADDR"] = "127.0.0.1:0"
+	env["LASTRO_CONCILIACAO_INTERVALO"] = "0"
+	env["LASTRO_WEBHOOK_INTERVALO"] = "50ms"
+	amb, _ := ambiente(t, env) // relógio em 2026-10-29 12:00 UTC
+	ctx := context.Background()
+
+	par := certificadotest.Gerar(t, "loja", time.Date(2026, 11, 18, 12, 0, 0, 0, time.UTC))
+	if err := criarConta(ctx, amb, "loja", arquivo(t, "cert.p12", par.P12), arquivo(t, "senha", []byte(certificadotest.Senha))); err != nil {
+		t.Fatal(err)
+	}
+	if err := Run(ctx, []string{"destino", "criar", "--url", destino.URL}, amb); err != nil {
+		t.Fatal(err)
+	}
+
+	servindo, parar := context.WithCancel(ctx)
+	feito := make(chan error, 1)
+	go func() { feito <- Run(servindo, []string{"serve"}, amb) }()
+	defer func() {
+		parar()
+		if err := <-feito; err != nil {
+			t.Errorf("serve: %v", err)
+		}
+	}()
+
+	select {
+	case corpo := <-recebidos:
+		var ev struct {
+			Type string               `json:"type"`
+			Data app.DadosCertificado `json:"data"`
+		}
+		if err := json.Unmarshal([]byte(corpo), &ev); err != nil {
+			t.Fatal(err)
+		}
+		if ev.Type != "certificado.expirando" || ev.Data.ContaID != "loja" || ev.Data.DiasRestantes != 20 || ev.Data.Sujeito != "CN=loja,O=Lastro Teste" {
+			t.Fatalf("evento = %s", corpo)
+		}
+		if strings.Contains(corpo, string(par.CertificadoPEM[30:60])) {
+			t.Fatal("o evento levou o certificado")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("o webhook certificado.expirando não chegou em 5 s")
+	}
+	select {
+	case corpo := <-recebidos:
+		t.Fatalf("chegou um segundo webhook: %s", corpo)
+	case <-time.After(300 * time.Millisecond):
 	}
 }

@@ -67,6 +67,7 @@ type Conta struct {
 	CertSujeito          sql.NullString
 	CertImpressaoDigital sql.NullString
 	CertValidadeS        sql.NullInt64
+	CertAvisadoImpressao sql.NullString
 }
 
 type DestinosWebhook struct {

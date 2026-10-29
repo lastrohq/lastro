@@ -85,3 +85,26 @@ func TestErrosDeCertificadoSaoContaInvalida(t *testing.T) {
 		}
 	}
 }
+
+func TestCertificadoPrecisaAvisarEm(t *testing.T) {
+	validade := time.Date(2027, 1, 31, 0, 0, 0, 0, time.UTC)
+	c := Certificado{Validade: validade}
+	casos := []struct {
+		agora time.Time
+		quer  bool
+	}{
+		{validade.Add(-AntecedenciaAvisoVencimento - time.Second), false}, // 30 dias e 1 s antes
+		{validade.Add(-AntecedenciaAvisoVencimento), true},                // exatamente 30 dias antes
+		{validade.Add(-time.Hour), true},
+		{validade.Add(24 * time.Hour), true}, // já vencido e nunca avisado
+	}
+	for _, caso := range casos {
+		if got := c.PrecisaAvisarEm(caso.agora); got != caso.quer {
+			t.Errorf("PrecisaAvisarEm(%s) = %v; quer %v", caso.agora, got, caso.quer)
+		}
+	}
+	c.VencimentoAvisado = true
+	if c.PrecisaAvisarEm(validade.Add(-time.Hour)) {
+		t.Error("avisa de novo um certificado já avisado")
+	}
+}

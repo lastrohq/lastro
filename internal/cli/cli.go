@@ -61,7 +61,8 @@ escopos: cob:read cob:write cobv:read cobv:write pix:read devolucao:write
 
 variáveis: LASTRO_DB (padrão lastro.db), LASTRO_MASTER_KEY, LASTRO_ADDR (padrão :8080),
            LASTRO_CONCILIACAO_INTERVALO (padrão 5m; 0 desliga), LASTRO_CONCILIACAO_JANELA (padrão 2h),
-           LASTRO_WEBHOOK_INTERVALO (padrão 2s; 0 desliga a entrega de eventos)`
+           LASTRO_WEBHOOK_INTERVALO (padrão 2s; 0 desliga a entrega de eventos),
+           LASTRO_CERTIFICADO_INTERVALO (padrão 1h; 0 desliga o aviso de certificado vencendo)`
 
 // Run executa o comando em args.
 func Run(ctx context.Context, args []string, amb Ambiente) error {
@@ -261,6 +262,10 @@ func serve(ctx context.Context, amb Ambiente) error {
 	if err != nil {
 		return err
 	}
+	intervaloCertificado, err := duracao(amb, "LASTRO_CERTIFICADO_INTERVALO", "1h")
+	if err != nil {
+		return err
+	}
 	contas, fechar, err := abrir(ctx, amb)
 	if err != nil {
 		return err
@@ -287,6 +292,18 @@ func serve(ctx context.Context, amb Ambiente) error {
 		})
 	} else {
 		slog.Warn("entrega de eventos desligada: os webhooks de saída ficam parados no outbox")
+	}
+	if intervaloCertificado > 0 {
+		certs := app.Certificados{Store: store, Clock: amb.Clock}
+		go jobs.Periodico(ctx, "vencimento de certificados", intervaloCertificado, func(ctx context.Context) error {
+			n, err := certs.AvisarVencimentos(ctx)
+			if n > 0 {
+				slog.InfoContext(ctx, "certificado perto de vencer: evento certificado.expirando publicado", "contas", n)
+			}
+			return err
+		})
+	} else {
+		slog.Warn("aviso de vencimento de certificado desligado: ninguém será avisado antes de o certificado vencer")
 	}
 	srv := &http.Server{
 		Addr: addr,
