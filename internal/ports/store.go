@@ -29,6 +29,7 @@ type Store interface {
 	Entregas() EntregaRepo
 	Recorrencias() RecorrenciaRepo
 	Solicitacoes() SolicitacaoRepo
+	CobrancasRecorrentes() CobrancaRecorrenteRepo
 	// WithTx executa fn numa transação: erro em fn desfaz tudo.
 	WithTx(ctx context.Context, fn func(Store) error) error
 }
@@ -57,6 +58,20 @@ type SolicitacaoRepo interface {
 	AtualizarStatus(ctx context.Context, id string, status domain.StatusSolicitacao) error
 	// DaRecorrencia devolve as solicitações da recorrência, em ordem de criação.
 	DaRecorrencia(ctx context.Context, idRec string) ([]domain.SolicitacaoRecorrencia, error)
+}
+
+// CobrancaRecorrenteRepo guarda as cobranças recorrentes (RN-42). O txid é
+// único na instância, compartilhado com cob e cobv (RN-10).
+type CobrancaRecorrenteRepo interface {
+	// Criar falha com ErrJaExiste se o txid já existir, e com
+	// ErrNaoEncontrado se a recorrência não existir.
+	Criar(ctx context.Context, c domain.CobrancaRecorrente) error
+	BuscarPorTxid(ctx context.Context, txid domain.Txid) (domain.CobrancaRecorrente, error)
+	// Atualizar grava status, tentativas e motivo de encerramento se
+	// c.Revisao for a revisão atual, e a incrementa; senão falha com ErrConflito.
+	Atualizar(ctx context.Context, c *domain.CobrancaRecorrente) error
+	// DaRecorrencia devolve as cobranças da recorrência em ordem de vencimento.
+	DaRecorrencia(ctx context.Context, idRec string) ([]domain.CobrancaRecorrente, error)
 }
 
 // ContaRepo guarda as contas recebedoras e as credenciais delas, já cifradas.

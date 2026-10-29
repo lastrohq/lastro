@@ -18,6 +18,10 @@ const (
 	EventoRecorrenciaCriada      TipoEvento = "recorrencia.criada"
 	EventoRecorrenciaAtualizada  TipoEvento = "recorrencia.atualizada"
 	EventoSolicitacaoRecorrencia TipoEvento = "recorrencia.solicitacao"
+	// Cobrança recorrente (RN-42).
+	EventoCobrRCriada     TipoEvento = "cobranca_recorrente.criada"
+	EventoCobrRAtualizada TipoEvento = "cobranca_recorrente.atualizada"
+	EventoCobrRTentativa  TipoEvento = "cobranca_recorrente.tentativa"
 )
 
 // Evento é uma mudança de estado que vira webhook de saída. Dados é o payload
