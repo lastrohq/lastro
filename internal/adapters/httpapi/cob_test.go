@@ -17,6 +17,7 @@ import (
 	"github.com/lastrohq/lastro/internal/app"
 	"github.com/lastrohq/lastro/internal/domain"
 	"github.com/lastrohq/lastro/internal/platform/vault"
+	"github.com/lastrohq/lastro/internal/ports"
 	"github.com/lastrohq/lastro/internal/ports/fake"
 )
 
@@ -34,6 +35,7 @@ type api struct {
 	certs *fake.Certificados
 	// sandbox é o PSP da conta loja.
 	sandbox *sandbox.PSP
+	vault   ports.Vault
 	t       *testing.T
 }
 
@@ -68,6 +70,7 @@ func novaAPI(t *testing.T) *api {
 		Devolucoes:           app.Devolucoes{Store: store, PSPs: registry, Clock: clock},
 		APIKeys:              keys,
 		Idempotencia:         app.Idempotencia{Store: store, Clock: clock},
+		Saida:                app.Saida{Store: store, Vault: v, Clock: clock},
 		Clock:                clock,
 	})
 	_, r := carregarContrato(t)
@@ -75,7 +78,7 @@ func novaAPI(t *testing.T) *api {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &api{h: h, r: r, clock: clock, store: store, keys: keys, webhooks: webhooks, token: token, certs: certs, sandbox: sb, t: t}
+	return &api{h: h, r: r, clock: clock, store: store, keys: keys, webhooks: webhooks, token: token, certs: certs, sandbox: sb, vault: v, t: t}
 }
 
 // novoToken cria uma API key com os escopos e a conta dados.

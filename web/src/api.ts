@@ -25,8 +25,8 @@ export const sessao = {
   sair: () => sessionStorage.removeItem(CHAVE),
 };
 
-export async function api<T>(caminho: string, token = sessao.token()): Promise<T> {
-  const resp = await fetch(caminho, { headers: { Authorization: `Bearer ${token ?? ""}` } });
+export async function api<T>(caminho: string, token = sessao.token(), metodo = "GET"): Promise<T> {
+  const resp = await fetch(caminho, { method: metodo, headers: { Authorization: `Bearer ${token ?? ""}` } });
   const texto = await resp.text();
   if (!resp.ok) {
     let msg = `o Lastro respondeu ${resp.status}`;
@@ -52,4 +52,43 @@ export async function listar(tipo: "cob" | "cobv", inicio: Date, fim: Date, stat
     if (pagina + 1 >= r.parametros.paginacao.quantidadeDePaginas) break;
   }
   return todas;
+}
+
+export interface Entrega {
+  eventoId: string;
+  destinoId: string;
+  contaId: string;
+  tipo: string;
+  status: "pendente" | "entregue" | "dlq";
+  tentativas: number;
+  ultimoHttp?: number;
+  ultimoErro?: string;
+  criadaEm: string;
+  proximaEm: string;
+  atualizadaEm: string;
+}
+
+export interface Conta {
+  id: string;
+  nome: string;
+  psp: string;
+  chave: string;
+  ambiente: string;
+  ativa: boolean;
+  certificado?: { sujeito: string; impressaoDigital: string; validade: string };
+}
+
+export const entregas = (status: Entrega["status"]) => api<{ entregas: Entrega[] }>(`/lastro/v1/webhooks/entregas?status=${status}&limite=500`).then((r) => r.entregas);
+export const reenviar = (eventoId: string) => api<{ reenviadas: number }>(`/lastro/v1/webhooks/entregas/${encodeURIComponent(eventoId)}/reenviar`, sessao.token(), "POST");
+export const contas = () => api<{ contas: Conta[] }>("/lastro/v1/contas").then((r) => r.contas);
+
+/** Dias até a data, arredondados para cima como no aviso do servidor
+ * (app.Certificados): zero ou negativo quando já passou. */
+export function diasAte(iso: string, agora = new Date()): number {
+  return Math.ceil((new Date(iso).getTime() - agora.getTime()) / 86_400_000);
+}
+
+/** Mensagem para quando a API key não tem o escopo da tela. */
+export function semEscopo(e: unknown, escopo: string): string | null {
+  return e instanceof ErroAPI && e.status === 403 ? `Esta API key não tem o escopo ${escopo}. Crie uma com lastro apikey criar --escopo ${escopo}.` : null;
 }
