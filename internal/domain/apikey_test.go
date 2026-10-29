@@ -30,7 +30,12 @@ func TestNovaAPIKeyGeraTokenQueConfere(t *testing.T) {
 	if err := k.Confere(seg); err != nil {
 		t.Fatal(err)
 	}
-	if err := k.Confere(seg[:31] + "x"); !errors.Is(err, ErrNaoAutenticado) {
+	// Troca o último caractere por outro diferente (o segredo pode já terminar em "x").
+	trocado := "x"
+	if strings.HasSuffix(seg, "x") {
+		trocado = "y"
+	}
+	if err := k.Confere(seg[:len(seg)-1] + trocado); !errors.Is(err, ErrNaoAutenticado) {
 		t.Fatal("segredo errado conferiu")
 	}
 	revogada := agora
