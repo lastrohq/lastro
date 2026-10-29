@@ -36,6 +36,7 @@ type Servidor struct {
 	cobvs          map[string]map[string]any
 	pix            []map[string]any
 	devolucoes     map[string]map[string]any // chave: e2e/id
+	webhooks       map[string]string         // chave Pix → webhookUrl
 	tokensEmitidos int
 	chamadas       []string
 	falhas         []int // status forçados para as próximas chamadas à API (não ao token)
@@ -45,7 +46,7 @@ type Servidor struct {
 // emitido por clienteCA, e tokens pedidos com clientID e clientSecret.
 func Novo(t testing.TB, clienteCA *x509.Certificate, clientID, clientSecret string) *Servidor {
 	t.Helper()
-	s := &Servidor{clientID: clientID, clientSecret: clientSecret, tokens: map[string]bool{}, cobs: map[string]map[string]any{}, cobvs: map[string]map[string]any{}, devolucoes: map[string]map[string]any{}}
+	s := &Servidor{clientID: clientID, clientSecret: clientSecret, tokens: map[string]bool{}, cobs: map[string]map[string]any{}, cobvs: map[string]map[string]any{}, devolucoes: map[string]map[string]any{}, webhooks: map[string]string{}}
 	srv := httptest.NewUnstartedServer(http.HandlerFunc(s.servir))
 	pool := x509.NewCertPool()
 	pool.AddCert(clienteCA)
@@ -88,7 +89,7 @@ func (s *Servidor) Falhar(status ...int) {
 
 // Pagar conclui a cob ou cobv do txid e registra o Pix recebido no horário
 // dado, como a homologação do Efí faz com valores de até R$ 10,00. Devolve o
-// endToEndId.
+// endToEndId, ou "" se a cobrança não estiver ATIVA (removida não é paga).
 func (s *Servidor) Pagar(txid string, horario time.Time) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -98,6 +99,9 @@ func (s *Servidor) Pagar(txid string, horario time.Time) string {
 	}
 	if c == nil {
 		panic("efitest: Pagar de txid inexistente " + txid)
+	}
+	if c["status"] != "ATIVA" {
+		return ""
 	}
 	c["status"] = "CONCLUIDA"
 	valor := c["valor"].(map[string]any)["original"].(string)
@@ -175,6 +179,10 @@ func (s *Servidor) servir(w http.ResponseWriter, r *http.Request) {
 	}
 	if txid, ok := strings.CutPrefix(r.URL.Path, "/v2/cobv/"); ok {
 		s.cobv(w, r, txid)
+		return
+	}
+	if chave, ok := strings.CutPrefix(r.URL.Path, "/v2/webhook/"); ok {
+		s.webhook(w, r, chave)
 		return
 	}
 	if r.URL.Path == "/v2/pix" {
@@ -443,4 +451,43 @@ func (s *Servidor) devolucao(w http.ResponseWriter, r *http.Request, e2e, id str
 	}
 	s.devolucoes[chave] = d
 	responder(w, http.StatusCreated, d)
+}
+
+// Webhook devolve a URL cadastrada para a chave Pix, ou "" se não houver.
+func (s *Servidor) Webhook(chave string) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.webhooks[chave]
+}
+
+func (s *Servidor) webhook(w http.ResponseWriter, r *http.Request, chave string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	switch r.Method {
+	case http.MethodPut:
+		// O Efí exige mTLS no servidor do webhook; sem o skip, o servidor do Lastro
+		// (que não termina TLS) seria recusado. O nome do erro é deste falso.
+		if r.Header.Get("x-skip-mtls-checking") != "true" {
+			erro(w, http.StatusBadRequest, "webhook_invalido", "A URL do webhook precisa aceitar mTLS com o certificado do Efí")
+			return
+		}
+		var corpo struct {
+			WebhookURL string `json:"webhookUrl"`
+		}
+		if b, _ := io.ReadAll(r.Body); json.Unmarshal(b, &corpo) != nil || !strings.HasPrefix(corpo.WebhookURL, "https://") {
+			erro(w, http.StatusBadRequest, "webhook_invalido", "webhookUrl deve ser https")
+			return
+		}
+		s.webhooks[chave] = corpo.WebhookURL
+		responder(w, http.StatusOK, map[string]string{"webhookUrl": corpo.WebhookURL})
+	case http.MethodGet:
+		u, ok := s.webhooks[chave]
+		if !ok {
+			erro(w, http.StatusNotFound, "webhook_nao_encontrado", "Nenhum webhook encontrado para a chave informada")
+			return
+		}
+		responder(w, http.StatusOK, map[string]string{"webhookUrl": u, "chave": chave})
+	default:
+		erro(w, http.StatusMethodNotAllowed, "metodo", "método não suportado")
+	}
 }

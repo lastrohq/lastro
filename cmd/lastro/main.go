@@ -9,9 +9,11 @@ import (
 	"syscall"
 
 	"github.com/lastrohq/lastro/internal/adapters/psp"
+	"github.com/lastrohq/lastro/internal/adapters/psp/efi"
 	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
 	"github.com/lastrohq/lastro/internal/cli"
 	"github.com/lastrohq/lastro/internal/platform/clock"
+	"github.com/lastrohq/lastro/internal/ports"
 )
 
 // version é preenchida no build pelo goreleaser (-ldflags "-X main.version=...").
@@ -24,7 +26,11 @@ func main() {
 	err := cli.Run(ctx, os.Args[1:], cli.Ambiente{
 		Saida:  os.Stdout,
 		Getenv: os.Getenv,
-		PSPs:   psp.NewRegistry(sandbox.New(relogio)),
+		// Os bancos reais precisam das credenciais das contas, que só existem
+		// depois de abrir o store e o vault: a CLI monta o registry nessa hora.
+		MontarPSPs: func(credenciais ports.Credenciais) ports.Registry {
+			return psp.NewRegistry(sandbox.New(relogio), efi.New(credenciais, relogio))
+		},
 		Clock:  relogio,
 		Versao: version,
 	})
