@@ -11,13 +11,55 @@ import (
 // webhookPix é o corpo do callback da spec do BCB: POST {webhookUrl}/pix.
 type webhookPix struct {
 	Pix []struct {
-		EndToEndID  string `json:"endToEndId"`
-		Txid        string `json:"txid"`
-		Valor       string `json:"valor"`
-		Chave       string `json:"chave"`
-		Horario     string `json:"horario"`
-		InfoPagador string `json:"infoPagador"`
+		EndToEndID  string          `json:"endToEndId"`
+		Txid        string          `json:"txid"`
+		Valor       string          `json:"valor"`
+		Chave       string          `json:"chave"`
+		Horario     string          `json:"horario"`
+		InfoPagador string          `json:"infoPagador"`
+		Devolucoes  []devolucaoSpec `json:"devolucoes"`
 	} `json:"pix"`
+}
+
+// devolucaoSpec é uma devolução como a spec a descreve, dentro do Pix.
+type devolucaoSpec struct {
+	ID       string `json:"id"`
+	RtrID    string `json:"rtrId"`
+	Valor    string `json:"valor"`
+	Natureza string `json:"natureza"`
+	Horario  struct {
+		Solicitacao string `json:"solicitacao"`
+		Liquidacao  string `json:"liquidacao"`
+	} `json:"horario"`
+	Status string `json:"status"`
+	Motivo string `json:"motivo"`
+}
+
+// devolucaoBCB converte a devolução do formato da spec. Status fora da RN-20 é
+// erro; horário de liquidação ausente fica zero.
+func devolucaoBCB(e2e string, d devolucaoSpec) (domain.Devolucao, error) {
+	if err := domain.ValidarIDDevolucao(d.ID); err != nil {
+		return domain.Devolucao{}, fmt.Errorf("%w: devolução: %w", domain.ErrPixInvalido, err)
+	}
+	valor, err := domain.ParseMoney(d.Valor)
+	if err != nil || !valor.Valid() {
+		return domain.Devolucao{}, fmt.Errorf("%w: devolução %s: valor %q", domain.ErrPixInvalido, d.ID, d.Valor)
+	}
+	status := domain.StatusDevolucao(d.Status)
+	switch status {
+	case domain.DevolucaoEmProcessamento, domain.DevolucaoDevolvido, domain.DevolucaoNaoRealizado:
+	default:
+		return domain.Devolucao{}, fmt.Errorf("%w: devolução %s: status %q", domain.ErrPixInvalido, d.ID, d.Status)
+	}
+	out := domain.Devolucao{ID: d.ID, EndToEndID: e2e, RtrID: d.RtrID, Valor: valor, Natureza: domain.NaturezaDevolucao(d.Natureza), Status: status, Motivo: d.Motivo}
+	if d.Horario.Liquidacao != "" {
+		t, err := time.Parse(time.RFC3339, d.Horario.Liquidacao)
+		if err != nil {
+			return domain.Devolucao{}, fmt.Errorf("%w: devolução %s: horario.liquidacao %q não é RFC 3339", domain.ErrPixInvalido, d.ID, d.Horario.Liquidacao)
+		}
+		out.LiquidadaEm = t.UTC()
+	}
+	return out, nil
 }
 
 // WebhookPixBCB interpreta o callback no formato da spec do BCB. Um item
@@ -44,10 +86,19 @@ func WebhookPixBCB(conta domain.Conta, corpo []byte) ([]domain.PixRecebido, erro
 			return nil, fmt.Errorf("pix[%d]: %w: horario %q não é RFC 3339", i, domain.ErrPixInvalido, p.Horario)
 		}
 		// txid é opcional (Pix por chave, sem cobrança) e pode ter de 1 a 35 caracteres no Pix.
-		out = append(out, domain.PixRecebido{
+		px := domain.PixRecebido{
 			EndToEndID: p.EndToEndID, ContaID: conta.ID, Txid: domain.Txid(p.Txid), Valor: valor,
 			Chave: p.Chave, Horario: horario.UTC(), InfoPagador: p.InfoPagador,
-		})
+		}
+		for _, d := range p.Devolucoes {
+			dev, err := devolucaoBCB(p.EndToEndID, d)
+			if err != nil {
+				return nil, fmt.Errorf("pix[%d]: %w", i, err)
+			}
+			dev.ContaID = conta.ID
+			px.Devolucoes = append(px.Devolucoes, dev)
+		}
+		out = append(out, px)
 	}
 	return out, nil
 }

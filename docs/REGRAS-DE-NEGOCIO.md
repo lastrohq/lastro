@@ -145,6 +145,15 @@ EM_PROCESSAMENTO ──▶ DEVOLVIDO
                  └─▶ NAO_REALIZADO
 ```
 
+- O banco é a fonte da verdade sobre o resultado. Ele chega pelas `devolucoes`
+  do aviso de Pix (`POST {webhookUrl}/pix`, RN-30) ou pela conciliação (RN-31),
+  que consulta `GET /pix/{e2eid}/devolucao/{id}` de cada devolução ainda
+  `EM_PROCESSAMENTO`. Cada mudança grava status, motivo, `rtrId` e liquidação e
+  publica `devolucao.atualizada`. Aviso repetido não publica de novo.
+- Devolução que o Lastro não pediu, de outra conta ou com status que volta
+  atrás é ignorada com aviso no log, sem erro: responder erro faria o banco
+  reenviar para sempre.
+
 ### RN-21 · Limites
 
 - A soma das devoluções de um Pix (`endToEndId`) não ultrapassa o valor recebido.
@@ -345,6 +354,10 @@ recorrências abertas (`CRIADA` e `APROVADA`) e aplica as mudanças sem aviso
 pelo caminho do webhook de recorrência (RN-40). Uma recorrência que falha não
 impede as outras, e as recorrências não dependem de a consulta de Pix dar certo.
 
+A rodada também consulta no banco cada devolução `EM_PROCESSAMENTO` (RN-20).
+Assim, o resultado da devolução de um Pix antigo, que já saiu da janela do
+`GET /pix`, também chega mesmo sem aviso.
+
 - Padrão: a cada **5 min**, olhando as últimas **2 h**
   (`LASTRO_CONCILIACAO_INTERVALO`, `LASTRO_CONCILIACAO_JANELA`). Intervalo `0`
   desliga, com aviso no log; janela zero é recusada.
@@ -365,7 +378,7 @@ impede as outras, e as recorrências não dependem de a consulta de Pix dar cert
   para assinar). https obrigatório (http só para localhost).
 - **Eventos:** `cobranca.criada`, `cobranca.revisada`, `cobranca.concluida`,
   `cobranca.removida`, `pix.recebido` (com `divergente` quando o valor pago
-  difere do cobrado), `devolucao.solicitada` (RN-21), `certificado.expirando` (RN-62) e, do Pix Automático,
+  difere do cobrado), `devolucao.solicitada` (RN-21), `devolucao.atualizada` (RN-20), `certificado.expirando` (RN-62) e, do Pix Automático,
   `recorrencia.criada`, `recorrencia.atualizada` e `recorrencia.solicitacao`
   (RN-40, RN-41), e `cobranca_recorrente.criada`, `cobranca_recorrente.atualizada`
   e `cobranca_recorrente.tentativa` (RN-42). O corpo é o envelope do Standard Webhooks:

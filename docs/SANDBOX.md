@@ -77,7 +77,9 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
   contam no saldo do Pix e respondem pelo id depois do restart.
 - **Devolução:** `PUT /pix/{e2eid}/devolucao/{id}` devolve um Pix que o Lastro
   já gravou (pelo webhook ou pela conciliação). O sandbox responde `DEVOLVIDO`
-  na hora, com `rtrId` e horário de liquidação.
+  na hora, com `rtrId` e horário de liquidação. Por isso o evento
+  `devolucao.atualizada`, que sai quando o banco informa o resultado depois,
+  não aparece no sandbox.
 - **Valor da cobv:** o sandbox paga o valor **original**. Multa, juros e desconto
   são calculados pelo banco de verdade.
 - **Cobrança recorrente:** `PUT /cobr/{txid}` (ou `POST /cobr`) cobra um ciclo

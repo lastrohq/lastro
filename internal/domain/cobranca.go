@@ -62,6 +62,9 @@ type PixRecebido struct {
 	Horario     time.Time
 	InfoPagador string
 	Pagador     *Devedor
+	// Devolucoes é o que o banco informa das devoluções do Pix, no aviso ou na
+	// consulta. Não é gravado com o Pix: cada devolução tem a própria tabela.
+	Devolucoes []Devolucao
 }
 
 // ValidarEndToEndID confere o formato do SPI: 32 caracteres alfanuméricos.

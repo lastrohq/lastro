@@ -356,6 +356,20 @@ func (p *PSP) Devolver(ctx context.Context, conta domain.Conta, d domain.Devoluc
 	return d, nil
 }
 
+// ConsultarDevolucao acha a devolução na memória ou no que o Lastro gravou.
+func (p *PSP) ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, id string) (domain.Devolucao, error) {
+	ds, err := p.devolucoesDoPix(ctx, e2e)
+	if err != nil {
+		return domain.Devolucao{}, err
+	}
+	for _, d := range ds {
+		if d.ID == id && d.ContaID == conta.ID {
+			return d, nil
+		}
+	}
+	return domain.Devolucao{}, fmt.Errorf("sandbox: devolução %s do Pix %s: %w", id, e2e, ports.ErrNaoEncontrado)
+}
+
 // devolucoesDoPix junta as devoluções da memória com as que o Lastro gravou,
 // que sobrevivem a um restart do sandbox.
 func (p *PSP) devolucoesDoPix(ctx context.Context, e2e string) ([]domain.Devolucao, error) {

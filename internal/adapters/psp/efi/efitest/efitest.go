@@ -453,6 +453,16 @@ func (s *Servidor) devolucao(w http.ResponseWriter, r *http.Request, e2e, id str
 	responder(w, http.StatusCreated, d)
 }
 
+// LiquidarDevolucao leva a devolução a DEVOLVIDO, com horário de liquidação,
+// como o banco faz depois de responder EM_PROCESSAMENTO.
+func (s *Servidor) LiquidarDevolucao(e2e, id string, horario time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	d := s.devolucoes[e2e+"/"+id]
+	d["status"] = "DEVOLVIDO"
+	d["horario"].(map[string]any)["liquidacao"] = horario.Format(time.RFC3339)
+}
+
 // Webhook devolve a URL cadastrada para a chave Pix, ou "" se não houver.
 func (s *Servidor) Webhook(chave string) string {
 	s.mu.Lock()

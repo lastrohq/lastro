@@ -28,7 +28,9 @@ type DadosPix struct {
 }
 
 // Registrar grava cada Pix uma vez só (pelo endToEndId) e, se ele pertence a
-// uma cobrança ativa da mesma conta, conclui a cobrança. Tudo numa transação:
+// uma cobrança ativa da mesma conta, conclui a cobrança. As devoluções que o
+// banco informa junto com o Pix, novo ou não, atualizam as gravadas (RN-20).
+// Tudo numa transação:
 // ou o lote inteiro entra com seus eventos, ou nada entra e o banco reenvia.
 // Devolve quantos Pix eram novos.
 func (s Recebimentos) Registrar(ctx context.Context, pixes []domain.PixRecebido) (int, error) {
@@ -39,6 +41,12 @@ func (s Recebimentos) Registrar(ctx context.Context, pixes []domain.PixRecebido)
 			novo, err := tx.Pix().Registrar(ctx, p)
 			if err != nil {
 				return err
+			}
+			for _, d := range p.Devolucoes {
+				d.EndToEndID, d.ContaID = p.EndToEndID, p.ContaID
+				if _, err := aplicarDevolucao(ctx, tx, s.Clock.Now(), d); err != nil {
+					return err
+				}
 			}
 			if !novo {
 				continue
