@@ -1,0 +1,406 @@
+{
+  "agora": "2026-10-29T21:51:18Z",
+  "rodada": "10292151",
+  "dados": {
+    "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+    "pago:conformidade10292151cob003": "32",
+    "webhook": ""
+  },
+  "interacoes": [
+    {
+      "metodo": "POST",
+      "url": "/oauth/token",
+      "corpo": {
+        "grant_type": "client_credentials"
+      },
+      "status": 200,
+      "resposta": {
+        "access_token": "gravado",
+        "expires_in": 3600,
+        "scope": "cob.read cob.write cobv.read cobv.write pix.read pix.write webhook.write",
+        "token_type": "Bearer"
+      }
+    },
+    {
+      "metodo": "PUT",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "corpo": {
+        "calendario": {
+          "expiracao": 86400
+        },
+        "valor": {
+          "original": "5.00"
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "solicitacaoPagador": "Teste de conformidade"
+      },
+      "status": 201,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.232Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.233Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pix": [
+          {
+            "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+            "endToEndId": "E09089356202610292151API677bdb36",
+            "horario": "2026-10-29T21:51:19.000Z",
+            "infoPagador": "Teste de pagamento em ambiente sandbox",
+            "txid": "conformidade10292151cob003",
+            "valor": "5.00"
+          }
+        ],
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "CONCLUIDA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292151cob003",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:51:19.000Z",
+          "id": 33,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e842",
+        "pix": [
+          {
+            "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+            "endToEndId": "E09089356202610292151API677bdb36",
+            "horario": "2026-10-29T21:51:19.000Z",
+            "infoPagador": "Teste de pagamento em ambiente sandbox",
+            "txid": "conformidade10292151cob003",
+            "valor": "5.00"
+          }
+        ],
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/2cbec6caf5f4496db18fdb454861e8425204000053039865802BR5905EFISA6008SAOPAULO62070503***6304E285",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "CONCLUIDA",
+        "txid": "conformidade10292151cob003",
+        "valor": {
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/pix?fim=2026-10-29T21%3A51%3A51Z\u0026inicio=2026-10-29T21%3A51%3A18Z\u0026paginacao.itensPorPagina=100\u0026paginacao.paginaAtual=0",
+      "status": 200,
+      "resposta": {
+        "parametros": {
+          "fim": "2026-10-29T21:51:51Z",
+          "inicio": "2026-10-29T21:51:18Z",
+          "paginacao": {
+            "itensPorPagina": 100,
+            "paginaAtual": 0,
+            "quantidadeDePaginas": 1,
+            "quantidadeTotalDeItens": 1
+          }
+        },
+        "pix": [
+          {
+            "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+            "endToEndId": "E09089356202610292151API677bdb36",
+            "horario": "2026-10-29T21:51:19.000Z",
+            "infoPagador": "Teste de pagamento em ambiente sandbox",
+            "txid": "conformidade10292151cob003",
+            "valor": "5.00"
+          }
+        ]
+      }
+    }
+  ]
+}

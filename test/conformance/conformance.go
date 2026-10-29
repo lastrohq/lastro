@@ -148,7 +148,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 			t.Skip("alvo não simula pagamento")
 		}
 		ctx := context.Background()
-		c, err := a.PSP.CriarCobv(ctx, a.Conta, novaCobv(a, txid(a, "cobv02")))
+		c, err := a.PSP.CriarCobv(ctx, a.Conta, novaCobvPaga(a, txid(a, "cobv02")))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -184,7 +184,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 		ctx := context.Background()
 		inicio := a.Agora()
-		c, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, txid(a, "cob003")))
+		c, err := a.PSP.CriarCob(ctx, a.Conta, novaCobPaga(a, txid(a, "cob003")))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -210,7 +210,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 		ctx := context.Background()
 		inicio := a.Agora()
-		c, _ := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, txid(a, "cob004")))
+		c, _ := a.PSP.CriarCob(ctx, a.Conta, novaCobPaga(a, txid(a, "cob004")))
 		a.Pagar(t, c.Txid)
 		pix, _ := a.PSP.ListarPix(ctx, a.Conta, ports.Janela{Inicio: inicio, Fim: a.Agora().Add(time.Second)})
 		if len(pix) == 0 {
@@ -218,17 +218,17 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 		e2e := pix[0].EndToEndID
 
-		d, err := a.PSP.Devolver(ctx, a.Conta, domain.Devolucao{ID: "d1", EndToEndID: e2e, Valor: 1000})
+		d, err := a.PSP.Devolver(ctx, a.Conta, domain.Devolucao{ID: "d1", EndToEndID: e2e, Valor: 200})
 		if err != nil || d.Status == "" {
 			t.Fatalf("primeira devolução: %+v, %v", d, err)
 		}
-		if _, err := a.PSP.Devolver(ctx, a.Conta, domain.Devolucao{ID: "d1", EndToEndID: e2e, Valor: 1000}); err != nil {
+		if _, err := a.PSP.Devolver(ctx, a.Conta, domain.Devolucao{ID: "d1", EndToEndID: e2e, Valor: 200}); err != nil {
 			t.Fatalf("repetir o mesmo id deveria ser idempotente: %v", err)
 		}
 		if _, err := a.PSP.Devolver(ctx, a.Conta, domain.Devolucao{ID: "d2", EndToEndID: e2e, Valor: c.Valor}); err == nil {
 			t.Fatal("aceitou devolver mais do que o recebido")
 		}
-		if lida, err := a.PSP.ConsultarDevolucao(ctx, a.Conta, e2e, "d1"); err != nil || lida.ID != "d1" || lida.Valor != 1000 || lida.Status == "" {
+		if lida, err := a.PSP.ConsultarDevolucao(ctx, a.Conta, e2e, "d1"); err != nil || lida.ID != "d1" || lida.Valor != 200 || lida.Status == "" {
 			t.Fatalf("consultar devolução: %+v, %v", lida, err)
 		}
 		if _, err := a.PSP.ConsultarDevolucao(ctx, a.Conta, e2e, "inexistente"); !errors.Is(err, ports.ErrNaoEncontrado) {
@@ -434,6 +434,25 @@ func txid(a Alvo, sufixo string) string {
 		rodada = "00000000"
 	}
 	return "conformidade" + rodada + sufixo
+}
+
+// Valores da suíte. A homologação do Efí paga sozinha, em segundos, qualquer
+// cobrança de até R$ 10,00. Por isso a cobrança que precisa continuar ATIVA
+// vale mais que isso, e só os cenários de pagamento usam valorPago. Todos
+// ficam longe dos valores mágicos do sandbox (0,66, 0,99, 1,01, 2,02).
+const valorPago domain.Money = 500
+
+// novaCobPaga e novaCobvPaga são as cobranças que o alvo consegue fazer ser pagas.
+func novaCobPaga(a Alvo, txid string) domain.Cobranca {
+	c := novaCob(a, txid)
+	c.Valor = valorPago
+	return c
+}
+
+func novaCobvPaga(a Alvo, txid string) domain.CobrancaVencimento {
+	c := novaCobv(a, txid)
+	c.Valor = valorPago
+	return c
 }
 
 func novaCobv(a Alvo, txid string) domain.CobrancaVencimento {
