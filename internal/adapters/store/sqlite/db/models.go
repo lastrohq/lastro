@@ -56,13 +56,14 @@ type CobrancasVencimento struct {
 }
 
 type Conta struct {
-	ID          string
-	Nome        string
-	Psp         string
-	ChavePix    string
-	Ambiente    string
-	Ativa       int64
-	Credenciais []byte
+	ID               string
+	Nome             string
+	Psp              string
+	ChavePix         string
+	Ambiente         string
+	Ativa            int64
+	Credenciais      []byte
+	WebhookTokenHash []byte
 }
 
 type Idempotencium struct {
@@ -82,6 +83,18 @@ type Outbox struct {
 	ContaID    string
 	OcorridoEm int64
 	Dados      string
+}
+
+type PixRecebido struct {
+	EndToEndID       string
+	ContaID          string
+	Txid             string
+	Valor            int64
+	Chave            string
+	Horario          int64
+	InfoPagador      string
+	PagadorDocumento sql.NullString
+	PagadorNome      sql.NullString
 }
 
 type Txid struct {

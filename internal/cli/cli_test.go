@@ -143,3 +143,14 @@ func TestAPIKeyCriarListarRevogar(t *testing.T) {
 		t.Fatal("aceitou escopo inventado")
 	}
 }
+
+func TestContaWebhookValidaArgumentos(t *testing.T) {
+	amb, _ := ambiente(t, envComBanco(t))
+	ctx := context.Background()
+	if err := Run(ctx, []string{"conta", "webhook"}, amb); err == nil || !strings.Contains(err.Error(), "use:") {
+		t.Fatalf("sem id: err = %v", err)
+	}
+	if err := Run(ctx, []string{"conta", "webhook", "loja"}, amb); err == nil || !strings.Contains(err.Error(), "https") {
+		t.Fatalf("sem --url-publica: err = %v", err)
+	}
+}

@@ -17,6 +17,8 @@ import (
 type dados struct {
 	contas    map[string]domain.Conta
 	creds     map[string][]byte
+	tokens    map[string][]byte
+	pix       map[string]domain.PixRecebido
 	cobrancas map[string]domain.Cobranca // chave: contaID + "/" + txid
 	ordem     []string                   // chaves de cobrança em ordem de criação
 	cobvs     map[domain.Txid]domain.CobrancaVencimento
@@ -30,6 +32,8 @@ func (d *dados) clonar() *dados {
 	return &dados{
 		contas:    maps.Clone(d.contas),
 		creds:     maps.Clone(d.creds),
+		tokens:    maps.Clone(d.tokens),
+		pix:       maps.Clone(d.pix),
 		cobrancas: maps.Clone(d.cobrancas),
 		ordem:     slices.Clone(d.ordem),
 		cobvs:     maps.Clone(d.cobvs),
@@ -52,7 +56,7 @@ var _ ports.Store = (*Store)(nil)
 
 // NewStore cria um Store vazio.
 func NewStore() *Store {
-	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, cobvs: map[domain.Txid]domain.CobrancaVencimento{}, idem: map[[2]string]domain.RegistroIdempotencia{}}}
+	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, tokens: map[string][]byte{}, pix: map[string]domain.PixRecebido{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, cobvs: map[domain.Txid]domain.CobrancaVencimento{}, idem: map[[2]string]domain.RegistroIdempotencia{}}}
 }
 
 // Eventos devolve o que foi publicado no outbox, para asserções.
@@ -103,6 +107,9 @@ func (s *Store) Idempotencia() ports.IdempotenciaRepo { return idem{s} }
 
 // CobrancasV devolve o repositório de cobranças com vencimento.
 func (s *Store) CobrancasV() ports.CobrancaVRepo { return cobvs{s} }
+
+// Pix devolve o repositório de Pix recebidos.
+func (s *Store) Pix() ports.PixRepo { return pixes{s} }
 
 // Outbox devolve o repositório do outbox.
 func (s *Store) Outbox() ports.OutboxRepo { return outbox{s} }
@@ -183,6 +190,26 @@ func (r contas) BuscarCredenciais(_ context.Context, id string) ([]byte, error) 
 		return nil, fmt.Errorf("credenciais da conta %s: %w", id, ports.ErrNaoEncontrado)
 	}
 	return slices.Clone(c), nil
+}
+
+func (r contas) SalvarTokenWebhook(_ context.Context, id string, hash []byte) error {
+	r.s.lock()
+	defer r.s.unlock()
+	if _, ok := r.s.d.contas[id]; !ok {
+		return fmt.Errorf("conta %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	r.s.d.tokens[id] = slices.Clone(hash)
+	return nil
+}
+
+func (r contas) BuscarTokenWebhook(_ context.Context, id string) ([]byte, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	h, ok := r.s.d.tokens[id]
+	if !ok {
+		return nil, fmt.Errorf("webhook da conta %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	return slices.Clone(h), nil
 }
 
 type cobrancas struct{ s *Store }
@@ -489,4 +516,42 @@ func (r cobvs) Contar(_ context.Context, f ports.FiltroCobrancas) (int, error) {
 	r.s.lock()
 	defer r.s.unlock()
 	return len(r.filtrar(f)), nil
+}
+
+type pixes struct{ s *Store }
+
+func (r pixes) Registrar(_ context.Context, p domain.PixRecebido) (bool, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	if _, ok := r.s.d.pix[p.EndToEndID]; ok {
+		return false, nil
+	}
+	if _, ok := r.s.d.contas[p.ContaID]; !ok {
+		return false, fmt.Errorf("conta %s: %w", p.ContaID, ports.ErrNaoEncontrado)
+	}
+	r.s.d.pix[p.EndToEndID] = p
+	return true, nil
+}
+
+func (r pixes) BuscarPorE2E(_ context.Context, e2e string) (domain.PixRecebido, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	p, ok := r.s.d.pix[e2e]
+	if !ok {
+		return p, fmt.Errorf("pix %s: %w", e2e, ports.ErrNaoEncontrado)
+	}
+	return p, nil
+}
+
+func (r pixes) ListarPorTxid(_ context.Context, txid domain.Txid) ([]domain.PixRecebido, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	var out []domain.PixRecebido
+	for _, p := range r.s.d.pix {
+		if p.Txid == txid {
+			out = append(out, p)
+		}
+	}
+	slices.SortFunc(out, func(a, b domain.PixRecebido) int { return a.Horario.Compare(b.Horario) })
+	return out, nil
 }

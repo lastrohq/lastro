@@ -1,6 +1,10 @@
 package domain
 
-import "time"
+import (
+	"errors"
+	"fmt"
+	"time"
+)
 
 // ExpiracaoPadrao é a validade de uma cob quando o cliente não informa (RN-13).
 const ExpiracaoPadrao = 86400 * time.Second
@@ -50,13 +54,32 @@ func (c *Cobranca) Transitar(para StatusCobranca) error {
 
 // PixRecebido é um pagamento liquidado na conta, identificado pelo endToEndId.
 type PixRecebido struct {
-	EndToEndID string
-	ContaID    string
-	Txid       Txid
-	Valor      Money
-	Horario    time.Time
-	Pagador    *Devedor
+	EndToEndID  string
+	ContaID     string
+	Txid        Txid
+	Valor       Money
+	Chave       string
+	Horario     time.Time
+	InfoPagador string
+	Pagador     *Devedor
 }
+
+// ValidarEndToEndID confere o formato do SPI: 32 caracteres alfanuméricos.
+func ValidarEndToEndID(e2e string) error {
+	if len(e2e) != 32 {
+		return fmt.Errorf("%w: endToEndId deve ter 32 caracteres, tem %d", ErrPixInvalido, len(e2e))
+	}
+	for i := 0; i < len(e2e); i++ {
+		c := e2e[i]
+		if (c < 'a' || c > 'z') && (c < 'A' || c > 'Z') && (c < '0' || c > '9') {
+			return fmt.Errorf("%w: endToEndId com caractere %q", ErrPixInvalido, c)
+		}
+	}
+	return nil
+}
+
+// ErrPixInvalido indica um Pix recebido com dados fora do formato da spec.
+var ErrPixInvalido = errors.New("pix recebido inválido")
 
 // Devolucao é a devolução total ou parcial de um Pix recebido (RN-20, RN-21).
 type Devolucao struct {

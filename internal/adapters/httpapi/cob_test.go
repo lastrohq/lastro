@@ -26,6 +26,8 @@ type api struct {
 	clock *fake.Clock
 	store *fake.Store
 	keys  app.APIKeys
+	// webhooks é o mesmo caso de uso que o roteador usa, para configurar a URL nos testes.
+	webhooks app.Webhooks
 	// token é a API key usada por padrão nas chamadas (todos os escopos, sem restrição).
 	token string
 	t     *testing.T
@@ -45,11 +47,13 @@ func novaAPI(t *testing.T) *api {
 	}
 	registry := psp.NewRegistry(sandbox.New(clock))
 	keys := app.APIKeys{Store: store, Clock: clock}
+	webhooks := app.Webhooks{Store: store, PSPs: registry, Recebimentos: app.Recebimentos{Store: store, Clock: clock}}
 	h := NewRouter(Opcoes{
 		Versao:       "v-test",
 		Cobrancas:    app.Cobrancas{Store: store, PSPs: registry, Clock: clock},
 		CobrancasV:   app.CobrancasV{Store: store, PSPs: registry, Clock: clock},
 		Contas:       app.Contas{Store: store, Vault: v, PSPs: registry},
+		Webhooks:     webhooks,
 		APIKeys:      keys,
 		Idempotencia: app.Idempotencia{Store: store, Clock: clock},
 		Clock:        clock,
@@ -59,7 +63,7 @@ func novaAPI(t *testing.T) *api {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &api{h: h, r: r, clock: clock, store: store, keys: keys, token: token, t: t}
+	return &api{h: h, r: r, clock: clock, store: store, keys: keys, webhooks: webhooks, token: token, t: t}
 }
 
 // novoToken cria uma API key com os escopos e a conta dados.

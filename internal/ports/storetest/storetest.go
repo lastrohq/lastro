@@ -351,6 +351,52 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 	})
 
+	t.Run("pix: registra uma vez só por endToEndId e lista por txid", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		p := domain.PixRecebido{EndToEndID: "E12345678202610291200abcdefghijk", ContaID: "c1", Txid: "txid00000000000000000000001",
+			Valor: 4990, Chave: "c1@example.com", Horario: base.Add(time.Minute), InfoPagador: "obrigado"}
+		novo1, err := s.Pix().Registrar(ctx, p)
+		if err != nil || !novo1 {
+			t.Fatalf("primeiro registro: novo=%v err=%v", novo1, err)
+		}
+		dup := p
+		dup.Valor = 1
+		novo2, err := s.Pix().Registrar(ctx, dup)
+		if err != nil || novo2 {
+			t.Fatalf("repetido: novo=%v err=%v", novo2, err)
+		}
+		got, err := s.Pix().BuscarPorE2E(ctx, p.EndToEndID)
+		if err != nil || got.Valor != 4990 || got.Txid != p.Txid || !got.Horario.Equal(p.Horario) || got.InfoPagador != "obrigado" || got.Chave != p.Chave {
+			t.Fatalf("BuscarPorE2E = %+v, %v", got, err)
+		}
+		cedo := p
+		cedo.EndToEndID, cedo.Horario = "E12345678202610291100abcdefghijk", base
+		_, _ = s.Pix().Registrar(ctx, cedo)
+		lista, err := s.Pix().ListarPorTxid(ctx, p.Txid)
+		if err != nil || len(lista) != 2 || lista[0].EndToEndID != cedo.EndToEndID {
+			t.Fatalf("ListarPorTxid = %+v, %v", lista, err)
+		}
+		if _, err := s.Pix().BuscarPorE2E(ctx, "Enadanadanadanadanadanadanadanad"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("inexistente: err = %v", err)
+		}
+	})
+
+	t.Run("conta: token de webhook", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		if _, err := s.Contas().BuscarTokenWebhook(ctx, "c1"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("sem token: err = %v", err)
+		}
+		if err := s.Contas().SalvarTokenWebhook(ctx, "c1", []byte{7, 7}); err != nil {
+			t.Fatal(err)
+		}
+		if h, err := s.Contas().BuscarTokenWebhook(ctx, "c1"); err != nil || string(h) != string([]byte{7, 7}) {
+			t.Fatalf("BuscarTokenWebhook = %v, %v", h, err)
+		}
+		if err := s.Contas().SalvarTokenWebhook(ctx, "nada", []byte{1}); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("conta inexistente: err = %v", err)
+		}
+	})
+
 	t.Run("transação: erro desfaz tudo, sucesso grava tudo", func(t *testing.T) {
 		s, ctx := comContas(t, novo), context.Background()
 		falha := errors.New("falhou no meio")

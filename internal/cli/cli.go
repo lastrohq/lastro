@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"text/tabwriter"
 	"time"
 
@@ -39,6 +40,8 @@ const uso = `uso: lastro <comando>
   conta criar  [flags]           cadastra uma conta recebedora
   conta listar                   lista as contas
   conta desativar <id>           impede novas cobranças na conta
+  conta webhook <id> --url-publica https://...
+                                 gera a URL de aviso de Pix e registra no banco
   apikey criar --nome N --escopo E [--escopo E...] [--conta ID]
                                  cria uma API key (o token aparece uma vez só)
   apikey listar                  lista as API keys
@@ -126,6 +129,23 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%v\n", c.ID, c.Nome, c.PSP, c.ChavePix, c.Ambiente, c.Ativa)
 		}
 		return tw.Flush()
+	case "webhook":
+		fs := flag.NewFlagSet("conta webhook", flag.ContinueOnError)
+		fs.SetOutput(amb.Saida)
+		urlPublica := fs.String("url-publica", "", "endereço público deste Lastro (https://lastro.suaempresa.com)")
+		if len(args) < 2 || strings.HasPrefix(args[1], "-") {
+			return errors.New("use: lastro conta webhook <id> --url-publica URL")
+		}
+		if err := fs.Parse(args[2:]); err != nil {
+			return err
+		}
+		wh := app.Webhooks{Store: contas.Store, PSPs: amb.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock}}
+		endereco, err := wh.Configurar(ctx, args[1], *urlPublica)
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintf(amb.Saida, "webhook da conta %s registrado no PSP:\n\n  %s\n\nO token faz parte da URL: trate a URL como segredo. Rodar de novo troca o token.\n", args[1], endereco)
+		return err
 	case "desativar":
 		if len(args) != 2 {
 			return errors.New("use: lastro conta desativar <id>")
@@ -214,6 +234,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 			Cobrancas:    app.Cobrancas{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
 			CobrancasV:   app.CobrancasV{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
 			Contas:       contas,
+			Webhooks:     app.Webhooks{Store: store, PSPs: amb.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock}},
 			APIKeys:      app.APIKeys{Store: store, Clock: amb.Clock},
 			Idempotencia: app.Idempotencia{Store: store, Clock: amb.Clock},
 			Clock:        amb.Clock,

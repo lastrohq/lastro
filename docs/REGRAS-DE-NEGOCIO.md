@@ -194,11 +194,27 @@ release com nota.
 
 ### RN-30 · Entrada (banco → Lastro)
 
-- Só é aceito webhook de origem configurada para a conta: mTLS (quando o banco
-  exige, como o Efí) ou segredo na URL/header.
+- A URL de aviso é **por conta**, com um token secreto:
+  `https://<seu-lastro>/webhooks/pix/{conta}/{token}`. Ela é gerada por
+  `lastro conta webhook <id> --url-publica https://...`, que também a registra no
+  PSP. Só o hash do token é gravado; rodar de novo troca o token (e o antigo para
+  de valer). O token faz parte da URL: trate a URL como segredo.
+- A spec do BCB manda o banco acrescentar `/pix` à URL: os dois caminhos são aceitos.
+- A rota não exige API key (quem chama é o banco). Token ausente, errado ou fora
+  do formato responde **401**, sem dizer qual dos três.
+- O corpo é interpretado pelo **adapter da conta**: quem segue a spec usa o
+  formato padrão (`{"pix": [...]}`), quem desvia trata o desvio no adapter. Um
+  item inválido recusa o lote inteiro (**400**): melhor o banco reenviar que
+  perder um Pix em silêncio.
 - O evento é **persistido antes** de responder 200. Se a persistência falhar, o
   Lastro responde 5xx e deixa o banco reenviar.
-- Deduplicação por `endToEndId`: o mesmo Pix avisado duas vezes gera um evento só.
+- Deduplicação por `endToEndId`: o mesmo Pix avisado duas vezes gera um registro
+  e um evento só.
+- Pix com `txid` de uma cob ou cobv **ativa da mesma conta** conclui a cobrança
+  na mesma transação. O banco é a fonte da verdade: valor diferente do cobrado
+  ainda conclui, mas o evento `pix.recebido` sai com `divergente: true`. Pix sem
+  txid, ou com txid de outra conta, é registrado sem concluir nada.
+- Corpo acima de 1 MiB é recusado em qualquer rota.
 
 ### RN-31 · Conciliação
 

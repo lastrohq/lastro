@@ -32,7 +32,11 @@ func (s *Server) ConsultarCob(ctx context.Context, r gen.ConsultarCobRequestObje
 	if err != nil {
 		return nil, err
 	}
-	return gen.ConsultarCob200JSONResponse(s.cobCompleta(c)), nil
+	out := s.cobCompleta(c)
+	if out.Pix, err = s.pixDaCobranca(ctx, c.ContaID, c.Txid); err != nil {
+		return nil, err
+	}
+	return gen.ConsultarCob200JSONResponse(out), nil
 }
 
 // RevisarCob aplica um PATCH na cob.
@@ -146,8 +150,20 @@ func (s *Server) cobGerada(c domain.Cobranca) gen.CobGerada {
 	return g
 }
 
-// cobCompleta é a cobGerada mais a lista de Pix recebidos, que chega com a
-// conciliação (F4); até lá a lista fica ausente.
+// pixDaCobranca monta a lista "pix" da CobCompleta e da CobVCompleta.
+func (s *Server) pixDaCobranca(ctx context.Context, contaID string, txid domain.Txid) (*[]gen.Pix, error) {
+	pixes, err := s.webhooks.Recebimentos.DaCobranca(ctx, contaID, txid)
+	if err != nil || len(pixes) == 0 {
+		return nil, err
+	}
+	out := make([]gen.Pix, len(pixes))
+	for i, p := range pixes {
+		out[i] = gen.Pix{EndToEndId: p.EndToEndID, Txid: ptr(string(p.Txid)), Valor: p.Valor.String(), Horario: p.Horario, Chave: vazioNil(p.Chave), InfoPagador: vazioNil(p.InfoPagador)}
+	}
+	return &out, nil
+}
+
+// cobCompleta é a cobGerada; a lista de Pix é preenchida só na consulta individual.
 func (s *Server) cobCompleta(c domain.Cobranca) gen.CobCompleta {
 	g := s.cobGerada(c)
 	return gen.CobCompleta{
