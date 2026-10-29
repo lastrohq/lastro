@@ -96,6 +96,7 @@ do Banco do Brasil são os próximos do board.
 - **Devoluções** — total ou parcial, nunca mais do que foi recebido.
 - **Sandbox com estado** — teste o fluxo inteiro sem conta PJ.
 - **Binário único** — `docker run` e pronto; SQLite por padrão.
+- **Painel** — `/painel/`: quanto entrou, cobranças ativas, quanto um gateway teria cobrado e cada cobrança com o QR Code. Entre com uma API key.
 - **Use com seu agente** — servidor MCP embutido (`lastro mcp`).
 
 ## Bancos

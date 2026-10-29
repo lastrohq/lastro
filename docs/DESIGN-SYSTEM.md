@@ -22,14 +22,16 @@ nunca usa cor literal.
 | `--border` | `#E2E8F0` | `#1E293B` | Divisórias |
 | `--text` | `#0F172A` | `#F1F5F9` | Texto principal |
 | `--text-muted` | `#475569` | `#94A3B8` | Texto secundário |
-| `--brand` | `#B8860B` | `#D4A017` | Ouro: logo, foco, link |
-| `--success` | `#059669` | `#10B981` | Pago, concluído, devolvido |
+| `--brand` | `#946C08` | `#D4A017` | Ouro: logo, foco, link |
+| `--success` | `#047857` | `#10B981` | Pago, concluído, devolvido |
 | `--warning` | `#B45309` | `#F59E0B` | Ativa, pendente, em processamento |
 | `--danger` | `#DC2626` | `#F87171` | Falha, DLQ, removida, rejeitada |
 | `--info` | `#2563EB` | `#60A5FA` | Recorrência, informativo |
 
-Todas as combinações texto/fundo passam **WCAG AA** (4,5:1). O par
-ouro-sobre-branco usa `#B8860B`, não `#D4A017`, justamente por isso.
+Todas as cores de texto passam **WCAG AA** (4,5:1) sobre `--bg` e `--surface`,
+nos dois temas, e `web/test/contraste.test.ts` confere isso a cada build. No tema
+claro, o ouro é `#946C08` e o verde é `#047857`: os tons anteriores (`#B8860B`,
+3,25:1, e `#059669`, 3,77:1) não passavam, e o teste é que mostrou.
 
 ### Tipografia
 

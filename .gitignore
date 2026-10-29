@@ -12,7 +12,7 @@
 !.env.example
 coverage.out
 node_modules/
-web/dist/
+web/dist/painel/
 .idea/
 .vscode/
 /dist/

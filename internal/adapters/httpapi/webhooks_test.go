@@ -76,3 +76,26 @@ func TestCorpoAcimaDe1MiBERecusado(t *testing.T) {
 		t.Fatalf("corpo de 1 MiB+: status %d", rec.Code)
 	}
 }
+
+// A lista (GET /cob) traz os Pix de cada cobrança paga, como a consulta: na
+// spec, os itens são cobranças completas. O painel soma o recebido por aqui.
+func TestListaTrazOsPixDaCobrancaPaga(t *testing.T) {
+	a := novaAPI(t)
+	caminho := a.configurarWebhook()
+	a.chamar(http.MethodPut, "/cob/"+txid, corpoCob, nil, nil)
+	a.chamar(http.MethodPut, "/cob/outra000000000000000000000001", corpoCob, nil, nil)
+	if st := a.chamar(http.MethodPost, caminho, corpoWebhook(txid, "123.45"), map[string]string{"Authorization": ""}, nil); st != http.StatusOK {
+		t.Fatalf("webhook: %d", st)
+	}
+	var lista gen.CobsConsultadas
+	a.chamar(http.MethodGet, "/cob?inicio=2026-10-29T00:00:00Z&fim=2026-10-30T00:00:00Z", "", nil, &lista)
+	pix := map[string]int{}
+	for _, c := range lista.Cobs {
+		if c.Pix != nil {
+			pix[c.Txid] = len(*c.Pix)
+		}
+	}
+	if len(lista.Cobs) != 2 || pix[txid] != 1 || pix["outra000000000000000000000001"] != 0 {
+		t.Fatalf("pix por cobrança na lista: %v", pix)
+	}
+}
