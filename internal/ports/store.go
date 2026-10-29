@@ -22,6 +22,7 @@ type Store interface {
 	Cobrancas() CobrancaRepo
 	Outbox() OutboxRepo
 	APIKeys() APIKeyRepo
+	Idempotencia() IdempotenciaRepo
 	// WithTx executa fn numa transação: erro em fn desfaz tudo.
 	WithTx(ctx context.Context, fn func(Store) error) error
 }
@@ -84,4 +85,14 @@ type APIKeyRepo interface {
 	Listar(ctx context.Context) ([]domain.APIKey, error)
 	// Revogar marca a chave como revogada em quando; revogar de novo não muda a data.
 	Revogar(ctx context.Context, id string, quando time.Time) error
+}
+
+// IdempotenciaRepo guarda as respostas por (dono, chave) para o Idempotency-Key (RN-11).
+type IdempotenciaRepo interface {
+	// Buscar devolve o registro, ou ErrNaoEncontrado.
+	Buscar(ctx context.Context, dono, chave string) (domain.RegistroIdempotencia, error)
+	// Salvar grava ou substitui o registro de (dono, chave).
+	Salvar(ctx context.Context, r domain.RegistroIdempotencia) error
+	// Remover apaga o registro; apagar o que não existe não é erro.
+	Remover(ctx context.Context, dono, chave string) error
 }

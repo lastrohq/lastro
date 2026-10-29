@@ -46,6 +46,16 @@ type Conta struct {
 	Credenciais []byte
 }
 
+type Idempotencium struct {
+	Dono        string
+	Chave       string
+	Hash        []byte
+	Status      int64
+	ContentType string
+	Corpo       []byte
+	CriadaEm    int64
+}
+
 type Outbox struct {
 	Seq        int64
 	ID         string

@@ -21,6 +21,7 @@ type dados struct {
 	ordem     []string                   // chaves de cobrança em ordem de criação
 	outbox    []domain.Evento
 	apikeys   map[string]domain.APIKey
+	idem      map[[2]string]domain.RegistroIdempotencia
 }
 
 func (d *dados) clonar() *dados {
@@ -31,6 +32,7 @@ func (d *dados) clonar() *dados {
 		ordem:     slices.Clone(d.ordem),
 		outbox:    slices.Clone(d.outbox),
 		apikeys:   maps.Clone(d.apikeys),
+		idem:      maps.Clone(d.idem),
 	}
 }
 
@@ -46,7 +48,7 @@ var _ ports.Store = (*Store)(nil)
 
 // NewStore cria um Store vazio.
 func NewStore() *Store {
-	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}}}
+	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, idem: map[[2]string]domain.RegistroIdempotencia{}}}
 }
 
 // Eventos devolve o que foi publicado no outbox, para asserções.
@@ -91,6 +93,9 @@ func (s *Store) Cobrancas() ports.CobrancaRepo { return cobrancas{s} }
 
 // APIKeys devolve o repositório de API keys.
 func (s *Store) APIKeys() ports.APIKeyRepo { return apikeys{s} }
+
+// Idempotencia devolve o repositório do Idempotency-Key.
+func (s *Store) Idempotencia() ports.IdempotenciaRepo { return idem{s} }
 
 // Outbox devolve o repositório do outbox.
 func (s *Store) Outbox() ports.OutboxRepo { return outbox{s} }
@@ -350,5 +355,32 @@ func (r apikeys) Revogar(_ context.Context, id string, quando time.Time) error {
 		k.RevogadaEm = &quando
 		r.s.d.apikeys[id] = k
 	}
+	return nil
+}
+
+type idem struct{ s *Store }
+
+func (r idem) Buscar(_ context.Context, dono, chave string) (domain.RegistroIdempotencia, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	reg, ok := r.s.d.idem[[2]string{dono, chave}]
+	if !ok {
+		return reg, fmt.Errorf("idempotência %s: %w", chave, ports.ErrNaoEncontrado)
+	}
+	return reg, nil
+}
+
+func (r idem) Salvar(_ context.Context, reg domain.RegistroIdempotencia) error {
+	r.s.lock()
+	defer r.s.unlock()
+	reg.Hash, reg.Corpo = slices.Clone(reg.Hash), slices.Clone(reg.Corpo)
+	r.s.d.idem[[2]string{reg.Dono, reg.Chave}] = reg
+	return nil
+}
+
+func (r idem) Remover(_ context.Context, dono, chave string) error {
+	r.s.lock()
+	defer r.s.unlock()
+	delete(r.s.d.idem, [2]string{dono, chave})
 	return nil
 }

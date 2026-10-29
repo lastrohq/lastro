@@ -46,11 +46,12 @@ func novaAPI(t *testing.T) *api {
 	registry := psp.NewRegistry(sandbox.New(clock))
 	keys := app.APIKeys{Store: store, Clock: clock}
 	h := NewRouter(Opcoes{
-		Versao:    "v-test",
-		Cobrancas: app.Cobrancas{Store: store, PSPs: registry, Clock: clock},
-		Contas:    app.Contas{Store: store, Vault: v, PSPs: registry},
-		APIKeys:   keys,
-		Clock:     clock,
+		Versao:       "v-test",
+		Cobrancas:    app.Cobrancas{Store: store, PSPs: registry, Clock: clock},
+		Contas:       app.Contas{Store: store, Vault: v, PSPs: registry},
+		APIKeys:      keys,
+		Idempotencia: app.Idempotencia{Store: store, Clock: clock},
+		Clock:        clock,
 	})
 	_, r := carregarContrato(t)
 	_, token, err := keys.Criar(context.Background(), "testes", domain.TodosEscopos, "")

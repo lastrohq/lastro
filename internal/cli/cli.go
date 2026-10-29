@@ -210,11 +210,12 @@ func serve(ctx context.Context, amb Ambiente) error {
 	srv := &http.Server{
 		Addr: addr,
 		Handler: httpapi.NewRouter(httpapi.Opcoes{
-			Versao:    amb.Versao,
-			Cobrancas: app.Cobrancas{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
-			Contas:    contas,
-			APIKeys:   app.APIKeys{Store: store, Clock: amb.Clock},
-			Clock:     amb.Clock,
+			Versao:       amb.Versao,
+			Cobrancas:    app.Cobrancas{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
+			Contas:       contas,
+			APIKeys:      app.APIKeys{Store: store, Clock: amb.Clock},
+			Idempotencia: app.Idempotencia{Store: store, Clock: amb.Clock},
+			Clock:        amb.Clock,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		BaseContext:       func(net.Listener) context.Context { return ctx },
