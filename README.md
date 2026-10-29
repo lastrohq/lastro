@@ -10,7 +10,7 @@ handles the mTLS certificates and normalizes webhooks.
 
 <img src="docs/demo/sandbox.gif" alt="lastro sandbox: a Pix charge is created and paid in a few seconds" width="820">
 
-[Português](./README.pt-BR.md) · [Docs](./docs) · [Roadmap](https://github.com/orgs/lastrohq/projects/1)
+[Português](./README.pt-BR.md) · [Docs](https://lastrohq.github.io/lastro/) · [Roadmap](https://github.com/orgs/lastrohq/projects/1)
 
 </div>
 

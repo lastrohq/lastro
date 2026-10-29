@@ -1,0 +1,34 @@
+---
+title: Lastro
+description: Gateway Pix self-hosted e multi-banco. Sua conta, sua infraestrutura, nenhuma taxa de intermediário.
+template: splash
+hero:
+  tagline: Gateway Pix self-hosted e multi-banco. Sua conta no banco, sua infraestrutura, nenhuma taxa de intermediário.
+  actions:
+    - text: Do zero ao Pix pago
+      link: /lastro/comecar/quickstart/
+      icon: right-arrow
+    - text: GitHub
+      link: https://github.com/lastrohq/lastro
+      icon: github
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+![lastro sandbox: uma cobrança Pix é criada e paga em poucos segundos](https://raw.githubusercontent.com/lastrohq/lastro/develop/docs/demo/sandbox.gif)
+
+<CardGrid>
+  <Card title="Uma API, vários bancos" icon="random">
+    Sua aplicação fala a API Pix do Banco Central uma vez; o Lastro traduz para cada banco, cuida do mTLS e normaliza os webhooks.
+  </Card>
+  <Card title="Sandbox com estado" icon="rocket">
+    `lastro sandbox` sobe tudo pronto: cobrança paga em segundos, valores mágicos para testar erro, sem conta PJ.
+  </Card>
+  <Card title="Webhook que não se perde" icon="approve-check">
+    Assinado no padrão Standard Webhooks, com retry por 24 h, DLQ com reenvio e conciliação que recupera o Pix cujo aviso sumiu.
+  </Card>
+  <Card title="Para o seu agente" icon="puzzle">
+    `lastro mcp` dá ao Claude Code (e a qualquer cliente MCP) ferramentas para cobrar, consultar e devolver, com os escopos da API key.
+  </Card>
+</CardGrid>
