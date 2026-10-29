@@ -34,6 +34,53 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 29/10/2026 (noite) — v0.6.0: Pix Automático completo, devoluções e o primeiro banco de verdade respondendo
+
+A cobrança recorrente fechou a F6 e as devoluções abriram a F7, as duas no
+sandbox. A suíte de conformidade ganhou fitas gravadas na homologação real do
+Efí, e a gravação achou três desvios que o servidor falso escondia. O sandbox
+passou a subir com um comando.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#32](https://github.com/lastrohq/lastro/issues/32) | Cobrar automaticamente as parcelas de uma recorrência aprovada | Core | G | Alta | [#100](https://github.com/lastrohq/lastro/pull/100) `88afe10`, [#101](https://github.com/lastrohq/lastro/pull/101) `2c0cc2f`, [#102](https://github.com/lastrohq/lastro/pull/102) `5daa183`, [#103](https://github.com/lastrohq/lastro/pull/103) `ef75558` | [v0.6.0](https://github.com/lastrohq/lastro/releases/tag/v0.6.0) · [#111](https://github.com/lastrohq/lastro/pull/111) `ba6ad2c` | 29/10 17:07 |
+| [#33](https://github.com/lastrohq/lastro/issues/33) | Devolver um Pix total ou parcialmente sem passar do valor recebido | Core | M | Média | [#104](https://github.com/lastrohq/lastro/pull/104) `e526e19`, [#105](https://github.com/lastrohq/lastro/pull/105) `f41dce4`, [#106](https://github.com/lastrohq/lastro/pull/106) `82f8067` | [v0.6.0](https://github.com/lastrohq/lastro/releases/tag/v0.6.0) · [#111](https://github.com/lastrohq/lastro/pull/111) `ba6ad2c` | 29/10 17:41 |
+| [#21](https://github.com/lastrohq/lastro/issues/21) | Todo adapter passa pela mesma suíte de conformidade | Adapters PSP | G | Alta | [#108](https://github.com/lastrohq/lastro/pull/108) `14cdf3e` | [v0.6.0](https://github.com/lastrohq/lastro/releases/tag/v0.6.0) · [#111](https://github.com/lastrohq/lastro/pull/111) `ba6ad2c` | 29/10 18:46 |
+
+> **Também no release, sem fechar issue:** o `lastro sandbox` da [#20](https://github.com/lastrohq/lastro/issues/20)
+> ([#107](https://github.com/lastrohq/lastro/pull/107) `d965f7c`), as fitas de pagamento e devolução do Efí da [#27](https://github.com/lastrohq/lastro/issues/27)
+> ([#109](https://github.com/lastrohq/lastro/pull/109) `f709a32`) e a leva do v0.5.0 ([#110](https://github.com/lastrohq/lastro/pull/110) `0b45367`).
+>
+> Release [v0.6.0](https://github.com/lastrohq/lastro/releases/tag/v0.6.0) com 6 binários e checksums; o binário
+> linux/amd64 foi conferido contra o `checksums.txt`, respondeu `0.6.0`, e o `lastro sandbox` dele levou uma
+> cobrança a `CONCLUIDA`.
+>
+> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/lastrohq/lastro/issues/98)).
+
+### A homologação contou o que a documentação não contava
+
+A gravação contra o Efí real achou: `PUT /v2/cobv/{txid}` com txid existente
+**sobrescreve** a cobrança em silêncio (o adapter passou a consultar antes), a
+location da cobv só vem em `loc.location`, e devolução inexistente responde 400
+em vez de 404. O servidor falso passou a imitar os três, para a suíte local
+pegar uma regressão. A primeira gravação também trouxe nome, CPF e endereço do
+dono da conta no campo `recebedor`; a auditoria pegou antes do commit, e a fita
+passou a mascarar recebedor e pagador por padrão.
+
+### "0% fees" saiu do README
+
+A pesquisa de taxas para o README mostrou que a Efí Empresas cobra 1,19% por Pix
+pela API, a mesma taxa da Stripe. O título deixou de prometer taxa zero e passou
+a dizer o que é verdade: o Lastro não soma nada à tarifa do banco.
+
+### Ficou aberto
+
+- [#20](https://github.com/lastrohq/lastro/issues/20) — GIF do README (fechou depois, no v0.7.0).
+- [#27](https://github.com/lastrohq/lastro/issues/27) — cadastro do webhook do Efí, que pede URL pública.
+- [#98](https://github.com/lastrohq/lastro/issues/98) — imagem pública no ghcr.io.
+
+---
+
 ## Leva de 29/10/2026 (fim da tarde) — v0.5.0: Pix Automático de ponta a ponta, por enquanto no sandbox
 
 A F6 começou: recorrência criada, pedido de autorização ao pagador, aviso de
