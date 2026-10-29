@@ -101,5 +101,17 @@ func runRecorrencias(t *testing.T, novo func(t *testing.T) ports.Store) {
 		if err := s.Solicitacoes().AtualizarStatus(ctx, "SC1234567820261029abcDEF99999", domain.SolicitacaoEnviada); !errors.Is(err, ports.ErrNaoEncontrado) {
 			t.Fatalf("inexistente: %v", err)
 		}
+		segunda := sol
+		segunda.ID, segunda.CriadaEm = "SC1234567820261029abcDEF00003", base.Add(time.Hour)
+		if err := s.Solicitacoes().Criar(ctx, segunda); err != nil {
+			t.Fatal(err)
+		}
+		lista, err := s.Solicitacoes().DaRecorrencia(ctx, r.ID)
+		if err != nil || len(lista) != 2 || lista[0].ID != sol.ID || lista[1].ID != segunda.ID {
+			t.Fatalf("DaRecorrencia = %+v, %v", lista, err)
+		}
+		if vazia, err := s.Solicitacoes().DaRecorrencia(ctx, "RR1234567820261029abcDEF99999"); err != nil || len(vazia) != 0 {
+			t.Fatalf("de recorrência sem solicitação: %+v, %v", vazia, err)
+		}
 	})
 }

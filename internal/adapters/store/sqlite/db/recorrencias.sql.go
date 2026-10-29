@@ -192,3 +192,41 @@ func (q *Queries) ExisteRecorrencia(ctx context.Context, id string) (int64, erro
 	err := row.Scan(&count)
 	return count, err
 }
+
+const solicitacoesDaRecorrencia = `-- name: SolicitacoesDaRecorrencia :many
+SELECT id, recorrencia_id, conta_id, status, ispb, agencia, conta, expira_em, criada_em
+FROM solicitacoes_recorrencia WHERE recorrencia_id = ? ORDER BY criada_em, id
+`
+
+func (q *Queries) SolicitacoesDaRecorrencia(ctx context.Context, recorrenciaID string) ([]SolicitacoesRecorrencium, error) {
+	rows, err := q.db.QueryContext(ctx, solicitacoesDaRecorrencia, recorrenciaID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []SolicitacoesRecorrencium
+	for rows.Next() {
+		var i SolicitacoesRecorrencium
+		if err := rows.Scan(
+			&i.ID,
+			&i.RecorrenciaID,
+			&i.ContaID,
+			&i.Status,
+			&i.Ispb,
+			&i.Agencia,
+			&i.Conta,
+			&i.ExpiraEm,
+			&i.CriadaEm,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

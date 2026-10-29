@@ -182,7 +182,16 @@ CRIADA ──▶ APROVADA ──▶ CANCELADA
   ela que identifica o recebedor, como a credencial do cliente na spec do BCB;
   key irrestrita responde 400. Consultar e pedir confirmação seguem a RN-60:
   recorrência de outra conta responde 404.
-- Rejeição pelo pagador vem com motivo; o Lastro guarda o motivo.
+- Rejeição pelo pagador vem com motivo; o Lastro guarda o motivo (código e
+  descrição do encerramento).
+- **Mudanças chegam pelo webhook de recorrência** (`/webhooks/rec/{conta}/{token}`,
+  com ou sem o `/rec` que a spec manda acrescentar), registrado por
+  `lastro conta webhook` com o mesmo token do aviso de Pix. Cada mudança grava a
+  recorrência, encerra as solicitações pendentes dela (RN-41) e publica
+  `recorrencia.atualizada`, numa transação só. Aviso repetido não muda nada;
+  aviso fora da RN-40 (uma volta de `APROVADA` para `CRIADA`, por exemplo) é
+  ignorado com registro no log; recorrência desconhecida é ignorada, para o banco
+  não reenviar para sempre.
 - A autorização é dada por uma de quatro **jornadas** do BCB: (1) notificação no
   app do pagador, sem QR Code (`/solicrec`); (2) QR Code só com a recorrência;
   (3) QR Code com primeiro pagamento imediato e recorrência; (4) QR Code de fatura

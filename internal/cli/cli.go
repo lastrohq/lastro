@@ -179,7 +179,8 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 		if err := fs.Parse(args[2:]); err != nil {
 			return err
 		}
-		wh := app.Webhooks{Store: contas.Store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock}}
+		wh := app.Webhooks{Store: contas.Store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock},
+			Recorrencias: app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}}
 		endereco, err := wh.Configurar(ctx, args[1], *urlPublica)
 		if err != nil {
 			return err
@@ -347,11 +348,12 @@ func serve(ctx context.Context, amb Ambiente) error {
 	srv := &http.Server{
 		Addr: addr,
 		Handler: httpapi.NewRouter(httpapi.Opcoes{
-			Versao:       amb.Versao,
-			Cobrancas:    app.Cobrancas{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			CobrancasV:   app.CobrancasV{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			Contas:       contas,
-			Webhooks:     app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock}},
+			Versao:     amb.Versao,
+			Cobrancas:  app.Cobrancas{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			CobrancasV: app.CobrancasV{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			Contas:     contas,
+			Webhooks: app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock},
+				Recorrencias: app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}},
 			Recorrencias: app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			APIKeys:      app.APIKeys{Store: store, Clock: amb.Clock},
 			Idempotencia: app.Idempotencia{Store: store, Clock: amb.Clock},
