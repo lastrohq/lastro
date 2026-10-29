@@ -372,6 +372,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 		Devolucoes:           app.Devolucoes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 		APIKeys:              app.APIKeys{Store: store, Clock: amb.Clock},
 		Idempotencia:         app.Idempotencia{Store: store, Clock: amb.Clock},
+		Saida:                saida,
 		Clock:                amb.Clock,
 	}))
 	srv := &http.Server{

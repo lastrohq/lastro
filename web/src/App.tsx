@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { sessao } from "./api";
 import { Button } from "./componentes/Button";
 import { CobrancaDetalhe, Cobrancas } from "./telas/Cobrancas";
+import { Contas } from "./telas/Contas";
 import { Login } from "./telas/Login";
 import { VisaoGeral } from "./telas/VisaoGeral";
+import { Webhooks } from "./telas/Webhooks";
 
 const rotaAtual = () => location.hash.replace(/^#/, "") || "/";
 
@@ -23,6 +25,8 @@ export function App() {
   const menu = [
     { rota: "/", rotulo: "Visão geral" },
     { rota: "/cobrancas", rotulo: "Cobranças" },
+    { rota: "/webhooks", rotulo: "Webhooks" },
+    { rota: "/contas", rotulo: "Contas" },
   ];
   return (
     <div style={{ display: "grid", gridTemplateColumns: "220px minmax(0, 1fr)", minHeight: "100vh" }}>
@@ -42,7 +46,11 @@ export function App() {
         </div>
       </nav>
       <main id="conteudo" style={{ padding: "var(--space-8)", maxWidth: 1100 }}>
-        {detalhe ? <CobrancaDetalhe txid={detalhe[1]!} ir={ir} /> : rota.startsWith("/cobrancas") ? <Cobrancas ir={ir} /> : <VisaoGeral />}
+        {detalhe ? <CobrancaDetalhe txid={detalhe[1]!} ir={ir} />
+          : rota.startsWith("/cobrancas") ? <Cobrancas ir={ir} />
+          : rota.startsWith("/webhooks") ? <Webhooks />
+          : rota.startsWith("/contas") ? <Contas />
+          : <VisaoGeral ir={ir} />}
       </main>
     </div>
   );
