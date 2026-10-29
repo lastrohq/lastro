@@ -1,0 +1,77 @@
+name: ✨ Funcionalidade
+description: Algo novo que quem usa o Lastro vai conseguir fazer
+labels: ["tipo:feature"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Descreva pelo **resultado para quem usa**, não pela tarefa técnica.
+        Antes de puxar para a sprint, confira a [Definition of Ready](https://github.com/lastrohq/lastro/blob/develop/docs/EQUIPE.md#-definition-of-ready).
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qual o problema?
+      description: O que hoje é ruim, manual ou impossível. Sem falar de solução ainda.
+      placeholder: Hoje quem recebe Pix pelo Inter não sabe se o webhook se perdeu até o cliente reclamar.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposta
+    attributes:
+      label: O que a gente quer fazer
+      description: A solução proposta, em uma ou duas frases.
+    validations:
+      required: true
+
+  - type: textarea
+    id: aceite
+    attributes:
+      label: Critérios de aceite
+      description: Cada linha precisa dar para responder sim ou não.
+      value: |
+        - [ ]
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área principal
+      options:
+        - Core
+        - Adapters PSP
+        - API
+        - Painel
+        - Design
+        - DX/Docs
+        - Infra/CI
+        - Segurança
+        - Comunidade/Marketing
+        - Estudo
+    validations:
+      required: true
+
+  - type: dropdown
+    id: estimativa
+    attributes:
+      label: Estimativa
+      description: "P: até meio dia · M: 1–2 dias · G: 3+ dias · GG: precisa ser quebrada"
+      options:
+        - P
+        - M
+        - G
+        - GG
+    validations:
+      required: false
+
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto extra
+      description: Trecho da spec do BCB, link da doc do banco, issue relacionada. Opcional.
+    validations:
+      required: false

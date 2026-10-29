@@ -1,0 +1,14 @@
+# CODEOWNERS — quem o GitHub chama automaticamente para revisar o quê.
+# Só entra o que é permanente. Aprovação obrigatória é zero: quem trava o merge é o CI.
+
+*                              @mateus-vitor-ferreira-dev
+
+# Regras de negócio e processo: mudança aqui muda o contrato com quem usa
+docs/REGRAS-DE-NEGOCIO.md      @mateus-vitor-ferreira-dev
+docs/EQUIPE.md                 @mateus-vitor-ferreira-dev
+
+# Segredos e criptografia
+internal/platform/             @mateus-vitor-ferreira-dev
+
+# CI: quebra aqui para todo mundo ao mesmo tempo
+.github/workflows/             @mateus-vitor-ferreira-dev

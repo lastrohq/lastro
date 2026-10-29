@@ -1,0 +1,59 @@
+name: 🔧 Tarefa técnica
+description: Refactor, teste, documentação, CI, infra — coisas que quem usa não vê
+labels: ["tipo:tecnica"]
+body:
+  - type: textarea
+    id: oque
+    attributes:
+      label: O que precisa ser feito
+    validations:
+      required: true
+
+  - type: textarea
+    id: porque
+    attributes:
+      label: Por que isso importa
+      description: Qual dor evita ou qual risco reduz. Se não der para responder, provavelmente não é prioridade.
+    validations:
+      required: true
+
+  - type: textarea
+    id: aceite
+    attributes:
+      label: Como saber que acabou
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área principal
+      options:
+        - Core
+        - Adapters PSP
+        - API
+        - Painel
+        - Design
+        - DX/Docs
+        - Infra/CI
+        - Segurança
+        - Comunidade/Marketing
+        - Estudo
+    validations:
+      required: true
+
+  - type: dropdown
+    id: estimativa
+    attributes:
+      label: Estimativa
+      description: "P: até meio dia · M: 1–2 dias · G: 3+ dias · GG: precisa ser quebrada"
+      options:
+        - P
+        - M
+        - G
+        - GG
+    validations:
+      required: false

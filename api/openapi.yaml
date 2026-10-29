@@ -1,0 +1,1141 @@
+openapi: 3.0.3
+info:
+  title: Lastro
+  version: 0.1.0
+  description: |
+    API do Lastro, o gateway Pix self-hosted.
+
+    As rotas Pix (`/cob`, `/cobv`...) são **compatíveis com a API Pix do Banco
+    Central** (spec v2.10.0): mesmo caminho, mesmos campos, mesmo formato de
+    erro. Quem já tem cliente escrito contra a spec troca a URL base e a
+    autenticação. Este arquivo é escrito pelo Lastro — não é cópia da spec do BCB.
+
+    O que o Lastro **acrescenta** à spec vem marcado com `x-lastro: true`:
+    o header `Idempotency-Key` e o campo `expirada`, por exemplo.
+
+    Rotas que não existem na spec (contas, API keys, administração) vivem em
+    `/lastro/v1/...` (ADR-003).
+
+    Dinheiro trafega como string decimal com exatamente duas casas (`"10.50"`).
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: http://localhost:8080
+
+security:
+  - apiKey: []
+
+tags:
+  - name: Cob
+    description: Cobrança imediata.
+  - name: CobV
+    description: Cobrança com vencimento.
+  - name: Lastro
+    description: Rotas do Lastro, fora da spec do BCB.
+
+paths:
+  /health:
+    get:
+      tags: [Lastro]
+      operationId: health
+      summary: Saúde da instância
+      security: []
+      responses:
+        "200":
+          description: A instância está no ar.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+
+  /cob/{txid}:
+    parameters:
+      - $ref: "#/components/parameters/TxidPath"
+    put:
+      tags: [Cob]
+      operationId: criarCobComTxid
+      summary: Criar cobrança imediata com txid definido pelo cliente
+      description: O txid já identifica a criação, então `Idempotency-Key` é opcional aqui (RN-11).
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyOpcional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Cobrança criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+    patch:
+      tags: [Cob]
+      operationId: revisarCob
+      summary: Revisar cobrança imediata
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobRevisada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Cobrança revisada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+    get:
+      tags: [Cob]
+      operationId: consultarCob
+      summary: Consultar cobrança imediata
+      parameters:
+        - name: revisao
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Cobrança encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobCompleta"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+
+  /cob:
+    post:
+      tags: [Cob]
+      operationId: criarCob
+      summary: Criar cobrança imediata com txid gerado pelo Lastro
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Cobrança criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+    get:
+      tags: [Cob]
+      operationId: listarCobs
+      summary: Listar cobranças imediatas
+      parameters:
+        - $ref: "#/components/parameters/Inicio"
+        - $ref: "#/components/parameters/Fim"
+        - $ref: "#/components/parameters/CpfFiltro"
+        - $ref: "#/components/parameters/CnpjFiltro"
+        - name: locationPresente
+          in: query
+          schema:
+            type: boolean
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/CobStatus"
+        - $ref: "#/components/parameters/PaginaAtual"
+        - $ref: "#/components/parameters/ItensPorPagina"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Página de cobranças.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobsConsultadas"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+
+  /cobv/{txid}:
+    parameters:
+      - $ref: "#/components/parameters/TxidPath"
+    put:
+      tags: [CobV]
+      operationId: criarCobv
+      summary: Criar cobrança com vencimento
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyOpcional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobVSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Cobrança criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobVGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+    patch:
+      tags: [CobV]
+      operationId: revisarCobv
+      summary: Revisar cobrança com vencimento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobVRevisada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Cobrança revisada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobVGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+    get:
+      tags: [CobV]
+      operationId: consultarCobv
+      summary: Consultar cobrança com vencimento
+      parameters:
+        - name: revisao
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Cobrança encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobVCompleta"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+
+  /cobv:
+    get:
+      tags: [CobV]
+      operationId: listarCobvs
+      summary: Listar cobranças com vencimento
+      parameters:
+        - $ref: "#/components/parameters/Inicio"
+        - $ref: "#/components/parameters/Fim"
+        - $ref: "#/components/parameters/CpfFiltro"
+        - $ref: "#/components/parameters/CnpjFiltro"
+        - name: locationPresente
+          in: query
+          schema:
+            type: boolean
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/CobVStatus"
+        - $ref: "#/components/parameters/PaginaAtual"
+        - $ref: "#/components/parameters/ItensPorPagina"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Página de cobranças.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobVsConsultadas"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+
+  /lastro/v1/contas:
+    post:
+      tags: [Lastro]
+      operationId: criarConta
+      summary: Cadastrar conta recebedora
+      description: |
+        Exige o escopo `conta:admin`. As credenciais são cifradas antes de gravar
+        (RN-61) e **nunca** voltam em resposta nenhuma. Use só sobre TLS.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContaSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Conta criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conta"
+    get:
+      tags: [Lastro]
+      operationId: listarContas
+      summary: Listar contas
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Contas da instância.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [contas]
+                properties:
+                  contas:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Conta"
+
+  /lastro/v1/contas/{id}:
+    parameters:
+      - $ref: "#/components/parameters/ContaIdPath"
+    get:
+      tags: [Lastro]
+      operationId: consultarConta
+      summary: Consultar conta
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Conta encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conta"
+
+  /lastro/v1/contas/{id}/desativar:
+    parameters:
+      - $ref: "#/components/parameters/ContaIdPath"
+    post:
+      tags: [Lastro]
+      operationId: desativarConta
+      summary: Desativar conta
+      description: Novas cobranças passam a ser recusadas; as existentes continuam valendo.
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Conta desativada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Conta"
+
+components:
+  securitySchemes:
+    apiKey:
+      type: http
+      scheme: bearer
+      description: "API key do Lastro, com escopos (RN-60). Envie `Authorization: Bearer lst_...`"
+
+  parameters:
+    ContaIdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-z0-9][a-z0-9-]{0,62}$"
+    TxidPath:
+      name: txid
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Txid"
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Reenvio com a mesma chave em até 24 h devolve a resposta original (RN-11).
+      x-lastro: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+    IdempotencyKeyOpcional:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: Reenvio com a mesma chave em até 24 h devolve a resposta original (RN-11).
+      x-lastro: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+    Inicio:
+      name: inicio
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date-time
+    Fim:
+      name: fim
+      in: query
+      required: true
+      schema:
+        type: string
+        format: date-time
+    CpfFiltro:
+      name: cpf
+      in: query
+      schema:
+        $ref: "#/components/schemas/Cpf"
+    CnpjFiltro:
+      name: cnpj
+      in: query
+      schema:
+        $ref: "#/components/schemas/Cnpj"
+    PaginaAtual:
+      name: paginacao.paginaAtual
+      in: query
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+        default: 0
+    ItensPorPagina:
+      name: paginacao.itensPorPagina
+      in: query
+      schema:
+        type: integer
+        format: int32
+        minimum: 1
+        maximum: 1000
+        default: 100
+
+  responses:
+    Erro:
+      description: |
+        Qualquer outro erro, sempre como `Problema`. Os mais comuns: `502` quando o
+        banco recusa ou falha (`PSPIndisponivel`) e `500` para erro interno.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problema"
+    RequisicaoInvalida:
+      description: Requisição fora do formato ou violando uma regra de negócio.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problema"
+    NaoAutenticado:
+      description: API key ausente ou inválida.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problema"
+    AcessoNegado:
+      description: A API key não tem o escopo necessário.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problema"
+    NaoEncontrado:
+      description: Recurso não encontrado.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problema"
+    Conflito:
+      description: txid já existe, revisão desatualizada, ou Idempotency-Key reutilizada com outro payload.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problema"
+    NaoSuportado:
+      description: O PSP da conta não oferece essa capacidade (RN-50).
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/Problema"
+
+  schemas:
+    Conta:
+      type: object
+      required: [id, nome, psp, chave, ambiente, ativa]
+      properties:
+        id:
+          type: string
+        nome:
+          type: string
+        psp:
+          type: string
+        chave:
+          $ref: "#/components/schemas/Chave"
+        ambiente:
+          type: string
+          enum: [homologacao, producao]
+        ativa:
+          type: boolean
+    ContaSolicitada:
+      type: object
+      required: [id, nome, psp, chave, ambiente]
+      properties:
+        id:
+          type: string
+          pattern: "^[a-z0-9][a-z0-9-]{0,62}$"
+        nome:
+          type: string
+          minLength: 1
+        psp:
+          type: string
+          minLength: 1
+        chave:
+          $ref: "#/components/schemas/Chave"
+        ambiente:
+          type: string
+          enum: [homologacao, producao]
+        credenciais:
+          type: object
+          properties:
+            clientId:
+              type: string
+            clientSecret:
+              type: string
+            certificado:
+              type: string
+              format: byte
+              description: Certificado do mTLS (.p12 ou .pem) em base64.
+            senhaCertificado:
+              type: string
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+        version:
+          type: string
+
+    Txid:
+      type: string
+      pattern: "^[a-zA-Z0-9]{26,35}$"
+    Valor:
+      type: string
+      pattern: "^\\d{1,10}\\.\\d{2}$"
+      example: "10.50"
+    Cpf:
+      type: string
+      pattern: "^\\d{11}$"
+    Cnpj:
+      type: string
+      description: Aceita o CNPJ alfanumérico.
+      pattern: "^[0-9A-Z]{14}$"
+    Chave:
+      type: string
+      maxLength: 77
+      description: Chave Pix do recebedor (telefone, e-mail, CPF/CNPJ ou EVP).
+
+    Problema:
+      type: object
+      description: Erro no formato da spec do BCB (RFC 7807).
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+        detail:
+          type: string
+        correlationId:
+          type: string
+        violacoes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Violacao"
+    Violacao:
+      type: object
+      properties:
+        razao:
+          type: string
+        propriedade:
+          type: string
+        valor:
+          type: string
+
+    Devedor:
+      type: object
+      description: Pessoa física (cpf) ou jurídica (cnpj). Informe um dos dois.
+      required: [nome]
+      properties:
+        cpf:
+          $ref: "#/components/schemas/Cpf"
+        cnpj:
+          $ref: "#/components/schemas/Cnpj"
+        nome:
+          type: string
+          maxLength: 200
+    DevedorCompleto:
+      allOf:
+        - $ref: "#/components/schemas/Devedor"
+        - type: object
+          properties:
+            email:
+              type: string
+            logradouro:
+              type: string
+              maxLength: 200
+            cidade:
+              type: string
+              maxLength: 200
+            uf:
+              type: string
+              maxLength: 2
+            cep:
+              type: string
+              maxLength: 8
+    Recebedor:
+      type: object
+      properties:
+        cpf:
+          $ref: "#/components/schemas/Cpf"
+        cnpj:
+          $ref: "#/components/schemas/Cnpj"
+        nome:
+          type: string
+        nomeFantasia:
+          type: string
+        logradouro:
+          type: string
+        cidade:
+          type: string
+        uf:
+          type: string
+        cep:
+          type: string
+
+    InfoAdicional:
+      type: object
+      required: [nome, valor]
+      properties:
+        nome:
+          type: string
+          maxLength: 50
+        valor:
+          type: string
+          maxLength: 200
+    Loc:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: integer
+          format: int64
+        location:
+          type: string
+        tipoCob:
+          type: string
+          enum: [cob, cobv]
+        criacao:
+          type: string
+          format: date-time
+
+    CobStatus:
+      type: string
+      enum: [ATIVA, CONCLUIDA, REMOVIDA_PELO_USUARIO_RECEBEDOR, REMOVIDA_PELO_PSP]
+    CobVStatus:
+      type: string
+      enum: [ATIVA, CONCLUIDA, REMOVIDA_PELO_USUARIO_RECEBEDOR, REMOVIDA_PELO_PSP]
+
+    CobValor:
+      type: object
+      required: [original]
+      properties:
+        original:
+          $ref: "#/components/schemas/Valor"
+        modalidadeAlteracao:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 1
+          default: 0
+          description: 1 permite ao pagador alterar o valor.
+
+    CobSolicitada:
+      type: object
+      required: [calendario, valor, chave]
+      properties:
+        calendario:
+          type: object
+          properties:
+            expiracao:
+              type: integer
+              format: int32
+              minimum: 1
+              default: 86400
+              description: Validade em segundos a partir da criação (RN-13).
+        devedor:
+          $ref: "#/components/schemas/Devedor"
+        loc:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+        valor:
+          $ref: "#/components/schemas/CobValor"
+        chave:
+          $ref: "#/components/schemas/Chave"
+        solicitacaoPagador:
+          type: string
+          maxLength: 140
+        infoAdicionais:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/InfoAdicional"
+
+    CobRevisada:
+      type: object
+      properties:
+        calendario:
+          type: object
+          properties:
+            expiracao:
+              type: integer
+              format: int32
+              minimum: 1
+        devedor:
+          $ref: "#/components/schemas/Devedor"
+        loc:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+        status:
+          type: string
+          enum: [REMOVIDA_PELO_USUARIO_RECEBEDOR]
+        valor:
+          $ref: "#/components/schemas/CobValor"
+        chave:
+          $ref: "#/components/schemas/Chave"
+        solicitacaoPagador:
+          type: string
+          maxLength: 140
+        infoAdicionais:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/InfoAdicional"
+
+    CobGerada:
+      type: object
+      required: [calendario, txid, revisao, status, valor, chave]
+      properties:
+        calendario:
+          type: object
+          required: [criacao, expiracao]
+          properties:
+            criacao:
+              type: string
+              format: date-time
+            expiracao:
+              type: integer
+              format: int32
+        txid:
+          $ref: "#/components/schemas/Txid"
+        revisao:
+          type: integer
+          format: int32
+          minimum: 0
+          description: Começa em 0 e cresce de 1 em 1 a cada alteração.
+        devedor:
+          $ref: "#/components/schemas/Devedor"
+        loc:
+          $ref: "#/components/schemas/Loc"
+        location:
+          type: string
+        status:
+          $ref: "#/components/schemas/CobStatus"
+        valor:
+          $ref: "#/components/schemas/CobValor"
+        chave:
+          $ref: "#/components/schemas/Chave"
+        solicitacaoPagador:
+          type: string
+        infoAdicionais:
+          type: array
+          items:
+            $ref: "#/components/schemas/InfoAdicional"
+        pixCopiaECola:
+          type: string
+          maxLength: 512
+        expirada:
+          type: boolean
+          x-lastro: true
+          description: Extensão do Lastro. Na spec a cob continua ATIVA depois de expirar; este campo poupa o cálculo (RN-13).
+
+    CobCompleta:
+      allOf:
+        - $ref: "#/components/schemas/CobGerada"
+        - type: object
+          properties:
+            pix:
+              type: array
+              items:
+                $ref: "#/components/schemas/Pix"
+
+    CobsConsultadas:
+      type: object
+      required: [parametros, cobs]
+      properties:
+        parametros:
+          $ref: "#/components/schemas/ParametrosConsulta"
+        cobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/CobCompleta"
+
+    CobVValor:
+      type: object
+      required: [original]
+      properties:
+        original:
+          $ref: "#/components/schemas/Valor"
+        multa:
+          type: object
+          required: [modalidade, valorPerc]
+          properties:
+            modalidade:
+              type: integer
+              format: int32
+              minimum: 1
+              maximum: 2
+              description: 1 valor fixo, 2 percentual.
+            valorPerc:
+              $ref: "#/components/schemas/Valor"
+        juros:
+          type: object
+          required: [modalidade, valorPerc]
+          properties:
+            modalidade:
+              type: integer
+              format: int32
+              minimum: 1
+              maximum: 8
+            valorPerc:
+              $ref: "#/components/schemas/Valor"
+        abatimento:
+          type: object
+          required: [modalidade, valorPerc]
+          properties:
+            modalidade:
+              type: integer
+              format: int32
+              minimum: 1
+              maximum: 2
+            valorPerc:
+              $ref: "#/components/schemas/Valor"
+        desconto:
+          type: object
+          required: [modalidade]
+          description: Use descontoDataFixa (modalidades 1 e 2) ou valorPerc (3 a 6), nunca os dois.
+          properties:
+            modalidade:
+              type: integer
+              format: int32
+              minimum: 1
+              maximum: 6
+            descontoDataFixa:
+              type: array
+              minItems: 1
+              maxItems: 3
+              items:
+                type: object
+                required: [data, valorPerc]
+                properties:
+                  data:
+                    type: string
+                    format: date
+                  valorPerc:
+                    $ref: "#/components/schemas/Valor"
+            valorPerc:
+              $ref: "#/components/schemas/Valor"
+
+    CalendarioVencimento:
+      type: object
+      required: [dataDeVencimento]
+      properties:
+        dataDeVencimento:
+          type: string
+          format: date
+        validadeAposVencimento:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 30
+          description: Dias corridos após o vencimento em que ainda pode ser paga.
+
+    CobVSolicitada:
+      type: object
+      required: [calendario, devedor, valor, chave]
+      properties:
+        calendario:
+          $ref: "#/components/schemas/CalendarioVencimento"
+        devedor:
+          $ref: "#/components/schemas/DevedorCompleto"
+        loc:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+        valor:
+          $ref: "#/components/schemas/CobVValor"
+        chave:
+          $ref: "#/components/schemas/Chave"
+        solicitacaoPagador:
+          type: string
+          maxLength: 140
+        infoAdicionais:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/InfoAdicional"
+
+    CobVRevisada:
+      type: object
+      properties:
+        calendario:
+          $ref: "#/components/schemas/CalendarioVencimento"
+        devedor:
+          $ref: "#/components/schemas/DevedorCompleto"
+        loc:
+          type: object
+          properties:
+            id:
+              type: integer
+              format: int64
+        status:
+          type: string
+          enum: [REMOVIDA_PELO_USUARIO_RECEBEDOR]
+        valor:
+          $ref: "#/components/schemas/CobVValor"
+        chave:
+          $ref: "#/components/schemas/Chave"
+        solicitacaoPagador:
+          type: string
+          maxLength: 140
+        infoAdicionais:
+          type: array
+          maxItems: 50
+          items:
+            $ref: "#/components/schemas/InfoAdicional"
+
+    CobVGerada:
+      type: object
+      required: [calendario, txid, revisao, devedor, status, valor, chave]
+      properties:
+        calendario:
+          allOf:
+            - $ref: "#/components/schemas/CalendarioVencimento"
+            - type: object
+              required: [criacao]
+              properties:
+                criacao:
+                  type: string
+                  format: date-time
+        txid:
+          $ref: "#/components/schemas/Txid"
+        revisao:
+          type: integer
+          format: int32
+          minimum: 0
+        devedor:
+          $ref: "#/components/schemas/DevedorCompleto"
+        recebedor:
+          $ref: "#/components/schemas/Recebedor"
+        loc:
+          $ref: "#/components/schemas/Loc"
+        status:
+          $ref: "#/components/schemas/CobVStatus"
+        valor:
+          $ref: "#/components/schemas/CobVValor"
+        chave:
+          $ref: "#/components/schemas/Chave"
+        solicitacaoPagador:
+          type: string
+        infoAdicionais:
+          type: array
+          items:
+            $ref: "#/components/schemas/InfoAdicional"
+        pixCopiaECola:
+          type: string
+          maxLength: 512
+
+    CobVCompleta:
+      allOf:
+        - $ref: "#/components/schemas/CobVGerada"
+        - type: object
+          properties:
+            pix:
+              type: array
+              items:
+                $ref: "#/components/schemas/Pix"
+
+    CobVsConsultadas:
+      type: object
+      required: [parametros, cobs]
+      properties:
+        parametros:
+          $ref: "#/components/schemas/ParametrosConsulta"
+        cobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/CobVCompleta"
+
+    Pix:
+      type: object
+      required: [endToEndId, valor, horario]
+      properties:
+        endToEndId:
+          type: string
+          pattern: "^[a-zA-Z0-9]{32}$"
+        txid:
+          type: string
+        valor:
+          $ref: "#/components/schemas/Valor"
+        chave:
+          $ref: "#/components/schemas/Chave"
+        horario:
+          type: string
+          format: date-time
+        infoPagador:
+          type: string
+          maxLength: 140
+
+    ParametrosConsulta:
+      type: object
+      required: [inicio, fim, paginacao]
+      properties:
+        inicio:
+          type: string
+          format: date-time
+        fim:
+          type: string
+          format: date-time
+        cpf:
+          $ref: "#/components/schemas/Cpf"
+        cnpj:
+          $ref: "#/components/schemas/Cnpj"
+        locationPresente:
+          type: boolean
+        status:
+          type: string
+        paginacao:
+          $ref: "#/components/schemas/Paginacao"
+    Paginacao:
+      type: object
+      required: [paginaAtual, itensPorPagina, quantidadeDePaginas, quantidadeTotalDeItens]
+      properties:
+        paginaAtual:
+          type: integer
+          minimum: 0
+        itensPorPagina:
+          type: integer
+          minimum: 1
+        quantidadeDePaginas:
+          type: integer
+          minimum: 1
+        quantidadeTotalDeItens:
+          type: integer
+          minimum: 0

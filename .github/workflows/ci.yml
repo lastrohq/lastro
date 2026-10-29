@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+jobs:
+  lint-test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          # Último patch da 1.26: o "go 1.26.0" do go.mod é o mínimo, não a versão a usar.
+          go-version: "1.26.x"
+          check-latest: true
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: latest
+      - name: Código gerado pelo sqlc está em dia
+        run: go tool sqlc diff
+      - name: Código gerado do openapi.yaml está em dia
+        run: |
+          go tool oapi-codegen -config api/oapi-codegen.yaml api/openapi.yaml
+          git diff --exit-code -- internal/adapters/httpapi/gen
+      - name: Testes
+        run: go test -race -coverprofile=coverage.out ./...
+      - name: govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      - name: Build da imagem
+        run: docker build -f deploy/docker/Dockerfile -t lastro:ci .

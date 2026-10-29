@@ -1,0 +1,274 @@
+# 📜 Lastro — Regras de negócio
+
+O que o Lastro **garante**, o que ele **recusa** e por quê. Toda regra tem um
+número estável (`RN-xx`) para ser citada em issue, teste e commit. Regra que
+muda ganha nota com data; regra que cai fica riscada, não some.
+
+> Os nomes de estado e campo seguem a [spec da API Pix do BCB](https://github.com/bacen/pix-api)
+> (v2.10.0). Onde o Lastro estende a spec, isso está dito explicitamente.
+
+---
+
+## Princípios
+
+### RN-01 · Não custodial
+
+O Lastro nunca guarda, recebe nem movimenta dinheiro. Ele roda na
+infraestrutura do dono da conta, com as credenciais do dono da conta, contra a
+API Pix do banco do dono da conta. Nenhuma funcionalidade pode exigir que o
+dinheiro passe por uma conta que não seja a do recebedor.
+
+**Por quê:** é o que mantém o projeto fora do papel de instituição de pagamento.
+A tese de que software não custodial dispensa autorização do BCB é uma
+**inferência**, não norma encontrada — por isso o README traz o aviso de que
+nada aqui é aconselhamento regulatório, e uma eventual versão hospedada exige
+análise jurídica própria antes de existir.
+
+### RN-02 · Dinheiro é inteiro, em centavos
+
+Valores trafegam e são armazenados como `int64` em centavos (`domain.Money`).
+`float` não aparece em nenhuma camada. A spec do BCB usa string decimal no
+formato `^\d{1,10}\.\d{2}$` (`"10.50"`); a conversão acontece só na borda
+(adapter e API) e aceita **exatamente** esse formato — sem sinal, vírgula,
+separador de milhar ou casas a mais ou a menos. Máximo: R$ 9.999.999.999,99.
+
+### RN-03 · Uma instância, N contas
+
+Uma instância do Lastro atende várias **contas recebedoras**. Conta = PSP +
+chave Pix + credenciais (client id/secret e certificado) + ambiente
+(homologação ou produção). Toda cobrança pertence a exatamente uma conta
+(chave estrangeira no banco).
+
+- O ID da conta é `[a-z0-9-]`, até 63 caracteres, e não muda. O PSP também não.
+- Conta nasce ativa. **Conta desativada recusa novas cobranças**; as existentes
+  continuam valendo e recebendo webhook.
+- O cadastro é pela CLI (`lastro conta criar|listar|desativar`). As rotas
+  `/lastro/v1/contas` entram junto com as API keys (#16), com o escopo `conta:admin`.
+- Segredos vêm de **arquivo**, nunca de flag, porque flag fica no histórico do shell.
+
+---
+
+## Cobranças
+
+### RN-10 · txid
+
+- Em `cob` e `cobv`: de **26 a 35** caracteres, `[a-zA-Z0-9]`.
+- Se o cliente não informar, o Lastro gera (aleatório criptográfico, 32 caracteres).
+- Se informar, o Lastro valida antes de chamar o banco — erro de formato nunca
+  vira chamada de rede.
+- txid é único **na instância inteira** — mais estrito que a spec (que exige
+  unicidade por recebedor), para que `GET /cob/{txid}` não precise saber a conta.
+- A conta da cobrança é a dona da `chave` informada no corpo. Chave Pix é única
+  na instância, como no DICT.
+
+### RN-11 · Idempotência
+
+Toda criação ou alteração (`POST`, `PUT`, `PATCH`) aceita o header `Idempotency-Key`.
+
+- A chave pertence à **API key** que a enviou: clientes diferentes não colidem.
+- Mesma chave + mesma requisição (método, caminho e corpo) em até **24 h** →
+  devolve a resposta original, byte a byte, com `Idempotent-Replayed: true`, sem
+  chamar o banco de novo.
+- Mesma chave + requisição diferente → **409** `IdempotencyKeyReutilizada`.
+- Duas requisições simultâneas com a mesma chave → a segunda recebe **409**
+  `RequisicaoEmAndamento` com `Retry-After`. Reserva sem resposta por mais de
+  **2 minutos** é considerada abandonada (processo que caiu) e liberada.
+- Resposta **5xx não é guardada**: o cliente mandou a chave justamente para
+  poder tentar de novo.
+- O header é obrigatório no `POST /cob` (o txid é gerado pelo Lastro) e opcional
+  no `PUT /cob/{txid}` (o txid já identifica a criação).
+- Corpo acima de 1 MiB com a chave → **413**.
+
+### RN-12 · Estados da cobrança (`cob` e `cobv`)
+
+```
+ATIVA ──▶ CONCLUIDA
+  │
+  ├──▶ REMOVIDA_PELO_USUARIO_RECEBEDOR
+  └──▶ REMOVIDA_PELO_PSP
+```
+
+Os três finais são **terminais**. Transição fora deste desenho é recusada no
+domínio, antes de qualquer persistência. `CONCLUIDA` só é alcançada por
+evidência de pagamento: webhook do banco ou conciliação (RN-31) — nunca por
+chamada da API do cliente.
+
+### RN-13 · Cobrança imediata (`cob`)
+
+- Expiração padrão: **86400 s** (24 h, o default da spec), configurável por cobrança.
+- Valor pode ser fixo ou permitir alteração pelo pagador (`modalidadeAlteracao`).
+- Cobrança expirada continua `ATIVA` na spec do BCB; o Lastro expõe o campo
+  derivado `expirada: true` (extensão) para não obrigar o cliente a calcular.
+
+### RN-14 · Cobrança com vencimento (`cobv`)
+
+- Exige devedor identificado: CPF ou CNPJ válido (inclusive o CNPJ alfanumérico,
+  `^[0-9A-Z]{14}$`) e nome. UF, se vier, são 2 letras maiúsculas; CEP, 8 dígitos.
+- `dataDeVencimento` é uma **data civil** avaliada no fuso de **Brasília**; não pode
+  estar no passado. `validadeAposVencimento` (dias corridos, padrão **30**) define o
+  último dia para pagar; depois dele a cobv aparece com `expirada`.
+- Usa a mesma máquina de estados da cob (RN-12) e compartilha o **txid** com ela:
+  um txid usado numa cob não serve para uma cobv, e vice-versa (garantido por
+  gatilho no banco).
+- O Lastro **valida** as combinações; o **cálculo final é do banco**, e o valor que
+  vale é o que o banco liquidou:
+
+| Campo | Modalidades | Regras |
+|---|---|---|
+| `multa` | 1 valor fixo · 2 percentual | valor positivo; percentual até 100,00 |
+| `juros` | 1 a 8 (valor ou percentual, ao dia/mês/ano, dias corridos ou úteis) | valor positivo |
+| `abatimento` | 1 valor fixo · 2 percentual | fixo menor que o valor original; percentual até 100,00 |
+| `desconto` | 1 e 2: até datas fixas · 3 a 6: por antecipação | 1–2 usam `descontoDataFixa` (1 a 3 datas, sem repetir, até o vencimento) e nunca `valorPerc`; 3–6 usam `valorPerc` e nunca datas; fixo menor que o valor; percentual menor que 100,00 |
+
+- No `PATCH`, cada bloco (`multa`, `juros`, `abatimento`, `desconto`) que vier
+  **substitui** o anterior inteiro, e a cobv resultante é revalidada por completo
+  (um abatimento que ficou maior que o valor revisado é recusado).
+
+### RN-15 · BR Code
+
+- Gerado em conformidade com o padrão EMV MPM do Manual de BR Code do BCB, com
+  CRC16-CCITT (`0xFFFF`, polinômio `0x1021`).
+- Dinâmico (URL de location do banco) para `cob`/`cobv`; estático para uso
+  avulso via `pkg/brcode`.
+- O Lastro **nunca** gera BR Code dinâmico com location própria: a location é
+  sempre a do PSP da conta.
+
+---
+
+## Devoluções
+
+### RN-20 · Estados da devolução
+
+```
+EM_PROCESSAMENTO ──▶ DEVOLVIDO
+                 └─▶ NAO_REALIZADO
+```
+
+### RN-21 · Limites
+
+- A soma das devoluções de um Pix (`endToEndId`) não ultrapassa o valor recebido.
+- Devolução identificada pelo par `e2eid` + `id` (id definido pelo cliente,
+  idempotente).
+- Prazo máximo de **90 dias** após o pagamento — validado antes de chamar o banco.
+
+---
+
+## Pix Automático
+
+> ⚠️ **Pendente do estudo #1**: quais bancos expõem `/rec` e `/cobr` em
+> produção para PJ. As regras abaixo descrevem o contrato da spec; a matriz de
+> capacidades (RN-50) diz quem suporta.
+
+### RN-40 · Recorrência (`/rec`)
+
+```
+CRIADA ──▶ APROVADA ──▶ CANCELADA
+   │          └───────▶ EXPIRADA
+   ├──▶ REJEITADA
+   └──▶ EXPIRADA
+```
+
+- Uma recorrência tem periodicidade, valor (fixo ou máximo) e vigência.
+- Só gera cobrança (`cobr`) quando `APROVADA`.
+
+### RN-41 · Solicitação de confirmação (`/solicrec`)
+
+É o pedido de autorização enviado ao pagador. Aprovação e rejeição chegam por
+webhook de recorrência (`/webhookrec`) e movem a recorrência (RN-40).
+
+### RN-42 · Cobrança recorrente (`/cobr`)
+
+- Agendada com a antecedência mínima do normativo vigente.
+- Tentativas e retentativas seguem o normativo vigente.
+
+### RN-43 · Prazos versionados
+
+Antecedência, janelas de retentativa e afins **não são constantes no código**.
+Ficam numa tabela de parâmetros com **data do normativo** de origem, para que
+cada mudança do BCB vire um commit pequeno, revisável e com fonte — e um
+release com nota.
+
+---
+
+## Webhooks
+
+### RN-30 · Entrada (banco → Lastro)
+
+- Só é aceito webhook de origem configurada para a conta: mTLS (quando o banco
+  exige, como o Efí) ou segredo na URL/header.
+- O evento é **persistido antes** de responder 200. Se a persistência falhar, o
+  Lastro responde 5xx e deixa o banco reenviar.
+- Deduplicação por `endToEndId`: o mesmo Pix avisado duas vezes gera um evento só.
+
+### RN-31 · Conciliação
+
+Um job periódico consulta `GET /pix?inicio&fim` em cada conta (janela
+deslizante, padrão a cada 5 min olhando as últimas 2 h) e trata como recebido
+todo Pix que não chegou por webhook. **Nenhum Pix some** porque o banco falhou
+em avisar.
+
+### RN-32 · Saída (Lastro → aplicação do cliente)
+
+- Payload **normalizado**: o mesmo formato, seja qual for o banco.
+- Assinado conforme [Standard Webhooks](https://www.standardwebhooks.com/)
+  (`webhook-id`, `webhook-timestamp`, `webhook-signature` HMAC-SHA256).
+- Entrega *at-least-once*: o cliente deve deduplicar pelo `webhook-id`.
+- Retry com backoff exponencial e jitter por até **24 h**; depois disso o evento
+  vai para a **DLQ**, visível no painel e reenviável manualmente.
+- Registro de cada tentativa (status, latência, corpo da resposta truncado).
+
+---
+
+## Segurança e acesso
+
+### RN-60 · API keys
+
+- Toda rota, exceto `/health`, exige `Authorization: Bearer lst_<id>_<segredo>`.
+- Escopos: `cob:read`, `cob:write`, `cobv:read`, `cobv:write`, `pix:read`,
+  `devolucao:write`, `rec:read`, `rec:write`, `webhook:admin`, `conta:admin`.
+  Cada rota exige exatamente um; rota sem escopo mapeado é **recusada** (falha
+  fechado), e um teste aponta a rota esquecida.
+- O segredo aparece **uma vez**, na criação. Só o hash SHA-256 é gravado: com
+  190 bits de entropia, hash lento não acrescenta proteção.
+- Chave restrita a uma conta só enxerga as cobranças dela. Cobrança de outra
+  conta responde **404**, sem revelar que existe; chave de outra conta no corpo é
+  tratada como chave desconhecida. Chave restrita não pode ter `conta:admin`.
+- Revogação vale na hora. 401 não diz se a chave existe, está revogada ou
+  malformada.
+- Criação e revogação de chaves é pela CLI (`lastro apikey ...`), que é também
+  como se cria a primeira chave de uma instância nova.
+
+### RN-61 · Segredos em repouso
+
+Certificados, chaves privadas e client secrets são cifrados com AES-256-GCM
+usando `LASTRO_MASTER_KEY`. Sem a master key, o Lastro não sobe. Nada disso é
+escrito em log — nem mascarado parcialmente.
+
+### RN-62 · Certificados
+
+- Alerta (painel e webhook `certificado.expirando`) a **30 dias** do vencimento.
+- Recusa usar em conta de produção um certificado marcado como de homologação
+  (o Bradesco, por exemplo, não aceita o mesmo certificado nos dois).
+
+---
+
+## Adapters
+
+### RN-50 · Matriz de capacidades
+
+Cada adapter declara o que suporta: `cob`, `cobv`, `devolucao`, `webhook`,
+`rec`, `cobr`, `lote`. Chamada a algo que o banco da conta não suporta responde
+**501** com o nome da capacidade — nunca um erro genérico do banco.
+
+### RN-51 · Conformidade
+
+Adapter só entra no `develop` se passar na suíte de conformidade
+(`test/conformance`) contra fixtures gravadas. Desvio de banco em relação à
+spec é tratado **dentro** do adapter e documentado nele; o domínio nunca ganha
+um `if banco == ...`.
+
+### RN-52 · Sandbox
+
+O adapter `sandbox` implementa todas as capacidades com estado em memória ou
+SQLite: cobrança criada é paga após N segundos (configurável), pode simular
+falha, expiração e webhook duplicado. É o adapter de referência da suíte.

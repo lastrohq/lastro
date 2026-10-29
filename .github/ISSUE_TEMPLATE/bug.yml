@@ -1,0 +1,78 @@
+name: 🐛 Bug
+description: Algo que deveria funcionar e não funciona
+labels: ["tipo:bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ⚠️ **Nunca cole certificado, client secret, API key ou dado de pagador real.** Falha de segurança vai pelo [SECURITY.md](https://github.com/lastrohq/lastro/blob/develop/SECURITY.md), não por issue pública.
+
+  - type: textarea
+    id: esperado
+    attributes:
+      label: O que deveria acontecer
+    validations:
+      required: true
+
+  - type: textarea
+    id: aconteceu
+    attributes:
+      label: O que aconteceu
+      description: Mensagem de erro, log (sem segredos) ou print.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduzir
+    attributes:
+      label: Como reproduzir
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+
+  - type: input
+    id: versao
+    attributes:
+      label: Versão do Lastro
+      description: Saída de `lastro version`
+    validations:
+      required: true
+
+  - type: dropdown
+    id: psp
+    attributes:
+      label: Banco / PSP
+      options:
+        - Sandbox
+        - Efí
+        - Inter
+        - Sicoob
+        - Banco do Brasil
+        - Outro / não se aplica
+    validations:
+      required: true
+
+  - type: dropdown
+    id: ambiente
+    attributes:
+      label: Ambiente do banco
+      options:
+        - Produção
+        - Homologação
+        - Sandbox do Lastro
+    validations:
+      required: true
+
+  - type: dropdown
+    id: gravidade
+    attributes:
+      label: Gravidade
+      options:
+        - Alta — Pix perdido, cobrança errada ou dado exposto
+        - Média — atrapalha, mas tem contorno
+        - Baixa — cosmético
+    validations:
+      required: true

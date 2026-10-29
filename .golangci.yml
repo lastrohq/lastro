@@ -1,0 +1,20 @@
+version: "2"
+linters:
+  default: standard
+  enable:
+    - bodyclose
+    - errorlint
+    - gosec
+    - noctx
+    - revive
+    - unconvert
+  exclusions:
+    rules:
+      # Testes usam credenciais falsas de propósito.
+      - path: _test\.go
+        linters: [gosec]
+        text: G101
+formatters:
+  enable:
+    - gofmt
+    - goimports

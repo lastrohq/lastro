@@ -1,0 +1,9 @@
+# Gera tipos, a interface do servidor (net/http + strict) e a spec embutida.
+# Regerar: make generate. O CI reprova se o código gerado ficar defasado.
+package: gen
+output: internal/adapters/httpapi/gen/api.gen.go
+generate:
+  models: true
+  std-http-server: true
+  strict-server: true
+  embedded-spec: true
