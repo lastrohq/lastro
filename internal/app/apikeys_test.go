@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -25,7 +26,13 @@ func TestAPIKeysCriarAutenticarRevogar(t *testing.T) {
 	if err != nil || got.ID != k.ID {
 		t.Fatalf("Autenticar = %+v, %v", got, err)
 	}
-	for _, ruim := range []string{"", "lst_xxx", token[:len(token)-1] + "x", "lst_" + "zzzzzzzzzzzz" + token[16:]} {
+	// Troca o último caractere por outro diferente: trocar por "x" um token que já
+	// termina em "x" não muda nada, e o teste falhava 1 vez em 64.
+	trocado := "x"
+	if strings.HasSuffix(token, "x") {
+		trocado = "y"
+	}
+	for _, ruim := range []string{"", "lst_xxx", token[:len(token)-1] + trocado, "lst_" + "zzzzzzzzzzzz" + token[16:]} {
 		if _, err := svc.Autenticar(ctx, ruim); !errors.Is(err, domain.ErrNaoAutenticado) {
 			t.Errorf("token %q autenticou (err = %v)", ruim, err)
 		}
