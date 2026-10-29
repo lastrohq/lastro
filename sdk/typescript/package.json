@@ -1,0 +1,44 @@
+{
+  "name": "@lastrohq/sdk",
+  "version": "0.1.0",
+  "description": "SDK TypeScript do Lastro, o gateway Pix self-hosted: cobranças, devoluções e verificação de webhooks.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lastrohq/lastro.git",
+    "directory": "sdk/typescript"
+  },
+  "homepage": "https://github.com/lastrohq/lastro/tree/main/sdk/typescript#readme",
+  "keywords": [
+    "pix",
+    "lastro",
+    "gateway",
+    "payments",
+    "brasil",
+    "bcb"
+  ],
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "gerar": "openapi-typescript ../../api/openapi.yaml -o src/schema.ts",
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test test/*.test.mjs"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.9.3"
+  }
+}

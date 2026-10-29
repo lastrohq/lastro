@@ -43,6 +43,19 @@ client works the same way: run `lastro mcp` over stdio with `LASTRO_URL`
 (default `http://localhost:8080`), `LASTRO_TOKEN` and, optionally,
 `LASTRO_CHAVE_PIX`.
 
+## Use it from TypeScript
+
+```ts
+import { Lastro } from "@lastrohq/sdk";
+
+const lastro = new Lastro({ url: "http://localhost:8080", token: process.env.LASTRO_TOKEN! });
+const cob = await lastro.cob.criar({ calendario: { expiracao: 3600 }, valor: { original: "49.90" }, chave: "sandbox@lastro.dev" });
+console.log(cob.pixCopiaECola);
+```
+
+Typed from the OpenAPI spec, zero dependencies, with webhook signature
+verification. See [`sdk/typescript`](./sdk/typescript).
+
 ## Why
 
 Payment gateways charge ~1% per Pix, on top of being one more company between
