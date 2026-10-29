@@ -87,3 +87,9 @@ func (a *API) ConfigurarWebhook(ctx context.Context, conta domain.Conta, enderec
 	corpo := map[string]string{"webhookUrl": endereco}
 	return a.chamarCom(ctx, conta, http.MethodPut, a.cfg.Prefixo+"/webhook/"+escapar(conta.ChavePix), corpo, nil, a.cfg.HeadersWebhook)
 }
+
+// Chamar é a chamada genérica, para a rota que só um banco tem (por exemplo,
+// a simulação de pagamento do sandbox do Inter). caminho já inclui o prefixo.
+func (a *API) Chamar(ctx context.Context, conta domain.Conta, metodo, caminho string, entrada, saida any) error {
+	return a.chamar(ctx, conta, metodo, caminho, entrada, saida)
+}

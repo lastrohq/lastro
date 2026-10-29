@@ -12,6 +12,7 @@ const base = "/lastro";
 const paginas = [
   ["docs/SANDBOX.md", "sandbox"],
   ["docs/EFI.md", "efi"],
+  ["docs/INTER.md", "inter"],
   ["docs/REGRAS-DE-NEGOCIO.md", "regras-de-negocio"],
   ["docs/ARQUITETURA.md", "arquitetura"],
   ["CONTRIBUTING.md", "contribuir"],

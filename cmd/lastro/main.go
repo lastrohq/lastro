@@ -10,6 +10,7 @@ import (
 
 	"github.com/lastrohq/lastro/internal/adapters/psp"
 	"github.com/lastrohq/lastro/internal/adapters/psp/efi"
+	"github.com/lastrohq/lastro/internal/adapters/psp/inter"
 	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
 	"github.com/lastrohq/lastro/internal/cli"
 	"github.com/lastrohq/lastro/internal/platform/clock"
@@ -30,7 +31,7 @@ func main() {
 		// store, que só existem depois de abrir o store e o vault: a CLI monta o
 		// registry nessa hora.
 		MontarPSPs: func(f cli.Fontes) ports.Registry {
-			return psp.NewRegistry(sandbox.New(relogio, sandbox.ComStore(f.Store)), efi.New(f.Credenciais, relogio))
+			return psp.NewRegistry(sandbox.New(relogio, sandbox.ComStore(f.Store)), efi.New(f.Credenciais, relogio), inter.New(f.Credenciais, relogio))
 		},
 		Clock:  relogio,
 		Versao: version,
