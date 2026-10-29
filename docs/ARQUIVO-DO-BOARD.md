@@ -53,7 +53,7 @@ mudou o rumo, e a #79 fechou o último pedaço do épico de certificados.
 > conferido contra o `checksums.txt` e respondeu `0.5.0`. A página do release ganhou no topo os avisos de "só no
 > sandbox" e da saída nova do `lastro conciliar`.
 >
-> **Ainda não ⚠️ — imagem privada**, a mesma pendência das levas anteriores.
+> **Ainda não ⚠️ — imagem privada**, a mesma pendência das levas anteriores, agora com issue: [#98](https://github.com/lastrohq/lastro/issues/98).
 
 ### O estudo que mudou o rumo
 
@@ -86,6 +86,8 @@ para Pix.
 - [#89](https://github.com/lastrohq/lastro/issues/89) — conta PJ (MEI) para testar Pix Automático num banco real.
 - [#27](https://github.com/lastrohq/lastro/issues/27) — teste do adapter do Efí na homologação.
 - [#21](https://github.com/lastrohq/lastro/issues/21) — fixtures gravadas da homologação para a conformidade.
+- [#98](https://github.com/lastrohq/lastro/issues/98) — imagem no `ghcr.io` ainda privada (ação manual na interface da org).
+- [#99](https://github.com/lastrohq/lastro/issues/99) — transições da solicitação de confirmação, a conferir no Manual de Fluxos do BCB.
 
 ---
 
