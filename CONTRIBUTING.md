@@ -32,7 +32,7 @@ Requisitos: Go 1.27+, [golangci-lint](https://golangci-lint.run/) v2, Docker (pa
 ## Escrevendo um adapter de banco
 
 1. Abra (ou pegue) a issue pelo template **🏦 Novo adapter de banco**.
-2. Crie `internal/adapters/psp/<banco>/` implementando o port `PSP` (`internal/ports`).
+2. Crie `internal/adapters/psp/<banco>/`. Banco que segue a API Pix do BCB não reescreve nada: o pacote `pixapi` já faz mTLS, OAuth2, cob, cobv, Pix recebidos, devolução e webhook. O adapter embute `*pixapi.API` e passa um `pixapi.Banco` com as URLs, a busca do token, a tradução dos erros e os desvios ligados (`ConsultarAntesDeCriar`, `HeadersWebhook`). O que for só do banco vira um método no pacote dele, que sobrescreve o do `pixapi`. O `efi` e o `inter` são os exemplos.
 3. Declare em `Capabilities()` só o que o banco realmente suporta.
 4. Trate **dentro do adapter** todo desvio do banco em relação à spec do BCB, com um comentário dizendo qual desvio e a fonte (link da doc do banco).
    - **Credenciais e mTLS:** o adapter recebe um `ports.Credenciais` no construtor e pede as credenciais da conta a cada chamada ([ADR-007](docs/adr/007-credenciais-chegam-ao-adapter-por-port.md)). O par do mTLS sai de `certificado.TLS` (`internal/platform/certificado`), que lê .p12 e PEM. O adapter `efi` é a referência.

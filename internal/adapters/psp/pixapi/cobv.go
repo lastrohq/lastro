@@ -1,14 +1,12 @@
-package efi
+package pixapi
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
 
 	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
 )
 
 type calendarioV struct {
@@ -52,8 +50,8 @@ type valorV struct {
 	Desconto   *desconto   `json:"desconto,omitempty"`
 }
 
-// cobvEfi é o corpo de cobv no Efí, de ida e de volta.
-type cobvEfi struct {
+// cobvJSON é o corpo de cobv da spec, de ida e de volta.
+type cobvJSON struct {
 	Calendario         *calendarioV `json:"calendario,omitempty"`
 	Txid               string       `json:"txid,omitempty"`
 	Revisao            *int         `json:"revisao,omitempty"`
@@ -63,14 +61,14 @@ type cobvEfi struct {
 	Chave              string       `json:"chave,omitempty"`
 	SolicitacaoPagador string       `json:"solicitacaoPagador,omitempty"`
 	Location           string       `json:"location,omitempty"`
-	// Loc é onde o Efí põe a location da cobv: diferente da cob, a resposta
-	// da cobv não traz o campo location no topo (visto na homologação).
-	Loc           *locEfi `json:"loc,omitempty"`
-	PixCopiaECola string  `json:"pixCopiaECola,omitempty"`
+	// Loc é onde a spec põe o payload location; há banco (o Efí, na cobv) que
+	// não repete a location no topo.
+	Loc           *locJSON `json:"loc,omitempty"`
+	PixCopiaECola string   `json:"pixCopiaECola,omitempty"`
 }
 
-// locEfi é o payload location que o Efí devolve dentro da cobrança.
-type locEfi struct {
+// locJSON é o payload location que o banco devolve dentro da cobrança.
+type locJSON struct {
 	Location string `json:"location"`
 }
 
@@ -92,7 +90,7 @@ func deModalidade(m *modalidade) (*domain.ValorModalidade, error) {
 	return &domain.ValorModalidade{Modalidade: m.Modalidade, ValorPerc: v}, nil
 }
 
-func corpoCobv(conta domain.Conta, c domain.CobrancaVencimento) cobvEfi {
+func corpoCobv(conta domain.Conta, c domain.CobrancaVencimento) cobvJSON {
 	if c.Chave == "" {
 		c.Chave = conta.ChavePix
 	}
@@ -119,7 +117,7 @@ func corpoCobv(conta domain.Conta, c domain.CobrancaVencimento) cobvEfi {
 			v.Desconto.ValorPerc = c.Desconto.ValorPerc.String()
 		}
 	}
-	return cobvEfi{
+	return cobvJSON{
 		Calendario:         &calendarioV{DataDeVencimento: c.Vencimento.String(), ValidadeAposVencimento: c.ValidadeAposVencimento},
 		Devedor:            dv,
 		Valor:              v,
@@ -128,8 +126,8 @@ func corpoCobv(conta domain.Conta, c domain.CobrancaVencimento) cobvEfi {
 	}
 }
 
-// paraCobv traduz a resposta do Efí; base completa o que o Efí não devolve.
-func paraCobv(conta domain.Conta, r cobvEfi, base domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
+// paraCobv traduz a resposta do banco; base completa o que ele não devolve.
+func paraCobv(conta domain.Conta, r cobvJSON, base domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
 	c := base
 	c.ContaID = conta.ID
 	if r.Txid != "" {
@@ -158,7 +156,7 @@ func paraCobv(conta domain.Conta, r cobvEfi, base domain.CobrancaVencimento) (do
 		if cal.DataDeVencimento != "" {
 			d, err := domain.ParseData(cal.DataDeVencimento)
 			if err != nil {
-				return domain.CobrancaVencimento{}, fmt.Errorf("efi: calendario.dataDeVencimento: %w", err)
+				return domain.CobrancaVencimento{}, fmt.Errorf("calendario.dataDeVencimento: %w", err)
 			}
 			c.Vencimento = d
 		}
@@ -166,7 +164,7 @@ func paraCobv(conta domain.Conta, r cobvEfi, base domain.CobrancaVencimento) (do
 		if cal.Criacao != "" {
 			criada, err := parseHorario(cal.Criacao)
 			if err != nil {
-				return domain.CobrancaVencimento{}, fmt.Errorf("efi: calendario.criacao: %w", err)
+				return domain.CobrancaVencimento{}, fmt.Errorf("calendario.criacao: %w", err)
 			}
 			c.CriadaEm = criada
 		}
@@ -182,34 +180,34 @@ func paraCobv(conta domain.Conta, r cobvEfi, base domain.CobrancaVencimento) (do
 		var err error
 		if v.Original != "" {
 			if c.Valor, err = domain.ParseMoney(v.Original); err != nil {
-				return domain.CobrancaVencimento{}, fmt.Errorf("efi: valor.original %q: %w", v.Original, err)
+				return domain.CobrancaVencimento{}, fmt.Errorf("valor.original %q: %w", v.Original, err)
 			}
 		}
 		if c.Multa, err = deModalidade(v.Multa); err != nil {
-			return domain.CobrancaVencimento{}, fmt.Errorf("efi: valor.multa: %w", err)
+			return domain.CobrancaVencimento{}, fmt.Errorf("valor.multa: %w", err)
 		}
 		if c.Juros, err = deModalidade(v.Juros); err != nil {
-			return domain.CobrancaVencimento{}, fmt.Errorf("efi: valor.juros: %w", err)
+			return domain.CobrancaVencimento{}, fmt.Errorf("valor.juros: %w", err)
 		}
 		if c.Abatimento, err = deModalidade(v.Abatimento); err != nil {
-			return domain.CobrancaVencimento{}, fmt.Errorf("efi: valor.abatimento: %w", err)
+			return domain.CobrancaVencimento{}, fmt.Errorf("valor.abatimento: %w", err)
 		}
 		c.Desconto = nil
 		if v.Desconto != nil {
 			des := &domain.Desconto{Modalidade: v.Desconto.Modalidade}
 			if v.Desconto.ValorPerc != "" {
 				if des.ValorPerc, err = domain.ParseMoney(v.Desconto.ValorPerc); err != nil {
-					return domain.CobrancaVencimento{}, fmt.Errorf("efi: valor.desconto: %w", err)
+					return domain.CobrancaVencimento{}, fmt.Errorf("valor.desconto: %w", err)
 				}
 			}
 			for _, df := range v.Desconto.DescontoDataFixa {
 				data, err := domain.ParseData(df.Data)
 				if err != nil {
-					return domain.CobrancaVencimento{}, fmt.Errorf("efi: valor.desconto.descontoDataFixa: %w", err)
+					return domain.CobrancaVencimento{}, fmt.Errorf("valor.desconto.descontoDataFixa: %w", err)
 				}
 				vp, err := domain.ParseMoney(df.ValorPerc)
 				if err != nil {
-					return domain.CobrancaVencimento{}, fmt.Errorf("efi: valor.desconto.descontoDataFixa: %w", err)
+					return domain.CobrancaVencimento{}, fmt.Errorf("valor.desconto.descontoDataFixa: %w", err)
 				}
 				des.DatasFixas = append(des.DatasFixas, domain.DescontoData{Data: data, ValorPerc: vp})
 			}
@@ -219,49 +217,45 @@ func paraCobv(conta domain.Conta, r cobvEfi, base domain.CobrancaVencimento) (do
 	return c, nil
 }
 
-func caminhoCobv(txid domain.Txid) string { return "/v2/cobv/" + url.PathEscape(string(txid)) }
+func (a *API) caminhoCobv(txid domain.Txid) string {
+	return a.cfg.Prefixo + "/cobv/" + url.PathEscape(string(txid))
+}
 
-// CriarCobv cria a cobrança com vencimento (PUT /v2/cobv/:txid).
-//
-// Desvio do Efí, visto na homologação em 29/10/2026: PUT num txid que já
-// existe não dá erro; sobrescreve a cobv e soma uma revisão (na cob, o Efí
-// recusa). Para cumprir o port (txid repetido é ErrJaExiste) sem apagar a
-// cobrança de ninguém, o adapter consulta o txid antes e só cria se ele não
-// existir. Entre a consulta e o PUT sobra uma janela curta; o Lastro já
-// impede dois pedidos com o mesmo txid antes de chegar aqui.
-func (p *PSP) CriarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
-	switch _, err := p.ConsultarCobv(ctx, conta, c.Txid); {
-	case err == nil:
-		return domain.CobrancaVencimento{}, fmt.Errorf("efi: cobv %s: %w", c.Txid, ports.ErrJaExiste)
-	case !errors.Is(err, ports.ErrNaoEncontrado):
-		return domain.CobrancaVencimento{}, err
+// CriarCobv cria a cobrança com vencimento (PUT /cobv/:txid). Com
+// ConsultarAntesDeCriar.Cobv, consulta o txid antes: há banco (o Efí) que
+// sobrescreve a cobv num PUT repetido, em vez de recusar.
+func (a *API) CriarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
+	if a.cfg.ConsultarAntesDeCriar.Cobv {
+		if err := a.naoExiste(a.ConsultarCobv(ctx, conta, c.Txid)); err != nil {
+			return domain.CobrancaVencimento{}, fmt.Errorf("%s: cobv %s: %w", a.cfg.Nome, c.Txid, err)
+		}
 	}
-	var r cobvEfi
-	if err := p.chamar(ctx, conta, http.MethodPut, caminhoCobv(c.Txid), corpoCobv(conta, c), &r); err != nil {
+	var r cobvJSON
+	if err := a.chamar(ctx, conta, http.MethodPut, a.caminhoCobv(c.Txid), corpoCobv(conta, c), &r); err != nil {
 		return domain.CobrancaVencimento{}, err
 	}
 	return paraCobv(conta, r, c)
 }
 
-// ConsultarCobv lê a cobrança com vencimento (GET /v2/cobv/:txid).
-func (p *PSP) ConsultarCobv(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.CobrancaVencimento, error) {
-	var r cobvEfi
-	if err := p.chamar(ctx, conta, http.MethodGet, caminhoCobv(txid), nil, &r); err != nil {
+// ConsultarCobv lê a cobrança com vencimento (GET /cobv/:txid).
+func (a *API) ConsultarCobv(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.CobrancaVencimento, error) {
+	var r cobvJSON
+	if err := a.chamar(ctx, conta, http.MethodGet, a.caminhoCobv(txid), nil, &r); err != nil {
 		return domain.CobrancaVencimento{}, err
 	}
 	return paraCobv(conta, r, domain.CobrancaVencimento{Txid: txid})
 }
 
-// RevisarCobv envia o novo estado (PATCH /v2/cobv/:txid). Remoção pelo
+// RevisarCobv envia o novo estado (PATCH /cobv/:txid). Remoção pelo
 // recebedor vai sozinha, só com o status.
-func (p *PSP) RevisarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
+func (a *API) RevisarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
 	corpo := corpoCobv(conta, c)
 	corpo.Chave = ""
 	if c.Status == domain.CobrancaRemovidaPeloUsuarioRecebedor {
-		corpo = cobvEfi{Status: string(c.Status)}
+		corpo = cobvJSON{Status: string(c.Status)}
 	}
-	var r cobvEfi
-	if err := p.chamar(ctx, conta, http.MethodPatch, caminhoCobv(c.Txid), corpo, &r); err != nil {
+	var r cobvJSON
+	if err := a.chamar(ctx, conta, http.MethodPatch, a.caminhoCobv(c.Txid), corpo, &r); err != nil {
 		return domain.CobrancaVencimento{}, err
 	}
 	return paraCobv(conta, r, c)

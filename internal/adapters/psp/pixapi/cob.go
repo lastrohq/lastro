@@ -1,9 +1,10 @@
-package efi
+package pixapi
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -11,9 +12,10 @@ import (
 	"time"
 
 	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/lastrohq/lastro/internal/ports"
 )
 
-// segundos aceita número ou string: o Efí envia expiracao como string no GET.
+// segundos aceita número ou string: há banco (o Efí) que envia expiracao como string no GET.
 type segundos int64
 
 func (s *segundos) UnmarshalJSON(b []byte) error {
@@ -47,8 +49,8 @@ type valor struct {
 	ModalidadeAlteracao int `json:"modalidadeAlteracao,omitempty"`
 }
 
-// cobEfi é o corpo de cob no Efí, de ida e de volta.
-type cobEfi struct {
+// cobJSON é o corpo de cob da spec, de ida e de volta.
+type cobJSON struct {
 	Calendario         *calendario `json:"calendario,omitempty"`
 	Txid               string      `json:"txid,omitempty"`
 	Revisao            *int        `json:"revisao,omitempty"`
@@ -58,6 +60,7 @@ type cobEfi struct {
 	Chave              string      `json:"chave,omitempty"`
 	SolicitacaoPagador string      `json:"solicitacaoPagador,omitempty"`
 	Location           string      `json:"location,omitempty"`
+	Loc                *locJSON    `json:"loc,omitempty"`
 	PixCopiaECola      string      `json:"pixCopiaECola,omitempty"`
 }
 
@@ -82,13 +85,13 @@ func paraValor(v domain.Money, permiteAlteracao bool) *valor {
 	return out
 }
 
-// corpoCob monta o PUT /v2/cob/:txid a partir da cobrança do domínio. Sem chave
-// na cobrança, vale a chave da conta (o Efí exige a chave).
-func corpoCob(conta domain.Conta, c domain.Cobranca) cobEfi {
+// corpoCob monta o PUT /cob/:txid a partir da cobrança do domínio. Sem chave
+// na cobrança, vale a chave da conta (a spec exige a chave).
+func corpoCob(conta domain.Conta, c domain.Cobranca) cobJSON {
 	if c.Chave == "" {
 		c.Chave = conta.ChavePix
 	}
-	return cobEfi{
+	return cobJSON{
 		Calendario:         &calendario{Expiracao: segundos(c.Expiracao / time.Second)},
 		Devedor:            paraDevedor(c.Devedor),
 		Valor:              paraValor(c.Valor, c.PermiteAlteracao),
@@ -97,8 +100,8 @@ func corpoCob(conta domain.Conta, c domain.Cobranca) cobEfi {
 	}
 }
 
-// paraCobranca traduz a resposta do Efí; base completa o que o Efí não devolve.
-func paraCobranca(conta domain.Conta, r cobEfi, base domain.Cobranca) (domain.Cobranca, error) {
+// paraCobranca traduz a resposta do banco; base completa o que ele não devolve.
+func paraCobranca(conta domain.Conta, r cobJSON, base domain.Cobranca) (domain.Cobranca, error) {
 	c := base
 	c.ContaID = conta.ID
 	if r.Txid != "" {
@@ -107,8 +110,11 @@ func paraCobranca(conta domain.Conta, r cobEfi, base domain.Cobranca) (domain.Co
 	if r.Status != "" {
 		c.Status = domain.StatusCobranca(r.Status)
 	}
-	if r.Location != "" {
+	switch {
+	case r.Location != "":
 		c.Location = r.Location
+	case r.Loc != nil && r.Loc.Location != "":
+		c.Location = r.Loc.Location
 	}
 	if r.PixCopiaECola != "" {
 		c.BRCode = r.PixCopiaECola
@@ -123,7 +129,7 @@ func paraCobranca(conta domain.Conta, r cobEfi, base domain.Cobranca) (domain.Co
 	if r.Valor != nil {
 		v, err := domain.ParseMoney(r.Valor.Original)
 		if err != nil {
-			return domain.Cobranca{}, fmt.Errorf("efi: valor.original %q: %w", r.Valor.Original, err)
+			return domain.Cobranca{}, fmt.Errorf("valor.original %q: %w", r.Valor.Original, err)
 		}
 		c.Valor, c.PermiteAlteracao = v, r.Valor.ModalidadeAlteracao == 1
 	}
@@ -143,7 +149,7 @@ func paraCobranca(conta domain.Conta, r cobEfi, base domain.Cobranca) (domain.Co
 		if r.Calendario.Criacao != "" {
 			criada, err := parseHorario(r.Calendario.Criacao)
 			if err != nil {
-				return domain.Cobranca{}, fmt.Errorf("efi: calendario.criacao: %w", err)
+				return domain.Cobranca{}, fmt.Errorf("calendario.criacao: %w", err)
 			}
 			c.CriadaEm = criada
 		}
@@ -151,7 +157,7 @@ func paraCobranca(conta domain.Conta, r cobEfi, base domain.Cobranca) (domain.Co
 	return c, nil
 }
 
-// parseHorario lê os instantes do Efí (RFC 3339, com ou sem fração de segundo) em UTC.
+// parseHorario lê os instantes do banco (RFC 3339, com ou sem fração de segundo) em UTC.
 func parseHorario(s string) (time.Time, error) {
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
@@ -160,39 +166,62 @@ func parseHorario(s string) (time.Time, error) {
 	return t.UTC(), nil
 }
 
-func caminhoCob(txid domain.Txid) string { return "/v2/cob/" + url.PathEscape(string(txid)) }
+func (a *API) caminhoCob(txid domain.Txid) string {
+	return a.cfg.Prefixo + "/cob/" + url.PathEscape(string(txid))
+}
 
-// CriarCob cria a cobrança com o txid do Lastro (PUT /v2/cob/:txid).
-func (p *PSP) CriarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
-	var r cobEfi
-	if err := p.chamar(ctx, conta, http.MethodPut, caminhoCob(c.Txid), corpoCob(conta, c), &r); err != nil {
+// CriarCob cria a cobrança com o txid do Lastro (PUT /cob/:txid). Com
+// ConsultarAntesDeCriar.Cob, consulta o txid antes: txid repetido é
+// ErrJaExiste mesmo no banco que sobrescreveria ou não sinalizaria.
+func (a *API) CriarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
+	if a.cfg.ConsultarAntesDeCriar.Cob {
+		if err := a.naoExiste(a.ConsultarCob(ctx, conta, c.Txid)); err != nil {
+			return domain.Cobranca{}, fmt.Errorf("%s: cob %s: %w", a.cfg.Nome, c.Txid, err)
+		}
+	}
+	var r cobJSON
+	if err := a.chamar(ctx, conta, http.MethodPut, a.caminhoCob(c.Txid), corpoCob(conta, c), &r); err != nil {
 		return domain.Cobranca{}, err
 	}
 	return paraCobranca(conta, r, c)
 }
 
-// ConsultarCob lê a cobrança (GET /v2/cob/:txid).
-func (p *PSP) ConsultarCob(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.Cobranca, error) {
-	var r cobEfi
-	if err := p.chamar(ctx, conta, http.MethodGet, caminhoCob(txid), nil, &r); err != nil {
+// ConsultarCob lê a cobrança (GET /cob/:txid).
+func (a *API) ConsultarCob(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.Cobranca, error) {
+	var r cobJSON
+	if err := a.chamar(ctx, conta, http.MethodGet, a.caminhoCob(txid), nil, &r); err != nil {
 		return domain.Cobranca{}, err
 	}
 	return paraCobranca(conta, r, domain.Cobranca{Txid: txid})
 }
 
-// RevisarCob envia o novo estado (PATCH /v2/cob/:txid). Remoção pelo recebedor
-// vai sozinha, só com o status, como no exemplo do Efí.
-func (p *PSP) RevisarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
+// RevisarCob envia o novo estado (PATCH /cob/:txid). Remoção pelo recebedor
+// vai sozinha, só com o status, como no exemplo da spec.
+func (a *API) RevisarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
 	corpo := corpoCob(conta, c)
 	corpo.Chave = "" // a chave não muda numa revisão
 	if c.Status == domain.CobrancaRemovidaPeloUsuarioRecebedor {
-		corpo = cobEfi{Status: string(c.Status)}
+		corpo = cobJSON{Status: string(c.Status)}
 	}
-	var r cobEfi
-	if err := p.chamar(ctx, conta, http.MethodPatch, caminhoCob(c.Txid), corpo, &r); err != nil {
+	var r cobJSON
+	if err := a.chamar(ctx, conta, http.MethodPatch, a.caminhoCob(c.Txid), corpo, &r); err != nil {
 		return domain.Cobranca{}, err
 	}
 	return paraCobranca(conta, r, c)
 }
 
 var _ json.Unmarshaler = (*segundos)(nil)
+
+// naoExiste recebe o resultado de uma consulta feita antes de criar: achou é
+// ErrJaExiste, não achou é nil, outro erro passa adiante.
+func (a *API) naoExiste(_ any, err error) error {
+	switch {
+	case err == nil:
+		return ports.ErrJaExiste
+	case errors.Is(err, ports.ErrNaoEncontrado):
+		return nil
+	}
+	return err
+}
+
+func escapar(s string) string { return url.PathEscape(s) }

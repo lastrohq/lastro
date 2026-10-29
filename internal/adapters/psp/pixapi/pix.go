@@ -1,4 +1,4 @@
-package efi
+package pixapi
 
 import (
 	"context"
@@ -13,26 +13,26 @@ import (
 	"github.com/lastrohq/lastro/internal/ports"
 )
 
-// itensPorPagina é o máximo que o Efí devolve por página em GET /v2/pix.
+// itensPorPagina é quantos Pix pedir por página em GET /pix (o Efí aceita até 100).
 const itensPorPagina = 100
 
-// limitePaginas protege contra um laço sem fim se o Efí repetir a paginação.
+// limitePaginas protege contra um laço sem fim se o banco repetir a paginação.
 const limitePaginas = 1000
 
-type pagadorEfi struct {
+type pagadorJSON struct {
 	CPF  string `json:"cpf,omitempty"`
 	CNPJ string `json:"cnpj,omitempty"`
 	Nome string `json:"nome,omitempty"`
 }
 
-type pixEfi struct {
-	EndToEndID  string      `json:"endToEndId"`
-	Txid        string      `json:"txid"`
-	Valor       string      `json:"valor"`
-	Chave       string      `json:"chave"`
-	Horario     string      `json:"horario"`
-	InfoPagador string      `json:"infoPagador"`
-	Pagador     *pagadorEfi `json:"pagador"`
+type pixJSON struct {
+	EndToEndID  string       `json:"endToEndId"`
+	Txid        string       `json:"txid"`
+	Valor       string       `json:"valor"`
+	Chave       string       `json:"chave"`
+	Horario     string       `json:"horario"`
+	InfoPagador string       `json:"infoPagador"`
+	Pagador     *pagadorJSON `json:"pagador"`
 }
 
 type listaPix struct {
@@ -42,10 +42,10 @@ type listaPix struct {
 			QuantidadeDePaginas int `json:"quantidadeDePaginas"`
 		} `json:"paginacao"`
 	} `json:"parametros"`
-	Pix []pixEfi `json:"pix"`
+	Pix []pixJSON `json:"pix"`
 }
 
-func paraPix(conta domain.Conta, p pixEfi) (domain.PixRecebido, error) {
+func paraPix(conta domain.Conta, p pixJSON) (domain.PixRecebido, error) {
 	if err := domain.ValidarEndToEndID(p.EndToEndID); err != nil {
 		return domain.PixRecebido{}, err
 	}
@@ -71,10 +71,10 @@ func paraPix(conta domain.Conta, p pixEfi) (domain.PixRecebido, error) {
 	return out, nil
 }
 
-// ListarPix lê os Pix recebidos na janela (GET /v2/pix), página por página. O
-// Efí filtra por [inicio, fim]; o port pede [Inicio, Fim), então quem cai
+// ListarPix lê os Pix recebidos na janela (GET /pix), página por página. A
+// spec filtra por [inicio, fim]; o port pede [Inicio, Fim), então quem cai
 // exatamente em Fim fica para a próxima janela.
-func (p *PSP) ListarPix(ctx context.Context, conta domain.Conta, j ports.Janela) ([]domain.PixRecebido, error) {
+func (a *API) ListarPix(ctx context.Context, conta domain.Conta, j ports.Janela) ([]domain.PixRecebido, error) {
 	var out []domain.PixRecebido
 	for pagina := 0; pagina < limitePaginas; pagina++ {
 		q := url.Values{}
@@ -83,14 +83,14 @@ func (p *PSP) ListarPix(ctx context.Context, conta domain.Conta, j ports.Janela)
 		q.Set("paginacao.paginaAtual", strconv.Itoa(pagina))
 		q.Set("paginacao.itensPorPagina", strconv.Itoa(itensPorPagina))
 		var r listaPix
-		if err := p.chamar(ctx, conta, http.MethodGet, "/v2/pix?"+q.Encode(), nil, &r); err != nil {
+		if err := a.chamar(ctx, conta, http.MethodGet, a.cfg.Prefixo+"/pix?"+q.Encode(), nil, &r); err != nil {
 			return nil, err
 		}
 		for i, item := range r.Pix {
 			pix, err := paraPix(conta, item)
 			if err != nil {
 				// Um Pix fora do formato invalida a consulta: melhor falhar que perder um pagamento.
-				return nil, fmt.Errorf("efi: GET /v2/pix página %d item %d: %w", pagina, i, err)
+				return nil, fmt.Errorf("%s: GET %s/pix página %d item %d: %w", a.cfg.Nome, a.cfg.Prefixo, pagina, i, err)
 			}
 			if !pix.Horario.Before(j.Inicio) && pix.Horario.Before(j.Fim) {
 				out = append(out, pix)
@@ -100,10 +100,10 @@ func (p *PSP) ListarPix(ctx context.Context, conta domain.Conta, j ports.Janela)
 			return out, nil
 		}
 	}
-	return nil, fmt.Errorf("efi: GET /v2/pix passou de %d páginas", limitePaginas)
+	return nil, fmt.Errorf("%s: GET %s/pix passou de %d páginas", a.cfg.Nome, a.cfg.Prefixo, limitePaginas)
 }
 
-type devolucaoEfi struct {
+type devolucaoJSON struct {
 	ID       string `json:"id,omitempty"`
 	RtrID    string `json:"rtrId,omitempty"`
 	Valor    string `json:"valor"`
@@ -117,11 +117,11 @@ type devolucaoEfi struct {
 	Descricao string `json:"descricao,omitempty"`
 }
 
-func caminhoDevolucao(e2e, id string) string {
-	return "/v2/pix/" + url.PathEscape(e2e) + "/devolucao/" + url.PathEscape(id)
+func (a *API) caminhoDevolucao(e2e, id string) string {
+	return a.cfg.Prefixo + "/pix/" + url.PathEscape(e2e) + "/devolucao/" + url.PathEscape(id)
 }
 
-func paraDevolucao(conta domain.Conta, r devolucaoEfi, base domain.Devolucao) (domain.Devolucao, error) {
+func paraDevolucao(conta domain.Conta, r devolucaoJSON, base domain.Devolucao) (domain.Devolucao, error) {
 	d := base
 	d.ContaID = conta.ID
 	if r.ID != "" {
@@ -130,7 +130,7 @@ func paraDevolucao(conta domain.Conta, r devolucaoEfi, base domain.Devolucao) (d
 	if r.Valor != "" {
 		v, err := domain.ParseMoney(r.Valor)
 		if err != nil {
-			return domain.Devolucao{}, fmt.Errorf("efi: valor da devolução %q: %w", r.Valor, err)
+			return domain.Devolucao{}, fmt.Errorf("valor da devolução %q: %w", r.Valor, err)
 		}
 		d.Valor = v
 	}
@@ -148,45 +148,45 @@ func paraDevolucao(conta domain.Conta, r devolucaoEfi, base domain.Devolucao) (d
 	if r.Horario != nil && r.Horario.Solicitacao != "" {
 		criada, err := parseHorario(r.Horario.Solicitacao)
 		if err != nil {
-			return domain.Devolucao{}, fmt.Errorf("efi: horario.solicitacao: %w", err)
+			return domain.Devolucao{}, fmt.Errorf("horario.solicitacao: %w", err)
 		}
 		d.CriadaEm = criada
 	}
 	if r.Horario != nil && r.Horario.Liquidacao != "" {
 		liquidada, err := parseHorario(r.Horario.Liquidacao)
 		if err != nil {
-			return domain.Devolucao{}, fmt.Errorf("efi: horario.liquidacao: %w", err)
+			return domain.Devolucao{}, fmt.Errorf("horario.liquidacao: %w", err)
 		}
 		d.LiquidadaEm = liquidada
 	}
 	return d, nil
 }
 
-// ConsultarDevolucao lê a devolução (GET /v2/pix/:e2eId/devolucao/:id).
-func (p *PSP) ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, id string) (domain.Devolucao, error) {
-	var r devolucaoEfi
-	if err := p.chamar(ctx, conta, http.MethodGet, caminhoDevolucao(e2e, id), nil, &r); err != nil {
+// ConsultarDevolucao lê a devolução (GET /pix/:e2eId/devolucao/:id).
+func (a *API) ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, id string) (domain.Devolucao, error) {
+	var r devolucaoJSON
+	if err := a.chamar(ctx, conta, http.MethodGet, a.caminhoDevolucao(e2e, id), nil, &r); err != nil {
 		return domain.Devolucao{}, err
 	}
 	return paraDevolucao(conta, r, domain.Devolucao{ID: id, EndToEndID: e2e})
 }
 
-// Devolver pede a devolução (PUT /v2/pix/:e2eId/devolucao/:id).
+// Devolver pede a devolução (PUT /pix/:e2eId/devolucao/:id).
 //
-// O Efí recusa id repetido com 409 devolucao_id_duplicado. O port pede
+// Id repetido vem do Traduzir como ErrDevolucaoDuplicada. O port pede
 // idempotência pelo id, então o adapter consulta a devolução existente e a
 // devolve se o valor for o mesmo; valor diferente é ErrJaExiste.
-func (p *PSP) Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error) {
-	corpo := devolucaoEfi{Valor: d.Valor.String(), Natureza: string(d.Natureza), Descricao: d.Descricao}
-	var r devolucaoEfi
-	err := p.chamar(ctx, conta, http.MethodPut, caminhoDevolucao(d.EndToEndID, d.ID), corpo, &r)
-	if errors.Is(err, errDevolucaoDuplicada) {
-		var existente devolucaoEfi
-		if errGet := p.chamar(ctx, conta, http.MethodGet, caminhoDevolucao(d.EndToEndID, d.ID), nil, &existente); errGet != nil {
+func (a *API) Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error) {
+	corpo := devolucaoJSON{Valor: d.Valor.String(), Natureza: string(d.Natureza), Descricao: d.Descricao}
+	var r devolucaoJSON
+	err := a.chamar(ctx, conta, http.MethodPut, a.caminhoDevolucao(d.EndToEndID, d.ID), corpo, &r)
+	if errors.Is(err, ErrDevolucaoDuplicada) {
+		var existente devolucaoJSON
+		if errGet := a.chamar(ctx, conta, http.MethodGet, a.caminhoDevolucao(d.EndToEndID, d.ID), nil, &existente); errGet != nil {
 			return domain.Devolucao{}, err
 		}
 		if existente.Valor != corpo.Valor {
-			return domain.Devolucao{}, fmt.Errorf("efi: devolução %s já existe com valor %s: %w", d.ID, existente.Valor, ports.ErrJaExiste)
+			return domain.Devolucao{}, fmt.Errorf("%s: devolução %s já existe com valor %s: %w", a.cfg.Nome, d.ID, existente.Valor, ports.ErrJaExiste)
 		}
 		return paraDevolucao(conta, existente, d)
 	}
