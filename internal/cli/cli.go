@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/lastrohq/lastro/internal/adapters/httpapi"
+	"github.com/lastrohq/lastro/internal/adapters/jobs"
 	"github.com/lastrohq/lastro/internal/adapters/store/sqlite"
 	"github.com/lastrohq/lastro/internal/app"
 	"github.com/lastrohq/lastro/internal/domain"
@@ -42,6 +43,7 @@ const uso = `uso: lastro <comando>
   conta desativar <id>           impede novas cobranças na conta
   conta webhook <id> --url-publica https://...
                                  gera a URL de aviso de Pix e registra no banco
+  conciliar                      roda a conciliação uma vez (GET /pix de cada conta)
   apikey criar --nome N --escopo E [--escopo E...] [--conta ID]
                                  cria uma API key (o token aparece uma vez só)
   apikey listar                  lista as API keys
@@ -50,7 +52,8 @@ const uso = `uso: lastro <comando>
 escopos: cob:read cob:write cobv:read cobv:write pix:read devolucao:write
          rec:read rec:write webhook:admin conta:admin
 
-variáveis: LASTRO_DB (padrão lastro.db), LASTRO_MASTER_KEY, LASTRO_ADDR (padrão :8080)`
+variáveis: LASTRO_DB (padrão lastro.db), LASTRO_MASTER_KEY, LASTRO_ADDR (padrão :8080),
+           LASTRO_CONCILIACAO_INTERVALO (padrão 5m; 0 desliga), LASTRO_CONCILIACAO_JANELA (padrão 2h)`
 
 // Run executa o comando em args.
 func Run(ctx context.Context, args []string, amb Ambiente) error {
@@ -73,6 +76,8 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 		return conta(ctx, args[1:], amb)
 	case "apikey":
 		return apikey(ctx, args[1:], amb)
+	case "conciliar":
+		return conciliar(ctx, amb)
 	case "help", "-h", "--help":
 		_, err := fmt.Fprintln(amb.Saida, uso)
 		return err
@@ -221,12 +226,29 @@ func trimFinal(b []byte) []byte {
 
 func serve(ctx context.Context, amb Ambiente) error {
 	addr := getenv(amb, "LASTRO_ADDR", ":8080")
+	intervalo, err := duracao(amb, "LASTRO_CONCILIACAO_INTERVALO", "5m")
+	if err != nil {
+		return err
+	}
+	conc, err := conciliacao(amb)
+	if err != nil {
+		return err
+	}
 	contas, fechar, err := abrir(ctx, amb)
 	if err != nil {
 		return err
 	}
 	defer fechar()
 	store := contas.Store
+	conc.Store, conc.Recebimentos.Store = store, store
+	if intervalo > 0 {
+		go jobs.Periodico(ctx, "conciliação", intervalo, func(ctx context.Context) error {
+			_, err := conc.Rodar(ctx)
+			return err
+		})
+	} else {
+		slog.Warn("conciliação desligada: Pix sem aviso do banco não serão recuperados")
+	}
 	srv := &http.Server{
 		Addr: addr,
 		Handler: httpapi.NewRouter(httpapi.Opcoes{
@@ -326,4 +348,48 @@ func apikey(ctx context.Context, args []string, amb Ambiente) error {
 	default:
 		return fmt.Errorf("subcomando desconhecido %q (use criar, listar ou revogar)", args[0])
 	}
+}
+
+// duracao lê uma variável no formato do Go (5m, 2h, 30s).
+func duracao(amb Ambiente, chave, padrao string) (time.Duration, error) {
+	v := getenv(amb, chave, padrao)
+	d, err := time.ParseDuration(v)
+	if err != nil || d < 0 {
+		return 0, fmt.Errorf("%s=%q: use uma duração como 5m ou 2h", chave, v)
+	}
+	return d, nil
+}
+
+// conciliacao monta o caso de uso sem Store; quem chama completa com o banco aberto.
+func conciliacao(amb Ambiente) (app.Conciliacao, error) {
+	janela, err := duracao(amb, "LASTRO_CONCILIACAO_JANELA", "2h")
+	if err != nil {
+		return app.Conciliacao{}, err
+	}
+	if janela == 0 {
+		return app.Conciliacao{}, errors.New("LASTRO_CONCILIACAO_JANELA não pode ser zero")
+	}
+	return app.Conciliacao{PSPs: amb.PSPs, Recebimentos: app.Recebimentos{Clock: amb.Clock}, Clock: amb.Clock, Janela: janela}, nil
+}
+
+func conciliar(ctx context.Context, amb Ambiente) error {
+	conc, err := conciliacao(amb)
+	if err != nil {
+		return err
+	}
+	contas, fechar, err := abrir(ctx, amb)
+	if err != nil {
+		return err
+	}
+	defer fechar()
+	conc.Store, conc.Recebimentos.Store = contas.Store, contas.Store
+	r, err := conc.Rodar(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d falhas\n", r.Contas, r.Novos, r.Falhas)
+	if err == nil && r.Falhas > 0 {
+		err = fmt.Errorf("%d contas falharam (detalhes no log)", r.Falhas)
+	}
+	return err
 }

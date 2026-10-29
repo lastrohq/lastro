@@ -218,10 +218,22 @@ release com nota.
 
 ### RN-31 · Conciliação
 
-Um job periódico consulta `GET /pix?inicio&fim` em cada conta (janela
-deslizante, padrão a cada 5 min olhando as últimas 2 h) e trata como recebido
-todo Pix que não chegou por webhook. **Nenhum Pix some** porque o banco falhou
-em avisar.
+Um job dentro do `serve` consulta `GET /pix` de **cada conta** numa janela
+deslizante e registra todo Pix que não chegou por webhook, pelo mesmo caminho do
+webhook (RN-30): deduplicado por `endToEndId`, concluindo a cobrança e publicando
+`pix.recebido`. **Nenhum Pix some** porque o banco falhou em avisar.
+
+- Padrão: a cada **5 min**, olhando as últimas **2 h**
+  (`LASTRO_CONCILIACAO_INTERVALO`, `LASTRO_CONCILIACAO_JANELA`). Intervalo `0`
+  desliga, com aviso no log; janela zero é recusada.
+- A janela é `[agora − janela, agora)`. Um Pix no instante exato de `agora` entra
+  na rodada seguinte: as janelas se sobrepõem.
+- Conta **desativada também entra**: as cobranças antigas dela ainda podem ser pagas.
+- Uma conta que falha (PSP fora, PSP desconhecido) não impede as outras; a falha
+  vai para o log e a rodada seguinte tenta de novo.
+- As rodadas nunca se sobrepõem, e um atraso aleatório de até 10% evita que
+  várias instâncias consultem o banco no mesmo segundo.
+- `lastro conciliar` roda uma rodada sob demanda (útil depois de uma indisponibilidade).
 
 ### RN-32 · Saída (Lastro → aplicação do cliente)
 
