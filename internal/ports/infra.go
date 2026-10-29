@@ -3,6 +3,8 @@ package ports
 import (
 	"context"
 	"time"
+
+	"github.com/lastrohq/lastro/internal/domain"
 )
 
 // Clock é a fonte de tempo; o domínio nunca chama time.Now() direto.
@@ -14,6 +16,14 @@ type Clock interface {
 type Vault interface {
 	Cifrar(ctx context.Context, segredo []byte) ([]byte, error)
 	Decifrar(ctx context.Context, cifrado []byte) ([]byte, error)
+}
+
+// Certificados lê o certificado do mTLS (.p12 com senha, ou PEM com certificado
+// e chave) e devolve os dados públicos dele (RN-62). Arquivo ilegível, senha
+// errada ou chave que não corresponde ao certificado devolvem um erro que embrulha
+// domain.ErrCertificadoInvalido, sem nada do conteúdo na mensagem.
+type Certificados interface {
+	Ler(arquivo []byte, senha string) (domain.Certificado, error)
 }
 
 // Enviador faz o POST de um webhook de saída e devolve o status HTTP. Erro só

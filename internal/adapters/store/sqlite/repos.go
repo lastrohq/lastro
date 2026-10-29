@@ -16,10 +16,15 @@ import (
 type contas struct{ q *db.Queries }
 
 func (r contas) Criar(ctx context.Context, c domain.Conta) error {
-	err := r.q.CriarConta(ctx, db.CriarContaParams{
+	p := db.CriarContaParams{
 		ID: c.ID, Nome: c.Nome, Psp: c.PSP, ChavePix: c.ChavePix, Ambiente: string(c.Ambiente), Ativa: boolInt(c.Ativa),
-	})
-	return traduzir(err, "conta "+c.ID)
+	}
+	if cert := c.Certificado; cert != nil {
+		p.CertSujeito = sql.NullString{String: cert.Sujeito, Valid: true}
+		p.CertImpressaoDigital = sql.NullString{String: cert.ImpressaoDigital, Valid: true}
+		p.CertValidadeS = sql.NullInt64{Int64: cert.Validade.Unix(), Valid: true}
+	}
+	return traduzir(r.q.CriarConta(ctx, p), "conta "+c.ID)
 }
 
 func (r contas) Buscar(ctx context.Context, id string) (domain.Conta, error) {
@@ -51,7 +56,15 @@ func (r contas) Listar(ctx context.Context) ([]domain.Conta, error) {
 }
 
 func paraConta(r db.BuscarContaRow) domain.Conta {
-	return domain.Conta{ID: r.ID, Nome: r.Nome, PSP: r.Psp, ChavePix: r.ChavePix, Ambiente: domain.Ambiente(r.Ambiente), Ativa: r.Ativa == 1}
+	c := domain.Conta{ID: r.ID, Nome: r.Nome, PSP: r.Psp, ChavePix: r.ChavePix, Ambiente: domain.Ambiente(r.Ambiente), Ativa: r.Ativa == 1}
+	if r.CertImpressaoDigital.Valid {
+		c.Certificado = &domain.Certificado{
+			Sujeito:          r.CertSujeito.String,
+			ImpressaoDigital: r.CertImpressaoDigital.String,
+			Validade:         time.Unix(r.CertValidadeS.Int64, 0).UTC(),
+		}
+	}
+	return c
 }
 
 func (r contas) Atualizar(ctx context.Context, c domain.Conta) error {

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"strings"
 	"testing"
+	"time"
 )
 
 func contaValida() Conta {
@@ -62,6 +63,25 @@ func TestCredenciaisNuncaVazamEmTexto(t *testing.T) {
 			if strings.Contains(s, segredo) {
 				t.Fatalf("vazou %q em %q", segredo, s)
 			}
+		}
+	}
+}
+
+func TestCertificadoVencidoEm(t *testing.T) {
+	validade := time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)
+	c := Certificado{Validade: validade}
+	if c.VencidoEm(validade.Add(-time.Second)) {
+		t.Fatal("um segundo antes da validade, já vencido")
+	}
+	if !c.VencidoEm(validade) {
+		t.Fatal("no instante da validade, ainda vale")
+	}
+}
+
+func TestErrosDeCertificadoSaoContaInvalida(t *testing.T) {
+	for _, err := range []error{ErrCertificadoInvalido, ErrCertificadoVencido} {
+		if !errors.Is(err, ErrContaInvalida) {
+			t.Fatalf("%v não é ErrContaInvalida", err)
 		}
 	}
 }

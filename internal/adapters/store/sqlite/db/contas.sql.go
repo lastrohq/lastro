@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
 const atualizarConta = `-- name: AtualizarConta :execrows
@@ -36,16 +37,19 @@ func (q *Queries) AtualizarConta(ctx context.Context, arg AtualizarContaParams) 
 }
 
 const buscarConta = `-- name: BuscarConta :one
-SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas WHERE id = ?
+SELECT id, nome, psp, chave_pix, ambiente, ativa, cert_sujeito, cert_impressao_digital, cert_validade_s FROM contas WHERE id = ?
 `
 
 type BuscarContaRow struct {
-	ID       string
-	Nome     string
-	Psp      string
-	ChavePix string
-	Ambiente string
-	Ativa    int64
+	ID                   string
+	Nome                 string
+	Psp                  string
+	ChavePix             string
+	Ambiente             string
+	Ativa                int64
+	CertSujeito          sql.NullString
+	CertImpressaoDigital sql.NullString
+	CertValidadeS        sql.NullInt64
 }
 
 func (q *Queries) BuscarConta(ctx context.Context, id string) (BuscarContaRow, error) {
@@ -58,21 +62,27 @@ func (q *Queries) BuscarConta(ctx context.Context, id string) (BuscarContaRow, e
 		&i.ChavePix,
 		&i.Ambiente,
 		&i.Ativa,
+		&i.CertSujeito,
+		&i.CertImpressaoDigital,
+		&i.CertValidadeS,
 	)
 	return i, err
 }
 
 const buscarContaPorChave = `-- name: BuscarContaPorChave :one
-SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas WHERE chave_pix = ?
+SELECT id, nome, psp, chave_pix, ambiente, ativa, cert_sujeito, cert_impressao_digital, cert_validade_s FROM contas WHERE chave_pix = ?
 `
 
 type BuscarContaPorChaveRow struct {
-	ID       string
-	Nome     string
-	Psp      string
-	ChavePix string
-	Ambiente string
-	Ativa    int64
+	ID                   string
+	Nome                 string
+	Psp                  string
+	ChavePix             string
+	Ambiente             string
+	Ativa                int64
+	CertSujeito          sql.NullString
+	CertImpressaoDigital sql.NullString
+	CertValidadeS        sql.NullInt64
 }
 
 func (q *Queries) BuscarContaPorChave(ctx context.Context, chavePix string) (BuscarContaPorChaveRow, error) {
@@ -85,6 +95,9 @@ func (q *Queries) BuscarContaPorChave(ctx context.Context, chavePix string) (Bus
 		&i.ChavePix,
 		&i.Ambiente,
 		&i.Ativa,
+		&i.CertSujeito,
+		&i.CertImpressaoDigital,
+		&i.CertValidadeS,
 	)
 	return i, err
 }
@@ -112,16 +125,19 @@ func (q *Queries) BuscarTokenWebhook(ctx context.Context, id string) ([]byte, er
 }
 
 const criarConta = `-- name: CriarConta :exec
-INSERT INTO contas (id, nome, psp, chave_pix, ambiente, ativa) VALUES (?, ?, ?, ?, ?, ?)
+INSERT INTO contas (id, nome, psp, chave_pix, ambiente, ativa, cert_sujeito, cert_impressao_digital, cert_validade_s) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type CriarContaParams struct {
-	ID       string
-	Nome     string
-	Psp      string
-	ChavePix string
-	Ambiente string
-	Ativa    int64
+	ID                   string
+	Nome                 string
+	Psp                  string
+	ChavePix             string
+	Ambiente             string
+	Ativa                int64
+	CertSujeito          sql.NullString
+	CertImpressaoDigital sql.NullString
+	CertValidadeS        sql.NullInt64
 }
 
 func (q *Queries) CriarConta(ctx context.Context, arg CriarContaParams) error {
@@ -132,21 +148,27 @@ func (q *Queries) CriarConta(ctx context.Context, arg CriarContaParams) error {
 		arg.ChavePix,
 		arg.Ambiente,
 		arg.Ativa,
+		arg.CertSujeito,
+		arg.CertImpressaoDigital,
+		arg.CertValidadeS,
 	)
 	return err
 }
 
 const listarContas = `-- name: ListarContas :many
-SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas ORDER BY id
+SELECT id, nome, psp, chave_pix, ambiente, ativa, cert_sujeito, cert_impressao_digital, cert_validade_s FROM contas ORDER BY id
 `
 
 type ListarContasRow struct {
-	ID       string
-	Nome     string
-	Psp      string
-	ChavePix string
-	Ambiente string
-	Ativa    int64
+	ID                   string
+	Nome                 string
+	Psp                  string
+	ChavePix             string
+	Ambiente             string
+	Ativa                int64
+	CertSujeito          sql.NullString
+	CertImpressaoDigital sql.NullString
+	CertValidadeS        sql.NullInt64
 }
 
 func (q *Queries) ListarContas(ctx context.Context) ([]ListarContasRow, error) {
@@ -165,6 +187,9 @@ func (q *Queries) ListarContas(ctx context.Context) ([]ListarContasRow, error) {
 			&i.ChavePix,
 			&i.Ambiente,
 			&i.Ativa,
+			&i.CertSujeito,
+			&i.CertImpressaoDigital,
+			&i.CertValidadeS,
 		); err != nil {
 			return nil, err
 		}

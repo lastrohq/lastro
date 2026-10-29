@@ -4,28 +4,41 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/lastrohq/lastro/internal/domain"
 	"github.com/lastrohq/lastro/internal/ports"
 )
 
-// Contas gerencia as contas recebedoras e as credenciais delas (RN-03, RN-61).
+// Contas gerencia as contas recebedoras e as credenciais delas (RN-03, RN-61, RN-62).
 type Contas struct {
-	Store ports.Store
-	Vault ports.Vault
-	PSPs  ports.Registry
+	Store        ports.Store
+	Vault        ports.Vault
+	PSPs         ports.Registry
+	Certificados ports.Certificados
+	Clock        ports.Clock
 }
 
-// Criar valida a conta, confere se o PSP existe e grava a conta com as
-// credenciais cifradas, numa transação só. Conta nasce ativa.
+// Criar valida a conta, confere se o PSP existe e se o certificado é legível e
+// está no prazo, e grava a conta com as credenciais cifradas, numa transação só.
+// Os dados públicos do certificado ficam na conta. Conta nasce ativa.
 func (s Contas) Criar(ctx context.Context, c domain.Conta, cred domain.Credenciais) error {
 	c.Ativa = true
+	c.Certificado = nil
 	if err := c.Validar(); err != nil {
 		return err
 	}
 	if _, err := s.PSPs.PSP(c.PSP); err != nil {
 		return err
+	}
+	if len(cred.Certificado) > 0 {
+		cert, err := s.lerCertificado(cred)
+		if err != nil {
+			return err
+		}
+		c.Certificado = &cert
 	}
 	plano, err := json.Marshal(cred) //nolint:gosec // G117: serializado só para ser cifrado na linha seguinte
 	if err != nil {
@@ -41,6 +54,20 @@ func (s Contas) Criar(ctx context.Context, c domain.Conta, cred domain.Credencia
 		}
 		return tx.Contas().SalvarCredenciais(ctx, c.ID, cifrado)
 	})
+}
+
+func (s Contas) lerCertificado(cred domain.Credenciais) (domain.Certificado, error) {
+	if s.Certificados == nil || s.Clock == nil {
+		return domain.Certificado{}, errors.New("contas: Certificados e Clock são obrigatórios para conferir o certificado")
+	}
+	cert, err := s.Certificados.Ler(cred.Certificado, cred.SenhaCertificado)
+	if err != nil {
+		return domain.Certificado{}, err
+	}
+	if cert.VencidoEm(s.Clock.Now()) {
+		return domain.Certificado{}, fmt.Errorf("%w em %s (%s)", domain.ErrCertificadoVencido, cert.Validade.Format(time.DateOnly), cert.Sujeito)
+	}
+	return cert, nil
 }
 
 // Desativar impede novas cobranças na conta; as existentes continuam valendo.

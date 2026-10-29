@@ -180,7 +180,7 @@ func (r contas) Atualizar(_ context.Context, c domain.Conta) error {
 	if !ok {
 		return fmt.Errorf("conta %s: %w", c.ID, ports.ErrNaoEncontrado)
 	}
-	c.PSP = atual.PSP
+	c.PSP, c.Certificado = atual.PSP, atual.Certificado // Atualizar não mexe em ID, PSP e certificado
 	r.s.d.contas[c.ID] = c
 	return nil
 }

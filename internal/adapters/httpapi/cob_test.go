@@ -30,6 +30,8 @@ type api struct {
 	webhooks app.Webhooks
 	// token é a API key usada por padrão nas chamadas (todos os escopos, sem restrição).
 	token string
+	// certs decide o que o cadastro de conta acha do certificado enviado.
+	certs *fake.Certificados
 	t     *testing.T
 }
 
@@ -46,13 +48,16 @@ func novaAPI(t *testing.T) *api {
 		t.Fatal(err)
 	}
 	registry := psp.NewRegistry(sandbox.New(clock))
+	certs := &fake.Certificados{Certificado: domain.Certificado{
+		Sujeito: "CN=loja", ImpressaoDigital: strings.Repeat("ab", 32), Validade: clock.Now().Add(90 * 24 * time.Hour),
+	}}
 	keys := app.APIKeys{Store: store, Clock: clock}
 	webhooks := app.Webhooks{Store: store, PSPs: registry, Recebimentos: app.Recebimentos{Store: store, Clock: clock}}
 	h := NewRouter(Opcoes{
 		Versao:       "v-test",
 		Cobrancas:    app.Cobrancas{Store: store, PSPs: registry, Clock: clock},
 		CobrancasV:   app.CobrancasV{Store: store, PSPs: registry, Clock: clock},
-		Contas:       app.Contas{Store: store, Vault: v, PSPs: registry},
+		Contas:       app.Contas{Store: store, Vault: v, PSPs: registry, Certificados: certs, Clock: clock},
 		Webhooks:     webhooks,
 		APIKeys:      keys,
 		Idempotencia: app.Idempotencia{Store: store, Clock: clock},
@@ -63,7 +68,7 @@ func novaAPI(t *testing.T) *api {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &api{h: h, r: r, clock: clock, store: store, keys: keys, webhooks: webhooks, token: token, t: t}
+	return &api{h: h, r: r, clock: clock, store: store, keys: keys, webhooks: webhooks, token: token, certs: certs, t: t}
 }
 
 // novoToken cria uma API key com os escopos e a conta dados.
