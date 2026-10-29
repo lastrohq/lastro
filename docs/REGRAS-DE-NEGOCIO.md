@@ -292,6 +292,14 @@ escrito em log — nem mascarado parcialmente.
 
 ### RN-62 · Certificados
 
+- O certificado do mTLS é **conferido no cadastro** da conta, pela CLI ou pela API:
+  .p12 com senha, ou PEM com certificado e chave no mesmo arquivo. O Lastro
+  recusa, com o motivo e sem mostrar o conteúdo, arquivo ilegível, senha errada,
+  chave privada que não corresponde ao certificado, chave PEM cifrada e
+  certificado vencido ([ADR-006](./adr/006-certificado-conferido-no-cadastro.md)).
+- Sujeito, impressão digital (SHA-256) e validade ficam visíveis na conta
+  (`conta listar`, `GET /lastro/v1/contas`). São dados públicos do certificado;
+  o certificado e a chave continuam cifrados (RN-61).
 - Alerta (painel e webhook `certificado.expirando`) a **30 dias** do vencimento.
 - Recusa usar em conta de produção um certificado marcado como de homologação
   (o Bradesco, por exemplo, não aceita o mesmo certificado nos dois).

@@ -26,14 +26,14 @@ comunidade sem medo.
 | `internal/cli` | Comandos (`serve`, `conta`, `chave`, `version`...), testáveis sem processo; monta as peças | tudo, menos `cmd` |
 | `internal/domain` | Entidades, máquinas de estado, `Money`, `Txid` | só stdlib |
 | `internal/app` | Casos de uso (`CriarCobranca`, `Devolver`, `CriarRecorrencia`...) | `domain`, `ports` |
-| `internal/ports` | Interfaces `PSP`, `Store`, `Notifier`, `Vault`, `Clock` | `domain` |
+| `internal/ports` | Interfaces `PSP`, `Store`, `Notifier`, `Vault`, `Certificados`, `Clock` | `domain` |
 | `internal/adapters/httpapi` | API BCB-compatível, admin, webhooks de entrada | `app`, `ports`, `domain` |
 | `internal/adapters/psp/*` | Um pacote por banco + `sandbox` | `ports`, `domain`, `platform`, o registry `adapters/psp`, `pkg` |
 | `internal/adapters/store/*` | `sqlite` (padrão), `postgres` (v0.3) | `ports`, `domain` |
 | `internal/adapters/notifier` | Outbox, entrega, retry, DLQ, assinatura | `ports`, `domain` |
 | `internal/adapters/mcp` | Ferramentas MCP sobre os casos de uso | `app`, `ports`, `domain` |
 | `internal/adapters/jobs` | Laço periódico (conciliação, entrega, limpezas) | só stdlib/libs |
-| `internal/platform` | `vault` (AES-256-GCM), `oauth` (cache de token OAuth2 por conta), e depois mTLS | só stdlib/libs — a checagem `var _ ports.Vault` fica no teste |
+| `internal/platform` | `vault` (AES-256-GCM), `oauth` (cache de token OAuth2 por conta), `certificado` (leitura de .p12/PEM), e depois mTLS | só stdlib/libs — a checagem `var _ ports.Vault` fica no teste |
 | `internal/adapters/psp` | `Registry` + um subpacote por banco | `ports`, `domain` |
 | `pkg/brcode` | Lib pública de BR Code | só stdlib |
 | `api/openapi.yaml` | Contrato da API (fonte da verdade) | — |
@@ -94,6 +94,7 @@ Definidos em `internal/ports` (#11):
 | `OutboxRepo` | É o lado "publicar" do Notifier: o evento entra na mesma transação da mudança de estado (ADR-005). A entrega fica no adapter `notifier` |
 | `Clock` | Fonte de tempo injetável |
 | `Vault` | Cifrar/decifrar segredos em repouso (RN-61) |
+| `Certificados` | Ler o certificado do mTLS (.p12/PEM) e devolver os dados públicos dele (RN-62). Implementado sobre `platform/certificado`, montado na CLI |
 
 Fakes em memória ficam em `internal/ports/fake`. **`internal/ports/storetest` é a suíte de
 contrato do Store**: o fake passa nela hoje, e o SQLite (#12) e o Postgres precisam passar nos

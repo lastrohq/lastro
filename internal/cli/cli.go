@@ -119,7 +119,7 @@ func abrir(ctx context.Context, amb Ambiente) (app.Contas, func(), error) {
 	if err != nil {
 		return app.Contas{}, nil, err
 	}
-	return app.Contas{Store: store, Vault: v, PSPs: amb.PSPs}, func() { _ = store.Close() }, nil
+	return app.Contas{Store: store, Vault: v, PSPs: amb.PSPs, Certificados: leitorCertificados{}, Clock: amb.Clock}, func() { _ = store.Close() }, nil
 }
 
 func conta(ctx context.Context, args []string, amb Ambiente) error {
@@ -141,9 +141,13 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 			return err
 		}
 		tw := tabwriter.NewWriter(amb.Saida, 0, 4, 2, ' ', 0)
-		_, _ = fmt.Fprintln(tw, "ID\tNOME\tPSP\tCHAVE\tAMBIENTE\tATIVA")
+		_, _ = fmt.Fprintln(tw, "ID\tNOME\tPSP\tCHAVE\tAMBIENTE\tATIVA\tCERTIFICADO VALE ATÉ")
 		for _, c := range lista {
-			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%v\n", c.ID, c.Nome, c.PSP, c.ChavePix, c.Ambiente, c.Ativa)
+			validade := "-"
+			if c.Certificado != nil {
+				validade = c.Certificado.Validade.Format(time.DateOnly)
+			}
+			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%v\t%s\n", c.ID, c.Nome, c.PSP, c.ChavePix, c.Ambiente, c.Ativa, validade)
 		}
 		return tw.Flush()
 	case "webhook":
@@ -213,8 +217,15 @@ func contaCriar(ctx context.Context, contas app.Contas, args []string, amb Ambie
 	if err := contas.Criar(ctx, c, cred); err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(amb.Saida, "conta %s criada (%s, %s)\n", c.ID, c.PSP, c.Ambiente)
-	return err
+	if _, err = fmt.Fprintf(amb.Saida, "conta %s criada (%s, %s)\n", c.ID, c.PSP, c.Ambiente); err != nil {
+		return err
+	}
+	if criada, err := contas.Buscar(ctx, c.ID); err == nil && criada.Certificado != nil {
+		cert := criada.Certificado
+		_, err = fmt.Fprintf(amb.Saida, "certificado %s, válido até %s (SHA-256 %s)\n", cert.Sujeito, cert.Validade.Format(time.DateOnly), cert.ImpressaoDigital)
+		return err
+	}
+	return nil
 }
 
 func lerSegredo(arquivo string) (string, error) {

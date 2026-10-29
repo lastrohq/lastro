@@ -10,5 +10,6 @@ com `Status: substitui ADR-00X`, e a antiga ganha `Status: substituída por ADR-
 | [003](./003-openapi-first.md) | OpenAPI-first, compatível com a spec do BCB | Aceita |
 | [004](./004-nao-custodial.md) | O Lastro é não custodial | Aceita |
 | [005](./005-standard-webhooks.md) | Webhooks de saída no padrão Standard Webhooks, com outbox | Aceita |
+| [006](./006-certificado-conferido-no-cadastro.md) | Certificado do mTLS conferido no cadastro, com go-pkcs12 | Aceita |
 
 Modelo: **Contexto** (o que força a decisão) · **Decisão** · **Consequências** (o que fica melhor, o que fica pior).

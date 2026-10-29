@@ -56,14 +56,17 @@ type CobrancasVencimento struct {
 }
 
 type Conta struct {
-	ID               string
-	Nome             string
-	Psp              string
-	ChavePix         string
-	Ambiente         string
-	Ativa            int64
-	Credenciais      []byte
-	WebhookTokenHash []byte
+	ID                   string
+	Nome                 string
+	Psp                  string
+	ChavePix             string
+	Ambiente             string
+	Ativa                int64
+	Credenciais          []byte
+	WebhookTokenHash     []byte
+	CertSujeito          sql.NullString
+	CertImpressaoDigital sql.NullString
+	CertValidadeS        sql.NullInt64
 }
 
 type DestinosWebhook struct {

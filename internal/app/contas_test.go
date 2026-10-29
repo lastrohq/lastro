@@ -4,7 +4,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"reflect"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/lastrohq/lastro/internal/adapters/psp"
 	"github.com/lastrohq/lastro/internal/app"
@@ -25,8 +29,16 @@ func novoContas(t *testing.T) (app.Contas, *fake.Store) {
 		t.Fatal(err)
 	}
 	s := fake.NewStore()
-	return app.Contas{Store: s, Vault: v, PSPs: psp.NewRegistry(pspFalso{})}, s
+	return app.Contas{
+		Store: s, Vault: v, PSPs: psp.NewRegistry(pspFalso{}),
+		Certificados: fake.Certificados{Certificado: certValido}, Clock: fake.NewClock(agora),
+	}, s
 }
+
+var (
+	agora      = time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
+	certValido = domain.Certificado{Sujeito: "CN=loja", ImpressaoDigital: "ab12", Validade: agora.Add(90 * 24 * time.Hour)}
+)
 
 var cred = domain.Credenciais{ClientID: "id-123", ClientSecret: "segredo-xyz", Certificado: []byte("PEM...")}
 
@@ -101,5 +113,65 @@ func TestCredenciaisComOutraMasterKeyFalham(t *testing.T) {
 	svc2 := app.Contas{Store: s, Vault: outra, PSPs: svc.PSPs}
 	if _, err := svc2.Credenciais(ctx, "loja"); !errors.Is(err, vault.ErrDecifrar) {
 		t.Fatalf("err = %v", err)
+	}
+}
+
+func TestCriarContaGuardaOsDadosPublicosDoCertificado(t *testing.T) {
+	svc, s := novoContas(t)
+	ctx := context.Background()
+	if err := svc.Criar(ctx, conta(), cred); err != nil {
+		t.Fatal(err)
+	}
+	c, _ := s.Contas().Buscar(ctx, "loja")
+	if c.Certificado == nil || !reflect.DeepEqual(*c.Certificado, certValido) {
+		t.Fatalf("Certificado = %+v; quer %+v", c.Certificado, certValido)
+	}
+}
+
+func TestCriarContaSemCertificadoNaoPrecisaDoLeitor(t *testing.T) {
+	svc, s := novoContas(t)
+	svc.Certificados, svc.Clock = nil, nil // o sandbox não tem certificado
+	ctx := context.Background()
+	if err := svc.Criar(ctx, conta(), domain.Credenciais{ClientID: "x"}); err != nil {
+		t.Fatal(err)
+	}
+	if c, _ := s.Contas().Buscar(ctx, "loja"); c.Certificado != nil {
+		t.Fatalf("conta sem certificado ganhou %+v", c.Certificado)
+	}
+}
+
+func TestCriarContaRecusaCertificado(t *testing.T) {
+	for nome, c := range map[string]struct {
+		leitor fake.Certificados
+		quer   error
+		trecho string
+	}{
+		"ilegível":    {fake.Certificados{Err: fmt.Errorf("%w: senha do .p12 errada", domain.ErrCertificadoInvalido)}, domain.ErrCertificadoInvalido, "senha do .p12 errada"},
+		"vencido":     {fake.Certificados{Certificado: domain.Certificado{Sujeito: "CN=loja", Validade: agora.Add(-time.Hour)}}, domain.ErrCertificadoVencido, "2026-10-29"},
+		"vence agora": {fake.Certificados{Certificado: domain.Certificado{Sujeito: "CN=loja", Validade: agora}}, domain.ErrCertificadoVencido, "CN=loja"},
+	} {
+		t.Run(nome, func(t *testing.T) {
+			svc, s := novoContas(t)
+			svc.Certificados = c.leitor
+			ctx := context.Background()
+			err := svc.Criar(ctx, conta(), cred)
+			if !errors.Is(err, c.quer) || !errors.Is(err, domain.ErrContaInvalida) {
+				t.Fatalf("err = %v; quer %v (e ErrContaInvalida)", err, c.quer)
+			}
+			if !strings.Contains(err.Error(), c.trecho) {
+				t.Fatalf("err %q não diz %q", err, c.trecho)
+			}
+			if lista, _ := s.Contas().Listar(ctx); len(lista) != 0 {
+				t.Fatal("gravou a conta com certificado recusado")
+			}
+		})
+	}
+}
+
+func TestCriarContaComCertificadoSemLeitorFalhaFechado(t *testing.T) {
+	svc, _ := novoContas(t)
+	svc.Certificados = nil
+	if err := svc.Criar(context.Background(), conta(), cred); err == nil {
+		t.Fatal("aceitou certificado sem conseguir conferir")
 	}
 }
