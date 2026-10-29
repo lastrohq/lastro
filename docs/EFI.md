@@ -13,8 +13,10 @@
 
 ## 1. Conta e credenciais
 
-1. **Conta Efí com acesso à API.** Pessoa física precisa da modalidade **Efí Pro**,
-   porque a "Efí para você" não tem API. Pessoa jurídica usa a **Efí Empresas**.
+1. **Conta Digital Efí com o menu "API".** É o que a [documentação da
+   Efí](https://dev.efipay.com.br/docs/api-pix/credenciais) pede; conta de
+   pessoa física também serve se o menu aparecer. O menu só existe no painel
+   web, não no app.
 2. No painel, em **API → Aplicações**, crie uma aplicação e ative a **API Pix**
    com os escopos de **homologação** (e de produção, quando for a hora):
    os escopos que o Lastro usa são `cob.write`, `cob.read`, `cobv.write`,
