@@ -36,6 +36,21 @@ type Cobranca struct {
 	Chave              string
 }
 
+type CobrancasRecorrente struct {
+	Txid               string
+	RecorrenciaID      string
+	ContaID            string
+	Status             string
+	Valor              int64
+	Vencimento         string
+	AjusteDiaUtil      int64
+	InfoAdicional      string
+	Tentativas         string
+	MotivoEncerramento string
+	CriadaEm           int64
+	Revisao            int64
+}
+
 type CobrancasVencimento struct {
 	Seq                int64
 	ContaID            string

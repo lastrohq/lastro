@@ -52,12 +52,13 @@ chave Pix + credenciais (client id/secret e certificado) + ambiente
 
 ### RN-10 · txid
 
-- Em `cob` e `cobv`: de **26 a 35** caracteres, `[a-zA-Z0-9]`.
+- Em `cob`, `cobv` e `cobr`: de **26 a 35** caracteres, `[a-zA-Z0-9]`.
 - Se o cliente não informar, o Lastro gera (aleatório criptográfico, 32 caracteres).
 - Se informar, o Lastro valida antes de chamar o banco — erro de formato nunca
   vira chamada de rede.
 - txid é único **na instância inteira** — mais estrito que a spec (que exige
   unicidade por recebedor), para que `GET /cob/{txid}` não precise saber a conta.
+  Vale entre os três tipos: o txid de uma cob não serve para uma cobv nem para uma cobr.
 - A conta da cobrança é a dona da `chave` informada no corpo. Chave Pix é única
   na instância, como no DICT.
 
@@ -238,7 +239,14 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
   como no exemplo da spec. A spec lista os status, não as transições: o
   diagrama precisa ser conferido no *Manual de Fluxos*, como o da RN-41.
 - **Só nasce de recorrência `APROVADA`**, com o vencimento dentro da vigência
-  dela e, se a recorrência tem valor fixo, **com esse valor**.
+  dela e, se a recorrência tem valor fixo, **com esse valor**. A cobrança é da
+  conta da recorrência; key restrita a outra conta recebe 404 (RN-60).
+- **Uma cobrança por ciclo:** enquanto a do ciclo está `CRIADA`, `ATIVA` ou
+  `CONCLUIDA`, outra no mesmo ciclo é recusada. Depois de cancelada, rejeitada ou
+  expirada, o recebedor pode criar outra.
+- Pedir retentativa publica `cobranca_recorrente.tentativa`, com a data nova;
+  cancelar publica `cobranca_recorrente.atualizada`. Se o aviso do banco chegou
+  antes da resposta do PSP, nada é publicado de novo.
 - **Antecedência:** a instrução de pagamento chega ao PSP do pagador **de 2 a 10
   dias corridos** antes da data prevista de liquidação. O Lastro recusa enviar
   fora dessa janela, em vez de deixar o banco recusar.
@@ -333,7 +341,8 @@ impede as outras, e as recorrências não dependem de a consulta de Pix dar cert
   `cobranca.removida`, `pix.recebido` (com `divergente` quando o valor pago
   difere do cobrado), `certificado.expirando` (RN-62) e, do Pix Automático,
   `recorrencia.criada`, `recorrencia.atualizada` e `recorrencia.solicitacao`
-  (RN-40, RN-41). O corpo é o envelope do Standard Webhooks:
+  (RN-40, RN-41), e `cobranca_recorrente.criada`, `cobranca_recorrente.atualizada`
+  e `cobranca_recorrente.tentativa` (RN-42). O corpo é o envelope do Standard Webhooks:
   `{"type": ..., "timestamp": ..., "data": {...}}`, normalizado, igual para
   qualquer banco.
 - **Assinatura** no padrão [Standard Webhooks](https://www.standardwebhooks.com/):

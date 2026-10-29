@@ -85,6 +85,20 @@ type PSPRecorrencia interface {
 	InterpretarWebhookRec(conta domain.Conta, corpo []byte) ([]domain.AtualizacaoRecorrencia, error)
 }
 
+// PSPCobrancaRecorrente é a parte opcional do PSP para a cobrança recorrente
+// do Pix Automático (RN-42). Só o adapter que declara CapCobr a implementa.
+type PSPCobrancaRecorrente interface {
+	// CriarCobr envia a cobrança com o txid dela (PUT /cobr/{txid}) e devolve
+	// o que o PSP gravou.
+	CriarCobr(ctx context.Context, conta domain.Conta, c domain.CobrancaRecorrente) (domain.CobrancaRecorrente, error)
+	ConsultarCobr(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.CobrancaRecorrente, error)
+	// CancelarCobr pede o cancelamento (PATCH /cobr/{txid} com CANCELADA).
+	CancelarCobr(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.CobrancaRecorrente, error)
+	// SolicitarRetentativa pede uma nova data de liquidação (POST
+	// /cobr/{txid}/retentativa/{data}) e devolve a cobrança com a tentativa nova.
+	SolicitarRetentativa(ctx context.Context, conta domain.Conta, txid domain.Txid, data domain.Data) (domain.CobrancaRecorrente, error)
+}
+
 // Credenciais entrega a um adapter de PSP as credenciais decifradas de uma conta
 // (RN-61). Só o adapter pede; nada mais no núcleo vê o segredo em claro.
 type Credenciais interface {
