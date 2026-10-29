@@ -168,18 +168,52 @@ CRIADA ──▶ APROVADA ──▶ CANCELADA
    └──▶ EXPIRADA
 ```
 
-- Uma recorrência tem periodicidade, valor (fixo ou máximo) e vigência.
+- Os status são os da API Pix do BCB (`RecStatus`, 2.10.0): `CRIADA`, `APROVADA`,
+  `REJEITADA`, `EXPIRADA`, `CANCELADA`.
+- Uma recorrência tem periodicidade (semanal, mensal, trimestral, semestral ou
+  anual), valor (fixo ou máximo), vigência e política de retentativa
+  (`NAO_PERMITE` ou `PERMITE_3R_7D`), definida só pelo recebedor (RN-42).
 - Só gera cobrança (`cobr`) quando `APROVADA`.
+- Rejeição pelo pagador vem com motivo; o Lastro guarda o motivo.
+- A autorização é dada por uma de quatro **jornadas** do BCB: (1) notificação no
+  app do pagador, sem QR Code (`/solicrec`); (2) QR Code só com a recorrência;
+  (3) QR Code com primeiro pagamento imediato e recorrência; (4) QR Code de fatura
+  com a recorrência. O PSP do recebedor oferece ao menos uma; o adapter declara
+  quais (RN-50).
 
 ### RN-41 · Solicitação de confirmação (`/solicrec`)
 
-É o pedido de autorização enviado ao pagador. Aprovação e rejeição chegam por
-webhook de recorrência (`/webhookrec`) e movem a recorrência (RN-40).
+É o pedido de autorização enviado ao app do pagador (jornada 1). Tem estados
+próprios, separados dos da recorrência (`SolicRecStatus`, 2.10.0):
+
+```
+CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
+   │          │           ├────────▶ REJEITADA
+   │          │           └────────▶ EXPIRADA
+   └──────────┴───────────────────▶ CANCELADA
+```
+
+- A spec lista os status, não as transições: o diagrama segue a ordem dos nomes
+  e precisa ser conferido no *Manual de Fluxos* do BCB ao implementar (#31).
+- `ACEITA` leva a recorrência a `APROVADA`; `REJEITADA`, a `REJEITADA` (RN-40).
+- Fica pendente no app do pagador por **no máximo 30 dias**; o recebedor pode
+  definir menos. Passado o prazo, expira.
+- O recebedor só cancela (`PATCH` com `CANCELADA`).
+- Mudanças chegam por webhook de recorrência (`/webhookrec`).
 
 ### RN-42 · Cobrança recorrente (`/cobr`)
 
-- Agendada com a antecedência mínima do normativo vigente.
-- Tentativas e retentativas seguem o normativo vigente.
+- Status da API Pix (`CobRStatus`, 2.10.0): `CRIADA`, `ATIVA`, `CONCLUIDA`,
+  `EXPIRADA`, `REJEITADA`, `CANCELADA`. O recebedor só cancela.
+- **Antecedência:** a instrução de pagamento chega ao PSP do pagador **de 2 a 10
+  dias corridos** antes da data prevista de liquidação. O Lastro recusa enviar
+  fora dessa janela, em vez de deixar o banco recusar.
+- **Retentativa** (`POST /cobr/{txid}/retentativa/{data}`), só se a recorrência
+  for `PERMITE_3R_7D`: no máximo **3 datas** diferentes, em até **7 dias corridos**
+  da data original, sem passar do início do ciclo seguinte (ou do fim da
+  recorrência), com **o mesmo valor**, pedida até **23h59 do dia anterior** à nova data.
+- Mudanças chegam por webhook de cobrança recorrente (`/webhookcobr`), separado
+  do de recorrência.
 
 ### RN-43 · Prazos versionados
 
@@ -187,6 +221,16 @@ Antecedência, janelas de retentativa e afins **não são constantes no código*
 Ficam numa tabela de parâmetros com **data do normativo** de origem, para que
 cada mudança do BCB vire um commit pequeno, revisável e com fonte — e um
 release com nota.
+
+Valores de partida, do *Guia de implementação do Pix Automático* v1.3
+(BCB, 19/08/2026), conferidos pelo estudo #1:
+
+| Parâmetro | Valor | Onde |
+|---|---|---|
+| Pendência máxima da solicitação de confirmação | 30 dias | Guia, seção 3.2 |
+| Antecedência da instrução de pagamento | 2 a 10 dias corridos | Guia, agendamento |
+| Retentativas pós-vencimento | até 3 datas, em até 7 dias corridos, mesmo valor | Guia, novas tentativas |
+| Prazo para pedir a retentativa | até 23h59 do dia anterior | Guia, novas tentativas |
 
 ---
 
