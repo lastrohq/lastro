@@ -1,8 +1,11 @@
 package efi_test
 
 import (
+	"context"
+	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -10,6 +13,7 @@ import (
 	"github.com/lastrohq/lastro/internal/adapters/psp/efi"
 	"github.com/lastrohq/lastro/internal/domain"
 	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
+	"github.com/lastrohq/lastro/internal/ports"
 	"github.com/lastrohq/lastro/internal/ports/fake"
 	"github.com/lastrohq/lastro/test/conformance"
 	"github.com/lastrohq/lastro/test/conformance/fita"
@@ -44,7 +48,8 @@ const dirFitas = "../../../../test/fixtures/efi"
 //	EFI_URL_WEBHOOK=https://... \
 //	go test -run TestConformidadeGravada ./internal/adapters/psp/efi/
 //
-// A homologação não paga cobranças, então os cenários de pagamento são pulados.
+// A homologação paga sozinha cobranças de até R$ 10,00: Pagar espera por isso
+// consultando a cobrança, e a fita guarda quanto tempo levou.
 // EFI_URL_WEBHOOK é opcional: o Efí chama a URL e só aceita se ela responder
 // 2xx; sem ela, o cenário de configurar o webhook é pulado.
 func TestConformidadeGravada(t *testing.T) {
@@ -75,8 +80,49 @@ func TestConformidadeGravada(t *testing.T) {
 		relogio := fake.NewClock(f.Agora)
 		conta := domain.Conta{ID: "loja", Nome: "Loja", PSP: "efi", ChavePix: f.Dados["chave"], Ambiente: domain.Homologacao, Ativa: true}
 		p := efi.New(&credenciais{porID: map[string]domain.Credenciais{"loja": cred}}, relogio, efi.ComTransporte(f.Envolver))
-		return conformance.Alvo{PSP: p, Conta: conta, Agora: relogio.Now, Rodada: f.Rodada, Real: true, URLWebhook: f.Dados["webhook"]}
+		return conformance.Alvo{
+			PSP: p, Conta: conta, Agora: relogio.Now, Rodada: f.Rodada, Real: true, URLWebhook: f.Dados["webhook"],
+			Pagar: func(t *testing.T, txid domain.Txid) { esperarPagamento(t, f, p, conta, relogio, txid, gravar) },
+		}
 	})
+}
+
+// esperarPagamento consulta a cobrança enquanto ela estiver ATIVA. Gravando,
+// espera de verdade e anota na fita quantos segundos a homologação levou; na
+// reprodução, as consultas vêm da fita sem espera. Nos dois casos o relógio
+// avança o tempo anotado, para as janelas de ListarPix saírem iguais.
+func esperarPagamento(t *testing.T, f *fita.Fita, p *efi.PSP, conta domain.Conta, relogio *fake.Clock, txid domain.Txid, gravar bool) {
+	t.Helper()
+	ctx := context.Background()
+	inicio := time.Now()
+	for tentativa := 0; ; tentativa++ {
+		c, err := p.ConsultarCob(ctx, conta, txid)
+		status := c.Status
+		if errors.Is(err, ports.ErrNaoEncontrado) {
+			v, errV := p.ConsultarCobv(ctx, conta, txid)
+			status, err = v.Status, errV
+		}
+		if err != nil {
+			t.Fatalf("consultando %s: %v", txid, err)
+		}
+		if status != domain.CobrancaAtiva {
+			break
+		}
+		switch {
+		case !gravar && tentativa > 100:
+			t.Fatalf("a fita não termina com %s paga", txid)
+		case gravar && time.Since(inicio) > 2*time.Minute:
+			t.Fatalf("a homologação não pagou %s em 2 min", txid)
+		case gravar:
+			time.Sleep(3 * time.Second)
+		}
+	}
+	chave := "pago:" + string(txid)
+	if gravar {
+		f.Dados[chave] = strconv.Itoa(int(time.Since(inicio).Seconds()) + 2)
+	}
+	segundos, _ := strconv.Atoi(f.Dados[chave])
+	relogio.Avancar(time.Duration(segundos) * time.Second)
 }
 
 // TestFitaGravaEReproduz grava a suíte contra o Efí falso e a reproduz sem

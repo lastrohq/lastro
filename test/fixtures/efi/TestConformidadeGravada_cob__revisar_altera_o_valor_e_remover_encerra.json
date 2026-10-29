@@ -1,6 +1,6 @@
 {
-  "agora": "2026-10-29T21:41:11Z",
-  "rodada": "10292141",
+  "agora": "2026-10-29T21:50:39Z",
+  "rodada": "10292150",
   "dados": {
     "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
     "webhook": ""
@@ -22,7 +22,7 @@
     },
     {
       "metodo": "PUT",
-      "url": "/v2/cob/conformidade10292141cob005",
+      "url": "/v2/cob/conformidade10292150cob005",
       "corpo": {
         "calendario": {
           "expiracao": 86400
@@ -36,22 +36,22 @@
       "status": 201,
       "resposta": {
         "calendario": {
-          "criacao": "2026-10-29T21:41:11.983Z",
+          "criacao": "2026-10-29T21:50:40.228Z",
           "expiracao": 86400
         },
         "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
         "loc": {
-          "criacao": "2026-10-29T21:41:11.984Z",
-          "id": 17,
-          "location": "qrcodespix-h.sejaefi.com.br/v2/cd098ef0fe30424ca19e12bfb091d81c",
+          "criacao": "2026-10-29T21:50:40.229Z",
+          "id": 29,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/c37d268075fb49efb71be10935f8a42a",
           "tipoCob": "cob"
         },
-        "location": "qrcodespix-h.sejaefi.com.br/v2/cd098ef0fe30424ca19e12bfb091d81c",
-        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/cd098ef0fe30424ca19e12bfb091d81c5204000053039865802BR5905EFISA6008SAOPAULO62070503***630474EE",
+        "location": "qrcodespix-h.sejaefi.com.br/v2/c37d268075fb49efb71be10935f8a42a",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/c37d268075fb49efb71be10935f8a42a5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304EBB2",
         "revisao": 0,
         "solicitacaoPagador": "Teste de conformidade",
         "status": "ATIVA",
-        "txid": "conformidade10292141cob005",
+        "txid": "conformidade10292150cob005",
         "valor": {
           "original": "25.00"
         }
@@ -59,7 +59,7 @@
     },
     {
       "metodo": "PATCH",
-      "url": "/v2/cob/conformidade10292141cob005",
+      "url": "/v2/cob/conformidade10292150cob005",
       "corpo": {
         "calendario": {
           "expiracao": 86400
@@ -72,22 +72,22 @@
       "status": 200,
       "resposta": {
         "calendario": {
-          "criacao": "2026-10-29T21:41:11.000Z",
+          "criacao": "2026-10-29T21:50:40.000Z",
           "expiracao": 86400
         },
         "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
         "loc": {
-          "criacao": "2026-10-29T21:41:11.000Z",
-          "id": 17,
-          "location": "qrcodespix-h.sejaefi.com.br/v2/cd098ef0fe30424ca19e12bfb091d81c",
+          "criacao": "2026-10-29T21:50:40.000Z",
+          "id": 29,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/c37d268075fb49efb71be10935f8a42a",
           "tipoCob": "cob"
         },
-        "location": "qrcodespix-h.sejaefi.com.br/v2/cd098ef0fe30424ca19e12bfb091d81c",
-        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/cd098ef0fe30424ca19e12bfb091d81c5204000053039865802BR5905EFISA6008SAOPAULO62070503***630474EE",
+        "location": "qrcodespix-h.sejaefi.com.br/v2/c37d268075fb49efb71be10935f8a42a",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/c37d268075fb49efb71be10935f8a42a5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304EBB2",
         "revisao": 1,
         "solicitacaoPagador": "Teste de conformidade",
         "status": "ATIVA",
-        "txid": "conformidade10292141cob005",
+        "txid": "conformidade10292150cob005",
         "valor": {
           "original": "30.00"
         }
@@ -95,29 +95,29 @@
     },
     {
       "metodo": "PATCH",
-      "url": "/v2/cob/conformidade10292141cob005",
+      "url": "/v2/cob/conformidade10292150cob005",
       "corpo": {
         "status": "REMOVIDA_PELO_USUARIO_RECEBEDOR"
       },
       "status": 200,
       "resposta": {
         "calendario": {
-          "criacao": "2026-10-29T21:41:11.000Z",
+          "criacao": "2026-10-29T21:50:40.000Z",
           "expiracao": 86400
         },
         "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
         "loc": {
-          "criacao": "2026-10-29T21:41:11.000Z",
-          "id": 17,
-          "location": "qrcodespix-h.sejaefi.com.br/v2/cd098ef0fe30424ca19e12bfb091d81c",
+          "criacao": "2026-10-29T21:50:40.000Z",
+          "id": 29,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/c37d268075fb49efb71be10935f8a42a",
           "tipoCob": "cob"
         },
-        "location": "qrcodespix-h.sejaefi.com.br/v2/cd098ef0fe30424ca19e12bfb091d81c",
-        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/cd098ef0fe30424ca19e12bfb091d81c5204000053039865802BR5905EFISA6008SAOPAULO62070503***630474EE",
+        "location": "qrcodespix-h.sejaefi.com.br/v2/c37d268075fb49efb71be10935f8a42a",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/c37d268075fb49efb71be10935f8a42a5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304EBB2",
         "revisao": 2,
         "solicitacaoPagador": "Teste de conformidade",
         "status": "REMOVIDA_PELO_USUARIO_RECEBEDOR",
-        "txid": "conformidade10292141cob005",
+        "txid": "conformidade10292150cob005",
         "valor": {
           "original": "30.00"
         }
@@ -125,7 +125,7 @@
     },
     {
       "metodo": "PATCH",
-      "url": "/v2/cob/conformidade10292141cob005",
+      "url": "/v2/cob/conformidade10292150cob005",
       "corpo": {
         "status": "REMOVIDA_PELO_USUARIO_RECEBEDOR"
       },

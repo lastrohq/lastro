@@ -405,7 +405,8 @@ func (s *Servidor) devolucao(w http.ResponseWriter, r *http.Request, e2e, id str
 	if r.Method == http.MethodGet {
 		d := s.devolucoes[chave]
 		if d == nil {
-			erro(w, http.StatusNotFound, "devolucao_nao_encontrada", "Nenhuma devolução encontrada para o identificador informado")
+			// Como na homologação (29/10/2026): 400, não 404.
+			erro(w, http.StatusBadRequest, "devolucao_nao_encontrada", "Nenhuma devolução encontrada para o identificador informado")
 			return
 		}
 		responder(w, http.StatusOK, d)

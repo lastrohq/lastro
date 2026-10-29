@@ -22,9 +22,12 @@
 //   - Devolução com id repetido responde 409 devolucao_id_duplicado. O port
 //     pede idempotência, então o adapter devolve a devolução existente se o
 //     valor for o mesmo, e ErrJaExiste se for outro.
+//   - Devolução inexistente responde 400 devolucao_nao_encontrada, não 404
+//     (visto na homologação); o adapter devolve ErrNaoEncontrado.
 //   - GET /v2/pix filtra com fim inclusivo; o port pede [Inicio, Fim), e o
 //     adapter descarta o que cai exatamente em Fim.
 //
 // Homologação: só cobranças de R$ 0,01 a R$ 10,00 são confirmadas e geram
-// webhook; acima disso, a cobrança fica ATIVA.
+// webhook; acima disso, a cobrança fica ATIVA. A confirmação leva uns 30 s na
+// consulta, mas a cobrança já não aceita revisão segundos depois de criada.
 package efi
