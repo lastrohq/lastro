@@ -34,6 +34,62 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 28/10/2026 (noite) — v0.2.0: nenhum Pix some
+
+A F4 inteira numa leva: o Lastro passou a **saber** do pagamento (webhook do
+banco ou conciliação), gravá-lo uma vez só e **avisar** a aplicação do cliente
+com assinatura verificável. Junto, o projeto foi para o Go 1.27.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#59](https://github.com/lastrohq/lastro/issues/59) | Projeto compila e roda no Go 1.27 | Infra/CI | P | Média | [#60](https://github.com/lastrohq/lastro/pull/60) `6aad7e3` | [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) · [#65](https://github.com/lastrohq/lastro/pull/65) `12d2c40` | 28/10 22:13 |
+| [#22](https://github.com/lastrohq/lastro/issues/22) | Webhook do banco é aceito, deduplicado e persistido antes do 200 | Core | G | Alta | [#61](https://github.com/lastrohq/lastro/pull/61) `6103f66` | [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) · [#65](https://github.com/lastrohq/lastro/pull/65) `12d2c40` | 28/10 22:22 |
+| [#24](https://github.com/lastrohq/lastro/issues/24) | Pix recebido sem webhook aparece em até 5 minutos (conciliação) | Core | M | Alta | [#62](https://github.com/lastrohq/lastro/pull/62) `6ef5174` | [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) · [#65](https://github.com/lastrohq/lastro/pull/65) `12d2c40` | 28/10 22:28 |
+| [#23](https://github.com/lastrohq/lastro/issues/23) | A aplicação do cliente recebe webhook assinado mesmo se estiver fora do ar por horas | Core | G | Alta | [#63](https://github.com/lastrohq/lastro/pull/63) `48647f9` | [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) · [#65](https://github.com/lastrohq/lastro/pull/65) `12d2c40` | 28/10 22:39 |
+| [#19](https://github.com/lastrohq/lastro/issues/19) | Testar o fluxo completo de Pix sem conta PJ (sandbox com estado) | Adapters PSP | G | Alta | — (fechada com evidência de #51, #55, #62 e #63) | [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) · [#65](https://github.com/lastrohq/lastro/pull/65) `12d2c40` | 28/10 22:39 |
+
+> `develop` e `main` com o mesmo conteúdo depois do [#65](https://github.com/lastrohq/lastro/pull/65); release
+> [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) com 6 binários, checksums e imagem `ghcr.io/lastrohq/lastro:0.2.0`.
+>
+> **Ainda não ⚠️ — imagem privada**, a mesma pendência da leva do v0.1.0.
+
+### Uma peça, três portas
+
+As três issues da F4 eram, no fundo, uma só: **registrar um Pix recebido** de
+forma idempotente pelo `endToEndId`, concluindo a cobrança e publicando os
+eventos na mesma transação. O webhook (#22) e a conciliação (#24) são duas
+entradas para `Recebimentos.Registrar`; a entrega (#23) consome o que ele publica.
+Desenhar a peça primeiro fez a #24 sair em uma fração do tempo da #22.
+
+### A prova que vale é a de fora
+
+A assinatura do Standard Webhooks foi implementada pelo Lastro e **verificada pela
+biblioteca oficial** nos testes — assinar e verificar com a mesma lib não provaria
+nada. No ponta a ponta, um receptor em Python verificou de novo, de forma
+independente, enquanto recusava de propósito as duas primeiras entregas.
+
+### O `tail` escondeu uma falha
+
+Na conciliação, um teste pareceu passar quando os dois tinham falhado: o
+`tail -5` cortou a saída. A causa real era o Pix cair exatamente em `agora`, fora
+da janela semiaberta — comportamento certo, que a rodada seguinte cobre. Ficou a
+regra: **saída de teste se lê inteira.**
+
+### O gzip mudou de ideia
+
+Subir para o Go 1.27 regenerou a spec embutida no código do oapi-codegen: o
+compressor da 1.27 produz bytes diferentes para o mesmo conteúdo. O check de
+drift do CI pegaria isso num PR distraído — é para isso que ele existe.
+
+### Ficou aberto
+
+- [#64](https://github.com/lastrohq/lastro/issues/64) — sandbox ainda esquece as cobranças ao reiniciar (tirado da #19).
+- [#21](https://github.com/lastrohq/lastro/issues/21) — conformidade espera as fixtures do primeiro banco real (F5).
+- [#9](https://github.com/lastrohq/lastro/issues/9) — BR Code ainda sem teste manual em apps de banco.
+- [#1](https://github.com/lastrohq/lastro/issues/1) — estudo de quais bancos expõem Pix Automático, que destrava a F6.
+
+---
+
 ## Leva de 28/10/2026 — v0.1.0: do repositório vazio à primeira cobrança paga no sandbox
 
 O primeiro release, e o dia inteiro dele: **F0, F1 e F2 fecharam juntas**. O
