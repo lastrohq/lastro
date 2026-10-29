@@ -30,6 +30,22 @@ type pspDevolucao struct {
 	pedidos []domain.Devolucao
 	// espera segura a resposta, para pedidos simultâneos se cruzarem.
 	espera time.Duration
+	// noBanco é o que ConsultarDevolucao responde, pelo id; ausente é ErrNaoEncontrado.
+	noBanco map[string]domain.Devolucao
+}
+
+func (p *pspDevolucao) ConsultarDevolucao(_ context.Context, _ domain.Conta, _, id string) (domain.Devolucao, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	d, ok := p.noBanco[id]
+	if !ok {
+		return domain.Devolucao{}, ports.ErrNaoEncontrado
+	}
+	return d, nil
+}
+
+func (p *pspDevolucao) ListarPix(context.Context, domain.Conta, ports.Janela) ([]domain.PixRecebido, error) {
+	return nil, nil
 }
 
 func (p *pspDevolucao) Nome() string { return "banco-dev" }
@@ -58,6 +74,9 @@ type semDevolucao struct{ ports.PSP }
 
 func (semDevolucao) Nome() string                     { return "sem-dev" }
 func (semDevolucao) Capabilities() ports.Capabilities { return ports.Capabilities{ports.CapCob: true} }
+func (semDevolucao) ListarPix(context.Context, domain.Conta, ports.Janela) ([]domain.PixRecebido, error) {
+	return nil, nil
+}
 
 // pagoEm é quando os Pix do teste entraram; agoraDev, um dia depois.
 var (
@@ -276,5 +295,87 @@ func TestConsultarDevolucao(t *testing.T) {
 	}
 	if _, err := svc.Consultar(ctx, e2eLoja, "nada"); !errors.Is(err, ports.ErrNaoEncontrado) {
 		t.Fatalf("inexistente: %v", err)
+	}
+}
+
+func TestAvisoDoBancoAtualizaDevolucoes(t *testing.T) {
+	svc, s, _, clock := novasDevolucoes(t)
+	ctx := context.Background()
+	for _, id := range []string{"dev1", "dev2"} {
+		if _, err := svc.Solicitar(ctx, pedidoDev(id, 1000)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	liquidada := agoraDev.Add(time.Minute)
+	pix := domain.PixRecebido{EndToEndID: e2eLoja, ContaID: "loja", Valor: valorDoPix, Horario: pagoEm, Devolucoes: []domain.Devolucao{
+		{ID: "dev1", Status: domain.DevolucaoDevolvido, LiquidadaEm: liquidada},
+		{ID: "dev2", Status: domain.DevolucaoNaoRealizado, Motivo: "Conta do pagador encerrada"},
+		{ID: "dev9", Status: domain.DevolucaoDevolvido}, // pedida fora do Lastro
+	}}
+	rec := app.Recebimentos{Store: s, Clock: clock}
+	if novos, err := rec.Registrar(ctx, []domain.PixRecebido{pix}); err != nil || novos != 0 {
+		t.Fatalf("Registrar: novos=%d %v", novos, err)
+	}
+	d1, _ := s.Devolucoes().Buscar(ctx, e2eLoja, "dev1")
+	d2, _ := s.Devolucoes().Buscar(ctx, e2eLoja, "dev2")
+	if d1.Status != domain.DevolucaoDevolvido || !d1.LiquidadaEm.Equal(liquidada) || d1.RtrID == "" || d1.Revisao != 1 ||
+		d2.Status != domain.DevolucaoNaoRealizado || d2.Motivo != "Conta do pagador encerrada" {
+		t.Fatalf("dev1 = %+v\ndev2 = %+v", d1, d2)
+	}
+	ev := dadosDev(t, s, domain.EventoDevolucaoAtualizada)
+	if len(ev) != 2 || ev[0].ID != "dev1" || ev[0].Status != "DEVOLVIDO" || ev[0].Revisao != 1 || ev[1].Status != "NAO_REALIZADO" || ev[1].Motivo == "" {
+		t.Fatalf("eventos = %+v", ev)
+	}
+
+	// O banco reenvia o mesmo aviso, e depois um que volta atrás: nada muda, e
+	// nenhum dos dois é erro, senão o banco reenviaria para sempre.
+	pix.Devolucoes = append(pix.Devolucoes, domain.Devolucao{ID: "dev1", Status: domain.DevolucaoEmProcessamento})
+	if _, err := rec.Registrar(ctx, []domain.PixRecebido{pix}); err != nil {
+		t.Fatal(err)
+	}
+	if ev := dadosDev(t, s, domain.EventoDevolucaoAtualizada); len(ev) != 2 {
+		t.Fatalf("aviso repetido gerou eventos: %+v", ev)
+	}
+	if d, _ := s.Devolucoes().Buscar(ctx, e2eLoja, "dev1"); d != d1 {
+		t.Fatalf("dev1 mudou: %+v", d)
+	}
+	// NAO_REALIZADO devolve o saldo: os 90 reais restantes voltam a valer.
+	if _, err := svc.Solicitar(ctx, pedidoDev("dev3", 9000)); err != nil {
+		t.Fatalf("saldo liberado: %v", err)
+	}
+}
+
+func TestConciliacaoConfereDevolucoesEmProcessamento(t *testing.T) {
+	svc, s, p, clock := novasDevolucoes(t)
+	ctx := context.Background()
+	for _, id := range []string{"dev1", "dev2"} {
+		if _, err := svc.Solicitar(ctx, pedidoDev(id, 1000)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	p.noBanco = map[string]domain.Devolucao{"dev1": {ID: "dev1", Status: domain.DevolucaoNaoRealizado, Motivo: "Recusada pelo banco do pagador"}}
+	conc := app.Conciliacao{Store: s, PSPs: svc.PSPs, Recebimentos: app.Recebimentos{Store: s, Clock: clock}, Clock: clock}
+	// dev2 não existe no banco: falha a consulta dela, e só dela.
+	r, err := conc.Rodar(ctx)
+	if err != nil || r.Devolucoes != 1 || r.Falhas != 1 {
+		t.Fatalf("rodada: %+v, %v", r, err)
+	}
+	if d, _ := s.Devolucoes().Buscar(ctx, e2eLoja, "dev1"); d.Status != domain.DevolucaoNaoRealizado || d.Motivo == "" {
+		t.Fatalf("dev1 = %+v", d)
+	}
+	if ev := dadosDev(t, s, domain.EventoDevolucaoAtualizada); len(ev) != 1 || ev[0].ID != "dev1" {
+		t.Fatalf("eventos = %+v", ev)
+	}
+
+	p.noBanco["dev2"] = domain.Devolucao{ID: "dev2", Status: domain.DevolucaoEmProcessamento}
+	if r, _ := conc.Rodar(ctx); r.Devolucoes != 0 || r.Falhas != 0 {
+		t.Fatalf("ainda em processamento: %+v", r)
+	}
+	p.noBanco["dev2"] = domain.Devolucao{ID: "dev2", Status: domain.DevolucaoDevolvido}
+	if r, _ := conc.Rodar(ctx); r.Devolucoes != 1 || r.Falhas != 0 {
+		t.Fatalf("liquidada: %+v", r)
+	}
+	if pendentes, _ := s.Devolucoes().EmProcessamento(ctx, "loja"); len(pendentes) != 0 {
+		t.Fatalf("pendentes = %+v", pendentes)
 	}
 }

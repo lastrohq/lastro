@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"sync"
 	"time"
 
@@ -34,11 +35,40 @@ type DadosDevolucao struct {
 	Revisao int    `json:"revisao"`
 }
 
-func (s Devolucoes) evento(tipo domain.TipoEvento, d domain.Devolucao) domain.Evento {
-	return domain.Evento{ID: novoID(), Tipo: tipo, ContaID: d.ContaID, OcorridoEm: s.Clock.Now(), Dados: DadosDevolucao{
+func eventoDevolucao(agora time.Time, tipo domain.TipoEvento, d domain.Devolucao) domain.Evento {
+	return domain.Evento{ID: novoID(), Tipo: tipo, ContaID: d.ContaID, OcorridoEm: agora, Dados: DadosDevolucao{
 		EndToEndID: d.EndToEndID, ID: d.ID, ContaID: d.ContaID, Valor: d.Valor.String(), Natureza: string(d.Natureza),
 		Descricao: d.Descricao, Status: string(d.Status), Motivo: d.Motivo, RtrID: d.RtrID, Revisao: d.Revisao,
 	}}
+}
+
+// aplicarDevolucao leva para a devolução gravada o que o banco informou sobre
+// ela e, se algo mudou, grava com o evento devolucao.atualizada, dentro de tx.
+// Devolve se mudou. Devolução que o Lastro não conhece, de outra conta ou com
+// status que volta atrás (RN-20) é ignorada com aviso: responder erro faria o
+// banco reenviar para sempre. Se o aviso chegou antes de o Solicitar gravar a
+// devolução, ela segue EM_PROCESSAMENTO e a conciliação a confere depois.
+func aplicarDevolucao(ctx context.Context, tx ports.Store, agora time.Time, doBanco domain.Devolucao) (bool, error) {
+	d, err := tx.Devolucoes().Buscar(ctx, doBanco.EndToEndID, doBanco.ID)
+	if errors.Is(err, ports.ErrNaoEncontrado) || (err == nil && d.ContaID != doBanco.ContaID) {
+		slog.WarnContext(ctx, "aviso de devolução desconhecida ignorado", "conta", doBanco.ContaID, "e2eid", doBanco.EndToEndID, "id", doBanco.ID)
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	mudou, _, err := d.Aplicar(doBanco)
+	if errors.Is(err, domain.ErrTransicaoInvalida) {
+		slog.WarnContext(ctx, "aviso de devolução fora da RN-20 ignorado", "conta", d.ContaID, "e2eid", d.EndToEndID, "id", d.ID, "de", d.Status, "para", doBanco.Status)
+		return false, nil
+	}
+	if err != nil || !mudou {
+		return false, err
+	}
+	if err := tx.Devolucoes().Atualizar(ctx, &d); err != nil {
+		return false, err
+	}
+	return true, tx.Outbox().Adicionar(ctx, eventoDevolucao(agora, domain.EventoDevolucaoAtualizada, d))
 }
 
 // travasPix serializa as devoluções de um mesmo Pix nesta instância: duas
@@ -126,7 +156,7 @@ func (s Devolucoes) Solicitar(ctx context.Context, d domain.Devolucao) (domain.D
 		if err := tx.Devolucoes().Criar(ctx, d); err != nil {
 			return err
 		}
-		return tx.Outbox().Adicionar(ctx, s.evento(domain.EventoDevolucaoSolicitada, d))
+		return tx.Outbox().Adicionar(ctx, eventoDevolucao(s.Clock.Now(), domain.EventoDevolucaoSolicitada, d))
 	})
 	if err != nil {
 		return domain.Devolucao{}, fmt.Errorf("o PSP aceitou a devolução %s do Pix %s, mas ela não foi gravada: %w", d.ID, d.EndToEndID, err)

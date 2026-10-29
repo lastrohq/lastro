@@ -493,7 +493,7 @@ func conciliar(ctx context.Context, amb Ambiente) error {
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d recorrências atualizadas, %d cobranças recorrentes atualizadas, %d falhas\n", r.Contas, r.Novos, r.Recorrencias, r.CobrancasRecorrentes, r.Falhas)
+	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d recorrências atualizadas, %d cobranças recorrentes atualizadas, %d devoluções atualizadas, %d falhas\n", r.Contas, r.Novos, r.Recorrencias, r.CobrancasRecorrentes, r.Devolucoes, r.Falhas)
 	if err == nil && r.Falhas > 0 {
 		err = fmt.Errorf("%d contas falharam (detalhes no log)", r.Falhas)
 	}

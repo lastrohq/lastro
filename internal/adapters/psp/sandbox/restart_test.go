@@ -183,4 +183,10 @@ func TestDevolucoesSobrevivemAoRestart(t *testing.T) {
 	if _, err := novo.Devolver(ctx, conta, domain.Devolucao{ID: "d2", EndToEndID: pix[0].EndToEndID, Valor: 2000}); err != nil {
 		t.Fatalf("o resto do saldo: %v", err)
 	}
+	if consultada, err := novo.ConsultarDevolucao(ctx, conta, pix[0].EndToEndID, "d1"); err != nil || consultada.RtrID != d.RtrID || consultada.Status != domain.DevolucaoDevolvido {
+		t.Fatalf("consulta depois do restart: %+v, %v", consultada, err)
+	}
+	if _, err := novo.ConsultarDevolucao(ctx, domain.Conta{ID: "outra"}, pix[0].EndToEndID, "d1"); !errors.Is(err, ports.ErrNaoEncontrado) {
+		t.Fatalf("consulta por outra conta: err = %v", err)
+	}
 }

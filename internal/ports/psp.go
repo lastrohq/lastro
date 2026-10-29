@@ -62,6 +62,9 @@ type PSP interface {
 
 	ListarPix(ctx context.Context, conta domain.Conta, j Janela) ([]domain.PixRecebido, error)
 	Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error)
+	// ConsultarDevolucao devolve a devolução como o banco a conhece (GET
+	// /pix/{e2eid}/devolucao/{id}); inexistente é ErrNaoEncontrado.
+	ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, id string) (domain.Devolucao, error)
 	ConfigurarWebhook(ctx context.Context, conta domain.Conta, url string) error
 	// InterpretarWebhook lê o corpo que o PSP enviou ao webhook. Quem segue a
 	// spec usa psp.WebhookPixBCB; quem desvia trata o desvio aqui.

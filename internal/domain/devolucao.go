@@ -100,6 +100,33 @@ func SaldoDevolvivel(pix PixRecebido, devolucoes []Devolucao) Money {
 	return max(saldo, 0)
 }
 
+// Aplicar leva para a devolução o que o banco informou sobre ela e diz se
+// algo mudou e se o status mudou. O banco é a fonte da verdade sobre status,
+// motivo, rtrId e liquidação; campos que ele não informa ficam como estão.
+// Status fora da RN-20, como uma volta de DEVOLVIDO para EM_PROCESSAMENTO, é
+// ErrTransicaoInvalida, e nada muda.
+func (d *Devolucao) Aplicar(doBanco Devolucao) (mudou, statusMudou bool, err error) {
+	novo := *d
+	if doBanco.Status != "" && doBanco.Status != d.Status {
+		if err := novo.Transitar(doBanco.Status); err != nil {
+			return false, false, err
+		}
+		statusMudou = true
+	}
+	if doBanco.Motivo != "" {
+		novo.Motivo = doBanco.Motivo
+	}
+	if doBanco.RtrID != "" {
+		novo.RtrID = doBanco.RtrID
+	}
+	if !doBanco.LiquidadaEm.IsZero() {
+		novo.LiquidadaEm = doBanco.LiquidadaEm
+	}
+	mudou = statusMudou || novo.Motivo != d.Motivo || novo.RtrID != d.RtrID || !novo.LiquidadaEm.Equal(d.LiquidadaEm)
+	*d = novo
+	return mudou, statusMudou, nil
+}
+
 // Transitar muda o status respeitando a RN-20.
 func (d *Devolucao) Transitar(para StatusDevolucao) error {
 	if err := TransicoesDevolucao.Validar(d.Status, para); err != nil {

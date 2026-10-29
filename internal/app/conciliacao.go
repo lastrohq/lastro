@@ -12,8 +12,9 @@ import (
 // JanelaConciliacaoPadrao é quanto tempo para trás a conciliação olha (RN-31).
 const JanelaConciliacaoPadrao = 2 * time.Hour
 
-// Conciliacao recupera os Pix que o banco recebeu mas não avisou (RN-31) e,
-// nas contas com Pix Automático, as mudanças de recorrência sem aviso (RN-40).
+// Conciliacao recupera os Pix que o banco recebeu mas não avisou (RN-31), o
+// resultado das devoluções em processamento (RN-20) e, nas contas com Pix
+// Automático, as mudanças de recorrência sem aviso (RN-40).
 type Conciliacao struct {
 	Store        ports.Store
 	PSPs         ports.Registry
@@ -36,7 +37,9 @@ type ResultadoConciliacao struct {
 	Recorrencias int
 	// CobrancasRecorrentes são as cobranças recorrentes que mudaram sem aviso.
 	CobrancasRecorrentes int
-	Falhas               int
+	// Devolucoes são as devoluções em processamento que mudaram sem aviso.
+	Devolucoes int
+	Falhas     int
 }
 
 // Rodar consulta GET /pix de cada conta na janela [agora-Janela, agora) e
@@ -69,6 +72,9 @@ func (s Conciliacao) Rodar(ctx context.Context) (ResultadoConciliacao, error) {
 		r.Falhas += falhas
 		mudaram, falhas = s.conciliarCobrs(ctx, conta)
 		r.CobrancasRecorrentes += mudaram
+		r.Falhas += falhas
+		mudaram, falhas = s.conciliarDevolucoes(ctx, conta)
+		r.Devolucoes += mudaram
 		r.Falhas += falhas
 		pixes, err := psp.ListarPix(ctx, conta, ports.Janela{Inicio: agora.Add(-janela), Fim: agora})
 		if err != nil {
@@ -160,6 +166,46 @@ func (s Conciliacao) conciliarCobrs(ctx context.Context, conta domain.Conta) (mu
 		if mudou {
 			mudaram++
 			slog.InfoContext(ctx, "conciliação recuperou mudança de cobrança recorrente sem aviso", "conta", conta.ID, "txid", c.Txid)
+		}
+	}
+	return mudaram, falhas
+}
+
+// conciliarDevolucoes consulta no PSP cada devolução da conta ainda
+// EM_PROCESSAMENTO e aplica o resultado pelo mesmo caminho do webhook. É o que
+// pega a devolução de um Pix antigo demais para aparecer na janela do GET /pix.
+// Conta cujo PSP não devolve é pulada sem falha.
+func (s Conciliacao) conciliarDevolucoes(ctx context.Context, conta domain.Conta) (mudaram, falhas int) {
+	psp, err := pspDe(s.PSPs, conta, ports.CapDevolucao)
+	if err != nil {
+		return 0, 0
+	}
+	pendentes, err := s.Store.Devolucoes().EmProcessamento(ctx, conta.ID)
+	if err != nil {
+		slog.ErrorContext(ctx, "conciliação: leitura das devoluções falhou", "conta", conta.ID, "erro", err)
+		return 0, 1
+	}
+	for _, d := range pendentes {
+		noBanco, err := psp.ConsultarDevolucao(ctx, conta, d.EndToEndID, d.ID)
+		if err != nil {
+			falhas++
+			slog.WarnContext(ctx, "conciliação: consulta da devolução falhou", "conta", conta.ID, "e2eid", d.EndToEndID, "id", d.ID, "erro", err)
+			continue
+		}
+		noBanco.EndToEndID, noBanco.ID, noBanco.ContaID = d.EndToEndID, d.ID, conta.ID
+		var mudou bool
+		err = s.Store.WithTx(ctx, func(tx ports.Store) error {
+			mudou, err = aplicarDevolucao(ctx, tx, s.Clock.Now(), noBanco)
+			return err
+		})
+		if err != nil {
+			falhas++
+			slog.ErrorContext(ctx, "conciliação: gravação da devolução falhou", "conta", conta.ID, "e2eid", d.EndToEndID, "id", d.ID, "erro", err)
+			continue
+		}
+		if mudou {
+			mudaram++
+			slog.InfoContext(ctx, "conciliação recuperou o resultado de devolução sem aviso", "conta", conta.ID, "e2eid", d.EndToEndID, "id", d.ID, "status", noBanco.Status)
 		}
 	}
 	return mudaram, falhas

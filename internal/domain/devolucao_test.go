@@ -81,3 +81,27 @@ func TestDevolucaoTransitar(t *testing.T) {
 		t.Fatalf("DEVOLVIDO → NAO_REALIZADO: %v", err)
 	}
 }
+
+func TestDevolucaoAplicar(t *testing.T) {
+	liquidada := time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)
+	d := Devolucao{ID: "d1", Status: DevolucaoEmProcessamento, RtrID: "D1"}
+	mudou, statusMudou, err := d.Aplicar(Devolucao{Status: DevolucaoEmProcessamento})
+	if err != nil || mudou || statusMudou {
+		t.Fatalf("aviso igual: mudou=%v status=%v %v", mudou, statusMudou, err)
+	}
+	mudou, statusMudou, err = d.Aplicar(Devolucao{Status: DevolucaoDevolvido, LiquidadaEm: liquidada})
+	if err != nil || !mudou || !statusMudou || d.Status != DevolucaoDevolvido || !d.LiquidadaEm.Equal(liquidada) || d.RtrID != "D1" {
+		t.Fatalf("liquidada: %+v mudou=%v status=%v %v", d, mudou, statusMudou, err)
+	}
+	if mudou, _, err := d.Aplicar(Devolucao{Status: DevolucaoDevolvido, LiquidadaEm: liquidada}); err != nil || mudou {
+		t.Fatalf("repetido: mudou=%v %v", mudou, err)
+	}
+	antes := d
+	if _, _, err := d.Aplicar(Devolucao{Status: DevolucaoEmProcessamento, Motivo: "x"}); !errors.Is(err, ErrTransicaoInvalida) || d != antes {
+		t.Fatalf("volta para EM_PROCESSAMENTO: %+v %v", d, err)
+	}
+	n := Devolucao{Status: DevolucaoEmProcessamento}
+	if mudou, statusMudou, err := n.Aplicar(Devolucao{Status: DevolucaoNaoRealizado, Motivo: "Conta do pagador encerrada"}); err != nil || !mudou || !statusMudou || n.Motivo == "" {
+		t.Fatalf("não realizada: %+v %v", n, err)
+	}
+}

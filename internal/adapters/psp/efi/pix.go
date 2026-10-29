@@ -112,6 +112,7 @@ type devolucaoEfi struct {
 	Motivo   string `json:"motivo,omitempty"`
 	Horario  *struct {
 		Solicitacao string `json:"solicitacao"`
+		Liquidacao  string `json:"liquidacao,omitempty"`
 	} `json:"horario,omitempty"`
 	Descricao string `json:"descricao,omitempty"`
 }
@@ -151,7 +152,23 @@ func paraDevolucao(conta domain.Conta, r devolucaoEfi, base domain.Devolucao) (d
 		}
 		d.CriadaEm = criada
 	}
+	if r.Horario != nil && r.Horario.Liquidacao != "" {
+		liquidada, err := parseHorario(r.Horario.Liquidacao)
+		if err != nil {
+			return domain.Devolucao{}, fmt.Errorf("efi: horario.liquidacao: %w", err)
+		}
+		d.LiquidadaEm = liquidada
+	}
 	return d, nil
+}
+
+// ConsultarDevolucao lê a devolução (GET /v2/pix/:e2eId/devolucao/:id).
+func (p *PSP) ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, id string) (domain.Devolucao, error) {
+	var r devolucaoEfi
+	if err := p.chamar(ctx, conta, http.MethodGet, caminhoDevolucao(e2e, id), nil, &r); err != nil {
+		return domain.Devolucao{}, err
+	}
+	return paraDevolucao(conta, r, domain.Devolucao{ID: id, EndToEndID: e2e})
 }
 
 // Devolver pede a devolução (PUT /v2/pix/:e2eId/devolucao/:id).
