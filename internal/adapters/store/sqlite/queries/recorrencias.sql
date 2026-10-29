@@ -28,3 +28,6 @@ UPDATE solicitacoes_recorrencia SET status = ? WHERE id = ?;
 -- name: SolicitacoesDaRecorrencia :many
 SELECT id, recorrencia_id, conta_id, status, ispb, agencia, conta, expira_em, criada_em
 FROM solicitacoes_recorrencia WHERE recorrencia_id = ? ORDER BY criada_em, id;
+
+-- name: RecorrenciasAbertas :many
+SELECT id FROM recorrencias WHERE conta_id = ? AND status IN ('CRIADA', 'APROVADA') ORDER BY criada_em, id;

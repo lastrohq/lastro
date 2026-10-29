@@ -69,6 +69,37 @@ func runRecorrencias(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 	})
 
+	t.Run("recorrência: abertas são as CRIADA e APROVADA da conta", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		ids := map[domain.StatusRecorrencia]string{
+			domain.RecorrenciaCriada: "RR1234567820261029abcDEF00011", domain.RecorrenciaAprovada: "RR1234567820261029abcDEF00012",
+			domain.RecorrenciaRejeitada: "RR1234567820261029abcDEF00013", domain.RecorrenciaCancelada: "RR1234567820261029abcDEF00014",
+		}
+		i := 0
+		for status, id := range ids {
+			r := recorrencia(id, "c1")
+			r.Status, r.CriadaEm = status, base.Add(time.Duration(i)*time.Minute)
+			i++
+			if err := s.Recorrencias().Criar(ctx, r); err != nil {
+				t.Fatal(err)
+			}
+		}
+		daOutra := recorrencia("RR1234567820261029abcDEF00015", "c2")
+		_ = s.Recorrencias().Criar(ctx, daOutra)
+		abertas, err := s.Recorrencias().Abertas(ctx, "c1")
+		if err != nil || len(abertas) != 2 {
+			t.Fatalf("Abertas = %+v, %v", abertas, err)
+		}
+		for _, r := range abertas {
+			if r.Status != domain.RecorrenciaCriada && r.Status != domain.RecorrenciaAprovada {
+				t.Fatalf("aberta com status %s", r.Status)
+			}
+		}
+		if abertas[0].CriadaEm.After(abertas[1].CriadaEm) {
+			t.Fatal("fora da ordem de criação")
+		}
+	})
+
 	t.Run("solicitação: cria, busca, atualiza o status e exige a recorrência", func(t *testing.T) {
 		s, ctx := comContas(t, novo), context.Background()
 		r := recorrencia("RR1234567820261029abcDEF00005", "c1")

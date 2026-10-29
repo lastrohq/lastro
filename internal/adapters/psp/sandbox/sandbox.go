@@ -58,6 +58,7 @@ type PSP struct {
 	webhooks    map[string]string
 	recs        map[string]domain.Recorrencia
 	webhooksRec map[string]string
+	solicitadas map[string]time.Time // idRec → quando a confirmação foi pedida
 	entregar    Entregador
 	locSeq      int
 }
@@ -76,7 +77,7 @@ func ComAtraso(d time.Duration) Opcao { return func(p *PSP) { p.atraso = d } }
 
 // New cria o sandbox com o relógio dado.
 func New(clock ports.Clock, opcoes ...Opcao) *PSP {
-	p := &PSP{clock: clock, atraso: AtrasoPadrao, cobs: map[string]domain.Cobranca{}, cobvs: map[string]domain.CobrancaVencimento{}, devolucoes: map[string][]domain.Devolucao{}, webhooks: map[string]string{}, recs: map[string]domain.Recorrencia{}, webhooksRec: map[string]string{}, entregar: entregarHTTP}
+	p := &PSP{clock: clock, atraso: AtrasoPadrao, cobs: map[string]domain.Cobranca{}, cobvs: map[string]domain.CobrancaVencimento{}, devolucoes: map[string][]domain.Devolucao{}, webhooks: map[string]string{}, recs: map[string]domain.Recorrencia{}, webhooksRec: map[string]string{}, solicitadas: map[string]time.Time{}, entregar: entregarHTTP}
 	for _, o := range opcoes {
 		o(p)
 	}

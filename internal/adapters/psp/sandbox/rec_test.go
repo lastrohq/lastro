@@ -61,3 +61,53 @@ func TestRecorrenciaLembradaDepoisDoRestart(t *testing.T) {
 		t.Fatalf("depois do restart: %+v, %v", r, err)
 	}
 }
+
+func TestRespostaDoPagadorPeloHorarioDaSolicitacao(t *testing.T) {
+	for valor, quer := range map[domain.Money]domain.StatusRecorrencia{
+		100: domain.RecorrenciaAprovada, sandbox.ValorRecRejeitada: domain.RecorrenciaRejeitada, sandbox.ValorRecExpirada: domain.RecorrenciaExpirada,
+	} {
+		t.Run(string(quer), func(t *testing.T) {
+			clock := fake.NewClock(inicio)
+			p := sandbox.New(clock)
+			ctx := context.Background()
+			r := recSandbox(domain.SemRetentativa)
+			r.ValorFixo = valor
+			criada, _ := p.CriarRecorrencia(ctx, conta, r)
+			// Antes de pedir a confirmação, nada muda, por mais tempo que passe.
+			clock.Avancar(time.Hour)
+			if lida, _ := p.ConsultarRecorrencia(ctx, conta, criada.ID); lida.Status != domain.RecorrenciaCriada {
+				t.Fatalf("sem solicitação: %s", lida.Status)
+			}
+			if _, err := p.SolicitarConfirmacao(ctx, conta, domain.SolicitacaoRecorrencia{RecorrenciaID: criada.ID}); err != nil {
+				t.Fatal(err)
+			}
+			clock.Avancar(sandbox.AtrasoPadrao - time.Second)
+			if lida, _ := p.ConsultarRecorrencia(ctx, conta, criada.ID); lida.Status != domain.RecorrenciaCriada {
+				t.Fatalf("antes do atraso: %s", lida.Status)
+			}
+			clock.Avancar(time.Second)
+			lida, _ := p.ConsultarRecorrencia(ctx, conta, criada.ID)
+			if lida.Status != quer || (quer == domain.RecorrenciaRejeitada) != (lida.MotivoRejeicao == "AP13") {
+				t.Fatalf("depois do atraso: %s %q; quer %s", lida.Status, lida.MotivoRejeicao, quer)
+			}
+		})
+	}
+}
+
+func TestRespostaDoPagadorDepoisDoRestart(t *testing.T) {
+	store, clock := fake.NewStore(), fake.NewClock(inicio)
+	ctx := context.Background()
+	_ = store.Contas().Criar(ctx, conta)
+	antigo := sandbox.New(clock, sandbox.ComStore(store))
+	criada, _ := antigo.CriarRecorrencia(ctx, conta, recSandbox(domain.SemRetentativa))
+	_ = store.Recorrencias().Criar(ctx, criada)
+	sol, _ := antigo.SolicitarConfirmacao(ctx, conta, domain.SolicitacaoRecorrencia{RecorrenciaID: criada.ID, ExpiraEm: inicio.Add(time.Hour)})
+	if err := store.Solicitacoes().Criar(ctx, sol); err != nil {
+		t.Fatal(err)
+	}
+	clock.Avancar(sandbox.AtrasoPadrao)
+	novo := sandbox.New(clock, sandbox.ComStore(store)) // outro processo: memória vazia
+	if lida, err := novo.ConsultarRecorrencia(ctx, conta, criada.ID); err != nil || lida.Status != domain.RecorrenciaAprovada {
+		t.Fatalf("depois do restart: %s, %v", lida.Status, err)
+	}
+}

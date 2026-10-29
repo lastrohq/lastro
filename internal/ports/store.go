@@ -42,6 +42,9 @@ type RecorrenciaRepo interface {
 	// Atualizar grava status e motivo de rejeição se r.Revisao for a revisão
 	// atual, e a incrementa; senão falha com ErrConflito.
 	Atualizar(ctx context.Context, r *domain.Recorrencia) error
+	// Abertas devolve as recorrências da conta que ainda podem mudar (CRIADA e
+	// APROVADA), em ordem de criação, para a conciliação.
+	Abertas(ctx context.Context, contaID string) ([]domain.Recorrencia, error)
 }
 
 // SolicitacaoRepo guarda as solicitações de confirmação de recorrência (RN-41).

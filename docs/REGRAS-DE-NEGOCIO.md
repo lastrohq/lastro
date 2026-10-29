@@ -192,6 +192,9 @@ CRIADA ──▶ APROVADA ──▶ CANCELADA
   aviso fora da RN-40 (uma volta de `APROVADA` para `CRIADA`, por exemplo) é
   ignorado com registro no log; recorrência desconhecida é ignorada, para o banco
   não reenviar para sempre.
+- **Aviso perdido não trava a recorrência:** a conciliação (RN-31) também consulta
+  no banco as recorrências abertas (`CRIADA` e `APROVADA`) e aplica o que mudou
+  pelo mesmo caminho do webhook.
 - A autorização é dada por uma de quatro **jornadas** do BCB: (1) notificação no
   app do pagador, sem QR Code (`/solicrec`); (2) QR Code só com a recorrência;
   (3) QR Code com primeiro pagamento imediato e recorrência; (4) QR Code de fatura
@@ -283,6 +286,11 @@ Um job dentro do `serve` consulta `GET /pix` de **cada conta** numa janela
 deslizante e registra todo Pix que não chegou por webhook, pelo mesmo caminho do
 webhook (RN-30): deduplicado por `endToEndId`, concluindo a cobrança e publicando
 `pix.recebido`. **Nenhum Pix some** porque o banco falhou em avisar.
+
+Nas contas cujo banco faz Pix Automático, a mesma rodada consulta as
+recorrências abertas (`CRIADA` e `APROVADA`) e aplica as mudanças sem aviso
+pelo caminho do webhook de recorrência (RN-40). Uma recorrência que falha não
+impede as outras, e as recorrências não dependem de a consulta de Pix dar certo.
 
 - Padrão: a cada **5 min**, olhando as últimas **2 h**
   (`LASTRO_CONCILIACAO_INTERVALO`, `LASTRO_CONCILIACAO_JANELA`). Intervalo `0`

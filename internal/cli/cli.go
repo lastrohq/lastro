@@ -307,6 +307,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 	}()
 	store := contas.Store
 	conc.Store, conc.Recebimentos.Store, conc.PSPs = store, store, contas.PSPs
+	conc.Recorrencias = app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}
 	if intervalo > 0 {
 		rodando.Go(func() {
 			jobs.Periodico(ctxJobs, "conciliação", intervalo, func(ctx context.Context) error {
@@ -481,11 +482,12 @@ func conciliar(ctx context.Context, amb Ambiente) error {
 	}
 	defer fechar()
 	conc.Store, conc.Recebimentos.Store, conc.PSPs = contas.Store, contas.Store, contas.PSPs
+	conc.Recorrencias = app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}
 	r, err := conc.Rodar(ctx)
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d falhas\n", r.Contas, r.Novos, r.Falhas)
+	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d recorrências atualizadas, %d falhas\n", r.Contas, r.Novos, r.Recorrencias, r.Falhas)
 	if err == nil && r.Falhas > 0 {
 		err = fmt.Errorf("%d contas falharam (detalhes no log)", r.Falhas)
 	}
