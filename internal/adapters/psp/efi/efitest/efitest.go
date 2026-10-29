@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -32,6 +33,9 @@ type Servidor struct {
 	tokens         map[string]bool
 	seq            int
 	cobs           map[string]map[string]any
+	cobvs          map[string]map[string]any
+	pix            []map[string]any
+	devolucoes     map[string]map[string]any // chave: e2e/id
 	tokensEmitidos int
 	chamadas       []string
 	falhas         []int // status forçados para as próximas chamadas à API (não ao token)
@@ -41,7 +45,7 @@ type Servidor struct {
 // emitido por clienteCA, e tokens pedidos com clientID e clientSecret.
 func Novo(t testing.TB, clienteCA *x509.Certificate, clientID, clientSecret string) *Servidor {
 	t.Helper()
-	s := &Servidor{clientID: clientID, clientSecret: clientSecret, tokens: map[string]bool{}, cobs: map[string]map[string]any{}}
+	s := &Servidor{clientID: clientID, clientSecret: clientSecret, tokens: map[string]bool{}, cobs: map[string]map[string]any{}, cobvs: map[string]map[string]any{}, devolucoes: map[string]map[string]any{}}
 	srv := httptest.NewUnstartedServer(http.HandlerFunc(s.servir))
 	pool := x509.NewCertPool()
 	pool.AddCert(clienteCA)
@@ -82,13 +86,53 @@ func (s *Servidor) Falhar(status ...int) {
 	s.falhas = append(s.falhas, status...)
 }
 
-// Pagar marca a cob como CONCLUIDA, como na homologação do Efí.
-func (s *Servidor) Pagar(txid string) {
+// Pagar conclui a cob ou cobv do txid e registra o Pix recebido no horário
+// dado, como a homologação do Efí faz com valores de até R$ 10,00. Devolve o
+// endToEndId.
+func (s *Servidor) Pagar(txid string, horario time.Time) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if c := s.cobs[txid]; c != nil {
-		c["status"] = "CONCLUIDA"
+	c := s.cobs[txid]
+	if c == nil {
+		c = s.cobvs[txid]
 	}
+	if c == nil {
+		panic("efitest: Pagar de txid inexistente " + txid)
+	}
+	c["status"] = "CONCLUIDA"
+	valor := c["valor"].(map[string]any)["original"].(string)
+	return s.registrarPix(txid, valor, fmt.Sprint(c["chave"]), horario)
+}
+
+// AdicionarPix registra n Pix por chave, sem cobrança, a partir de horario, um
+// por segundo. Serve para testar a paginação de GET /v2/pix.
+func (s *Servidor) AdicionarPix(n int, horario time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for i := range n {
+		s.registrarPix("", "1.00", "loja@example.com", horario.Add(time.Duration(i)*time.Second))
+	}
+}
+
+func (s *Servidor) registrarPix(txid, valor, chave string, horario time.Time) string {
+	s.seq++
+	e2e := fmt.Sprintf("E18236120%015d%08d", horario.Unix(), s.seq)[:32]
+	p := map[string]any{
+		"endToEndId": e2e, "valor": valor, "chave": chave, "horario": horario.UTC().Format(time.RFC3339Nano),
+		"infoPagador": "pagando o pix", "pagador": map[string]any{"cpf": "12345678909", "nome": "Fulano Pagador"},
+	}
+	if txid != "" {
+		p["txid"] = txid
+	}
+	s.pix = append(s.pix, p)
+	return e2e
+}
+
+// problema responde no formato de erro da spec do BCB, que o Efí usa na cobv.
+func problema(w http.ResponseWriter, status int, titulo, detalhe string) {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(map[string]any{"type": "https://pix.bcb.gov.br/api/v2/error/CobVOperacaoInvalida", "title": titulo, "status": status, "detail": detalhe})
 }
 
 func erro(w http.ResponseWriter, status int, nome, mensagem string) {
@@ -128,6 +172,20 @@ func (s *Servidor) servir(w http.ResponseWriter, r *http.Request) {
 	if txid, ok := strings.CutPrefix(r.URL.Path, "/v2/cob/"); ok {
 		s.cob(w, r, txid)
 		return
+	}
+	if txid, ok := strings.CutPrefix(r.URL.Path, "/v2/cobv/"); ok {
+		s.cobv(w, r, txid)
+		return
+	}
+	if r.URL.Path == "/v2/pix" {
+		s.listarPix(w, r)
+		return
+	}
+	if resto, ok := strings.CutPrefix(r.URL.Path, "/v2/pix/"); ok {
+		if e2e, id, ok := strings.Cut(resto, "/devolucao/"); ok {
+			s.devolucao(w, r, e2e, id)
+			return
+		}
 	}
 	erro(w, http.StatusNotFound, "rota_nao_encontrada", "rota não existe no Efí falso")
 }
@@ -236,4 +294,153 @@ func brCodeDinamico(location string) string {
 		panic(err) // location gerada aqui mesmo: só falha se o código estiver errado
 	}
 	return code
+}
+
+func (s *Servidor) cobv(w http.ResponseWriter, r *http.Request, txid string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	atual := s.cobvs[txid]
+	switch r.Method {
+	case http.MethodPut:
+		if atual != nil {
+			// O Efí não documenta o erro de txid repetido na cobv; a doc só mostra este 400.
+			problema(w, http.StatusBadRequest, "Cobrança inválida.", "O campo txid informado já foi utilizado.")
+			return
+		}
+		var corpo map[string]any
+		if b, _ := io.ReadAll(r.Body); json.Unmarshal(b, &corpo) != nil {
+			problema(w, http.StatusBadRequest, "Cobrança inválida.", "corpo não é JSON")
+			return
+		}
+		s.seq++
+		location := fmt.Sprintf("pix-h.example.efipay.com.br/v2/cobv/%d", s.seq)
+		corpo["txid"], corpo["status"], corpo["revisao"], corpo["location"] = txid, "ATIVA", 0, location
+		corpo["loc"] = map[string]any{"id": s.seq, "location": location, "tipoCob": "cobv"}
+		corpo["recebedor"] = map[string]any{"cnpj": "12682781000116", "nome": "Loja Teste"}
+		cal, _ := corpo["calendario"].(map[string]any)
+		cal["criacao"] = time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC).Format(time.RFC3339)
+		corpo["pixCopiaECola"] = brCodeDinamico(location)
+		s.cobvs[txid] = corpo
+		responder(w, http.StatusCreated, corpo)
+	case http.MethodGet:
+		if atual == nil {
+			problema(w, http.StatusNotFound, "Não Encontrado", "Nenhuma cobrança encontrada para o txid informado.")
+			return
+		}
+		responder(w, http.StatusOK, atual)
+	case http.MethodPatch:
+		if atual == nil {
+			problema(w, http.StatusNotFound, "Não Encontrado", "Nenhuma cobrança encontrada para o txid informado.")
+			return
+		}
+		if atual["status"] != "ATIVA" {
+			problema(w, http.StatusBadRequest, "Operação inválida.", "Somente cobranças ATIVA podem ser revisadas.")
+			return
+		}
+		var mudancas map[string]any
+		if b, _ := io.ReadAll(r.Body); json.Unmarshal(b, &mudancas) != nil {
+			problema(w, http.StatusBadRequest, "Operação inválida.", "corpo não é JSON")
+			return
+		}
+		for k, v := range mudancas {
+			atual[k] = v
+		}
+		atual["revisao"] = atual["revisao"].(int) + 1
+		responder(w, http.StatusOK, atual)
+	default:
+		problema(w, http.StatusMethodNotAllowed, "Método", "método não suportado")
+	}
+}
+
+func (s *Servidor) listarPix(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	inicio, err1 := time.Parse(time.RFC3339, q.Get("inicio"))
+	fim, err2 := time.Parse(time.RFC3339, q.Get("fim"))
+	if err1 != nil || err2 != nil {
+		erro(w, http.StatusBadRequest, "parametro_invalido", "inicio e fim são obrigatórios, em RFC 3339")
+		return
+	}
+	pagina, _ := strconv.Atoi(q.Get("paginacao.paginaAtual"))
+	porPagina, err := strconv.Atoi(q.Get("paginacao.itensPorPagina"))
+	if err != nil || porPagina <= 0 {
+		porPagina = 100
+	}
+	s.mu.Lock()
+	var filtrados []map[string]any
+	for _, p := range s.pix {
+		h, _ := time.Parse(time.RFC3339, p["horario"].(string))
+		if !h.Before(inicio) && !h.After(fim) { // o Efí filtra com fim inclusivo
+			filtrados = append(filtrados, p)
+		}
+	}
+	s.mu.Unlock()
+	paginas := (len(filtrados) + porPagina - 1) / porPagina
+	de, ate := min(pagina*porPagina, len(filtrados)), min((pagina+1)*porPagina, len(filtrados))
+	responder(w, http.StatusOK, map[string]any{
+		"parametros": map[string]any{"inicio": q.Get("inicio"), "fim": q.Get("fim"), "paginacao": map[string]any{
+			"paginaAtual": pagina, "itensPorPagina": porPagina, "quantidadeDePaginas": paginas, "quantidadeTotalDeItens": len(filtrados),
+		}},
+		"pix": append([]map[string]any{}, filtrados[de:ate]...),
+	})
+}
+
+func (s *Servidor) devolucao(w http.ResponseWriter, r *http.Request, e2e, id string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	chave := e2e + "/" + id
+	if r.Method == http.MethodGet {
+		d := s.devolucoes[chave]
+		if d == nil {
+			erro(w, http.StatusNotFound, "devolucao_nao_encontrada", "Nenhuma devolução encontrada para o identificador informado")
+			return
+		}
+		responder(w, http.StatusOK, d)
+		return
+	}
+	if r.Method != http.MethodPut {
+		erro(w, http.StatusMethodNotAllowed, "metodo", "método não suportado")
+		return
+	}
+	var pix map[string]any
+	for _, p := range s.pix {
+		if p["endToEndId"] == e2e {
+			pix = p
+		}
+	}
+	if pix == nil {
+		erro(w, http.StatusBadRequest, "pix_nao_encontrado", "Nenhum pix encontrado para o identificador informado")
+		return
+	}
+	if s.devolucoes[chave] != nil {
+		erro(w, http.StatusConflict, "devolucao_id_duplicado", "O id informado já foi utilizado em outra devolução")
+		return
+	}
+	var corpo struct {
+		Valor string `json:"valor"`
+	}
+	if b, _ := io.ReadAll(r.Body); json.Unmarshal(b, &corpo) != nil {
+		erro(w, http.StatusBadRequest, "json_invalido", "corpo não é JSON")
+		return
+	}
+	pedido, _ := strconv.ParseFloat(corpo.Valor, 64)
+	recebido, _ := strconv.ParseFloat(pix["valor"].(string), 64)
+	devolvido := 0.0
+	for k, d := range s.devolucoes {
+		if strings.HasPrefix(k, e2e+"/") {
+			v, _ := strconv.ParseFloat(d["valor"].(string), 64)
+			devolvido += v
+		}
+	}
+	if pedido <= 0 || devolvido+pedido > recebido+1e-9 {
+		// Nome de erro não documentado pelo Efí: só importa que a devolução seja recusada.
+		erro(w, http.StatusBadRequest, "valor_devolucao_invalido", "O valor da devolução passa do valor disponível do Pix")
+		return
+	}
+	s.seq++
+	d := map[string]any{
+		"id": id, "rtrId": fmt.Sprintf("D18236120202010291200%011d", s.seq), "valor": corpo.Valor, "status": "EM_PROCESSAMENTO",
+		"horario": map[string]any{"solicitacao": time.Date(2026, 10, 29, 12, 30, 0, 0, time.UTC).Format(time.RFC3339)},
+	}
+	s.devolucoes[chave] = d
+	responder(w, http.StatusCreated, d)
 }
