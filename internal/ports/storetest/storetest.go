@@ -84,6 +84,38 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 	})
 
+	t.Run("conta: atualiza os dados públicos do certificado", func(t *testing.T) {
+		s, ctx := novo(t), context.Background()
+		c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true}
+		if err := s.Contas().Criar(ctx, c); err != nil {
+			t.Fatal(err)
+		}
+		cert := domain.Certificado{Sujeito: "CN=loja", ImpressaoDigital: "ab12", Validade: base.Add(24 * time.Hour)}
+		if err := s.Contas().AtualizarCertificado(ctx, "c1", cert); err != nil {
+			t.Fatal(err)
+		}
+		if got, _ := s.Contas().Buscar(ctx, "c1"); got.Certificado == nil || !reflect.DeepEqual(*got.Certificado, cert) {
+			t.Fatalf("depois de atualizar: %+v", got.Certificado)
+		}
+		// Avisado e regravado com a mesma impressão: o aviso continua; com outra, zera.
+		if err := s.Contas().MarcarVencimentoAvisado(ctx, "c1", "ab12"); err != nil {
+			t.Fatal(err)
+		}
+		_ = s.Contas().AtualizarCertificado(ctx, "c1", cert)
+		if got, _ := s.Contas().Buscar(ctx, "c1"); !got.Certificado.VencimentoAvisado {
+			t.Fatal("regravar o mesmo certificado zerou o aviso")
+		}
+		outro := cert
+		outro.ImpressaoDigital = "cd34"
+		_ = s.Contas().AtualizarCertificado(ctx, "c1", outro)
+		if got, _ := s.Contas().Buscar(ctx, "c1"); got.Certificado.VencimentoAvisado || got.Certificado.ImpressaoDigital != "cd34" {
+			t.Fatalf("trocar o certificado não zerou o aviso: %+v", got.Certificado)
+		}
+		if err := s.Contas().AtualizarCertificado(ctx, "nada", cert); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("inexistente: err = %v", err)
+		}
+	})
+
 	t.Run("conta: marca o vencimento do certificado como avisado", func(t *testing.T) {
 		s, ctx := novo(t), context.Background()
 		c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true,

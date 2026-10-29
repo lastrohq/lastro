@@ -185,6 +185,20 @@ func (r contas) Atualizar(_ context.Context, c domain.Conta) error {
 	return nil
 }
 
+func (r contas) AtualizarCertificado(_ context.Context, id string, cert domain.Certificado) error {
+	r.s.lock()
+	defer r.s.unlock()
+	c, ok := r.s.d.contas[id]
+	if !ok {
+		return fmt.Errorf("conta %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	// O aviso vale para a impressão digital: a mesma mantém, outra zera.
+	cert.VencimentoAvisado = c.Certificado != nil && c.Certificado.VencimentoAvisado && c.Certificado.ImpressaoDigital == cert.ImpressaoDigital
+	c.Certificado = &cert
+	r.s.d.contas[id] = c
+	return nil
+}
+
 func (r contas) MarcarVencimentoAvisado(_ context.Context, id, impressao string) error {
 	r.s.lock()
 	defer r.s.unlock()
