@@ -41,9 +41,12 @@ const dirFitas = "../../../../test/fixtures/efi"
 //
 //	LASTRO_GRAVAR_EFI=1 EFI_CLIENT_ID=... EFI_CLIENT_SECRET=... \
 //	EFI_CERTIFICADO=homologacao.p12 EFI_SENHA_CERTIFICADO= EFI_CHAVE_PIX=... \
+//	EFI_URL_WEBHOOK=https://... \
 //	go test -run TestConformidadeGravada ./internal/adapters/psp/efi/
 //
 // A homologação não paga cobranças, então os cenários de pagamento são pulados.
+// EFI_URL_WEBHOOK é opcional: o Efí chama a URL e só aceita se ela responder
+// 2xx; sem ela, o cenário de configurar o webhook é pulado.
 func TestConformidadeGravada(t *testing.T) {
 	gravar := os.Getenv("LASTRO_GRAVAR_EFI") != ""
 	if !gravar {
@@ -63,7 +66,7 @@ func TestConformidadeGravada(t *testing.T) {
 				ClientID: os.Getenv("EFI_CLIENT_ID"), ClientSecret: os.Getenv("EFI_CLIENT_SECRET"),
 				Certificado: p12, SenhaCertificado: os.Getenv("EFI_SENHA_CERTIFICADO"),
 			}
-			f.Dados = map[string]string{"chave": os.Getenv("EFI_CHAVE_PIX")}
+			f.Dados = map[string]string{"chave": os.Getenv("EFI_CHAVE_PIX"), "webhook": os.Getenv("EFI_URL_WEBHOOK")}
 		} else {
 			// Na reprodução nada sai para a rede: o certificado só precisa abrir.
 			par := certificadotest.Gerar(t, "loja", f.Agora.Add(365*24*time.Hour))
@@ -72,7 +75,7 @@ func TestConformidadeGravada(t *testing.T) {
 		relogio := fake.NewClock(f.Agora)
 		conta := domain.Conta{ID: "loja", Nome: "Loja", PSP: "efi", ChavePix: f.Dados["chave"], Ambiente: domain.Homologacao, Ativa: true}
 		p := efi.New(&credenciais{porID: map[string]domain.Credenciais{"loja": cred}}, relogio, efi.ComTransporte(f.Envolver))
-		return conformance.Alvo{PSP: p, Conta: conta, Agora: relogio.Now, Rodada: f.Rodada}
+		return conformance.Alvo{PSP: p, Conta: conta, Agora: relogio.Now, Rodada: f.Rodada, Real: true, URLWebhook: f.Dados["webhook"]}
 	})
 }
 

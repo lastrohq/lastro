@@ -16,3 +16,6 @@ web/dist/
 .idea/
 .vscode/
 /dist/
+
+# Gravações de testes que falharam (test/conformance/fita), só para diagnóstico
+*.falha

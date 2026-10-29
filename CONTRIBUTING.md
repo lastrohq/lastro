@@ -81,7 +81,8 @@ return conformance.Alvo{PSP: p, Conta: conta, Agora: relogio.Now, Rodada: f.Roda
 - O adapter precisa de uma opção que envolva o transporte mTLS, token incluído (`efi.ComTransporte`).
 - Na reprodução, o adapter tem que fazer as mesmas chamadas, na mesma ordem e com os mesmos corpos JSON. Se ele mudar o que envia, grave de novo.
 - `Rodada` muda a cada gravação, porque o banco lembra os txids da anterior.
-- A fita não guarda cabeçalhos e troca o `access_token` por `"gravado"`. **Abra os JSON antes do commit** e confira se não há dado real (use uma chave Pix aleatória da homologação).
+- A fita não guarda cabeçalhos, troca o `access_token` por `"gravado"` e troca `recebedor` e `pagador` (nome, CPF/CNPJ, endereço) por dados fictícios. Mesmo assim, **abra os JSON antes do commit** e confira se não sobrou dado real (use uma chave Pix aleatória). Se o teste falhar gravando, a fita fica num `.falha` ignorado pelo git, só para diagnóstico.
+- Se o banco testar a URL do webhook antes de aceitar (o Efí testa), passe uma URL pública em `URLWebhook`; sem ela, o cenário é pulado.
 - O `TestConformidadeGravada` do Efí é o modelo, com o comando de gravação no comentário.
 
 ## O que não entra

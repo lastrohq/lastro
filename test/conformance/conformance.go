@@ -27,6 +27,12 @@ type Alvo struct {
 	// cada gravação precisa de uma rodada nova, porque o banco não esquece as
 	// cobranças da gravação anterior. Vazia vale "00000000".
 	Rodada string
+	// Real marca um banco de verdade (gravando ou reproduzindo fitas): o que
+	// só um servidor falso aceita é pulado.
+	Real bool
+	// URLWebhook é uma URL pública que responde 2xx. O banco de verdade testa
+	// a URL antes de aceitar o webhook; vazia, usa um endereço de exemplo.
+	URLWebhook string
 }
 
 // Run executa a suíte. novo deve devolver um alvo limpo a cada chamada.
@@ -311,7 +317,14 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 	t.Run("webhook: configurar URL", func(t *testing.T) {
 		a := novo(t)
 		exigir(t, a, ports.CapWebhook)
-		if err := a.PSP.ConfigurarWebhook(context.Background(), a.Conta, "https://lastro.example.com/webhook/"+a.Conta.ID); err != nil {
+		url := a.URLWebhook
+		if url == "" {
+			if a.Real {
+				t.Skip("o banco testa a URL do webhook antes de aceitar: o alvo precisa de URLWebhook pública")
+			}
+			url = "https://lastro.example.com/webhook/" + a.Conta.ID
+		}
+		if err := a.PSP.ConfigurarWebhook(context.Background(), a.Conta, url); err != nil {
 			t.Fatal(err)
 		}
 	})

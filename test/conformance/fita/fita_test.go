@@ -148,3 +148,20 @@ func TestArquivo(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func TestMascaraPessoas(t *testing.T) {
+	corpo := `{"txid":"abc","recebedor":{"nome":"Fulano Real","cpf":"12345678909","logradouro":"Rua Real, 10","cep":"37200000","nomeFantasia":"Loja Real"},
+	  "pix":[{"pagador":{"nome":"Beltrana","cnpj":"11222333000181"},"valor":"1.00"}],"devedor":{"nome":"Empresa de Teste"}}`
+	got := string(mascarar([]byte(corpo)))
+	for _, real := range []string{"Fulano", "12345678909", "Rua Real", "37200000", "Loja Real", "Beltrana", "11222333000181"} {
+		if strings.Contains(got, real) {
+			t.Errorf("%q ficou na fita: %s", real, got)
+		}
+	}
+	// O devedor é escrito pela suíte (já é fictício) e o resto fica como veio.
+	for _, fica := range []string{`"txid":"abc"`, `"valor":"1.00"`, `"Empresa de Teste"`, `"Recebedor de Teste"`, `"00000000000000"`} {
+		if !strings.Contains(got, fica) {
+			t.Errorf("faltou %s: %s", fica, got)
+		}
+	}
+}

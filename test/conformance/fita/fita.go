@@ -3,8 +3,9 @@
 // test/fixtures/<banco>/. Na reprodução o adapter precisa fazer as mesmas
 // chamadas, na mesma ordem, com os mesmos corpos; qualquer desvio falha o teste.
 //
-// A fita não guarda cabeçalhos (lá vão o Basic do client secret e o Bearer) e
-// troca o access_token das respostas de OAuth por "gravado".
+// A fita não guarda cabeçalhos (lá vão o Basic do client secret e o Bearer),
+// troca o access_token das respostas de OAuth por "gravado" e troca os dados
+// de pessoas (recebedor e pagador, com nome, CPF e endereço) por fictícios.
 package fita
 
 import (
@@ -129,7 +130,7 @@ func (tr transporte) gravar(req *http.Request, pedido Interacao) (*http.Response
 	}
 	resp.Body = io.NopCloser(bytes.NewReader(b))
 	pedido.Status = resp.StatusCode
-	pedido.Resposta = jsonOuNada(semToken(b))
+	pedido.Resposta = jsonOuNada(mascarar(semToken(b)))
 	tr.f.mu.Lock()
 	tr.f.Interacoes = append(tr.f.Interacoes, pedido)
 	tr.f.mu.Unlock()
@@ -163,20 +164,22 @@ func (f *Fita) salvar() {
 	if len(f.Interacoes) == 0 {
 		return
 	}
+	arquivo := f.arquivo
 	if f.t.Failed() {
-		f.t.Logf("teste falhou: a fita %s não foi gravada", f.arquivo)
-		return
+		// Fica para diagnóstico, fora das fitas: o .gitignore exclui *.falha.
+		arquivo += ".falha"
+		f.t.Logf("teste falhou: a gravação ficou em %s, só para diagnóstico", arquivo)
 	}
 	b, err := json.MarshalIndent(f, "", "  ")
 	if err != nil {
 		f.t.Error(err)
 		return
 	}
-	if err := os.MkdirAll(filepath.Dir(f.arquivo), 0o750); err != nil {
+	if err := os.MkdirAll(filepath.Dir(arquivo), 0o750); err != nil {
 		f.t.Error(err)
 		return
 	}
-	if err := os.WriteFile(f.arquivo, append(b, '\n'), 0o600); err != nil {
+	if err := os.WriteFile(arquivo, append(b, '\n'), 0o600); err != nil {
 		f.t.Error(err)
 	}
 }
@@ -237,4 +240,54 @@ func semToken(b []byte) []byte {
 		return b
 	}
 	return out
+}
+
+// Pessoas fictícias que entram no lugar das de verdade. A forma (objeto com os
+// campos da spec) é mantida para o adapter conseguir ler a resposta.
+var pessoasFicticias = map[string]map[string]string{
+	"recebedor": {"nome": "Recebedor de Teste", "cpf": "00000000000", "logradouro": "Rua de Teste, 1", "cidade": "Sao Paulo", "uf": "SP", "cep": "01000000"},
+	"pagador":   {"nome": "Pagador de Teste", "cpf": "00000000000"},
+}
+
+// mascarar troca, em qualquer nível do JSON, os objetos de pessoas pelos
+// fictícios; só os campos que vieram são trocados, e CNPJ vira CNPJ.
+func mascarar(b []byte) []byte {
+	var v any
+	if json.Unmarshal(b, &v) != nil {
+		return b
+	}
+	out, err := json.Marshal(trocarPessoas(v))
+	if err != nil {
+		return b
+	}
+	return out
+}
+
+func trocarPessoas(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		for k, filho := range x {
+			if ficticia, ok := pessoasFicticias[k]; ok {
+				if pessoa, ok := filho.(map[string]any); ok {
+					for campo := range pessoa {
+						switch {
+						case campo == "cnpj":
+							pessoa[campo] = "00000000000000"
+						case ficticia[campo] != "":
+							pessoa[campo] = ficticia[campo]
+						default:
+							pessoa[campo] = "mascarado"
+						}
+					}
+					continue
+				}
+			}
+			x[k] = trocarPessoas(filho)
+		}
+	case []any:
+		for i := range x {
+			x[i] = trocarPessoas(x[i])
+		}
+	}
+	return v
 }

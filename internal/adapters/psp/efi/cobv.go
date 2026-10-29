@@ -63,7 +63,15 @@ type cobvEfi struct {
 	Chave              string       `json:"chave,omitempty"`
 	SolicitacaoPagador string       `json:"solicitacaoPagador,omitempty"`
 	Location           string       `json:"location,omitempty"`
-	PixCopiaECola      string       `json:"pixCopiaECola,omitempty"`
+	// Loc é onde o Efí põe a location da cobv: diferente da cob, a resposta
+	// da cobv não traz o campo location no topo (visto na homologação).
+	Loc           *locEfi `json:"loc,omitempty"`
+	PixCopiaECola string  `json:"pixCopiaECola,omitempty"`
+}
+
+// locEfi é o payload location que o Efí devolve dentro da cobrança.
+type locEfi struct {
+	Location string `json:"location"`
 }
 
 func paraModalidade(m *domain.ValorModalidade) *modalidade {
@@ -130,8 +138,11 @@ func paraCobv(conta domain.Conta, r cobvEfi, base domain.CobrancaVencimento) (do
 	if r.Status != "" {
 		c.Status = domain.StatusCobranca(r.Status)
 	}
-	if r.Location != "" {
+	switch {
+	case r.Location != "":
 		c.Location = r.Location
+	case r.Loc != nil && r.Loc.Location != "":
+		c.Location = r.Loc.Location
 	}
 	if r.PixCopiaECola != "" {
 		c.BRCode = r.PixCopiaECola
@@ -212,19 +223,21 @@ func caminhoCobv(txid domain.Txid) string { return "/v2/cobv/" + url.PathEscape(
 
 // CriarCobv cria a cobrança com vencimento (PUT /v2/cobv/:txid).
 //
-// O Efí não documenta um nome de erro para txid repetido na cobv (só um 400
-// "Cobrança inválida."). Quando o PUT falha com 4xx, o adapter consulta o txid:
-// se a cobv já existe, o erro é ErrJaExiste. A confirmar na homologação.
+// Desvio do Efí, visto na homologação em 29/10/2026: PUT num txid que já
+// existe não dá erro; sobrescreve a cobv e soma uma revisão (na cob, o Efí
+// recusa). Para cumprir o port (txid repetido é ErrJaExiste) sem apagar a
+// cobrança de ninguém, o adapter consulta o txid antes e só cria se ele não
+// existir. Entre a consulta e o PUT sobra uma janela curta; o Lastro já
+// impede dois pedidos com o mesmo txid antes de chegar aqui.
 func (p *PSP) CriarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
+	switch _, err := p.ConsultarCobv(ctx, conta, c.Txid); {
+	case err == nil:
+		return domain.CobrancaVencimento{}, fmt.Errorf("efi: cobv %s: %w", c.Txid, ports.ErrJaExiste)
+	case !errors.Is(err, ports.ErrNaoEncontrado):
+		return domain.CobrancaVencimento{}, err
+	}
 	var r cobvEfi
-	err := p.chamar(ctx, conta, http.MethodPut, caminhoCobv(c.Txid), corpoCobv(conta, c), &r)
-	if err != nil {
-		var e *erroHTTP
-		if errors.As(err, &e) && e.status >= 400 && e.status < 500 && !errors.Is(err, ports.ErrJaExiste) {
-			if _, errGet := p.ConsultarCobv(ctx, conta, c.Txid); errGet == nil {
-				return domain.CobrancaVencimento{}, fmt.Errorf("efi: cobv %s: %w (%w)", c.Txid, ports.ErrJaExiste, err)
-			}
-		}
+	if err := p.chamar(ctx, conta, http.MethodPut, caminhoCobv(c.Txid), corpoCobv(conta, c), &r); err != nil {
 		return domain.CobrancaVencimento{}, err
 	}
 	return paraCobv(conta, r, c)
