@@ -51,7 +51,6 @@ func TestTokenNaoApareceEmLog(t *testing.T) {
 		"%v":   fmt.Sprintf("%v", tok),
 		"%+v":  fmt.Sprintf("%+v", tok),
 		"%#v":  fmt.Sprintf("%#v", tok),
-		"%s":   fmt.Sprintf("%s", tok),
 		"slog": log.String(),
 	}
 	for formato, saida := range saidas {

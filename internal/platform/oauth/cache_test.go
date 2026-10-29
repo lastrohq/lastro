@@ -25,7 +25,7 @@ type banco struct {
 	buscas  atomic.Int64
 }
 
-func (b *banco) buscar(ctx context.Context) (oauth.Token, error) {
+func (b *banco) buscar(_ context.Context) (oauth.Token, error) {
 	n := b.buscas.Add(1)
 	agora := b.relogio.Now()
 	return oauth.Token{Valor: fmt.Sprintf("token-%d", n), ObtidoEm: agora, ExpiraEm: agora.Add(b.vida)}, nil
@@ -54,7 +54,7 @@ func TestChamadasConcorrentesFazemUmaBusca(t *testing.T) {
 	c := oauth.NovoCache(relogio)
 	liberar := make(chan struct{})
 	var buscas atomic.Int64
-	buscar := func(ctx context.Context) (oauth.Token, error) {
+	buscar := func(_ context.Context) (oauth.Token, error) {
 		buscas.Add(1)
 		<-liberar // segura a busca até todos estarem esperando
 		return oauth.Token{Valor: "unico", ObtidoEm: inicio, ExpiraEm: inicio.Add(time.Hour)}, nil
@@ -131,7 +131,7 @@ func TestContasTemTokensSeparados(t *testing.T) {
 func TestErroNaoFicaGuardado(t *testing.T) {
 	c := oauth.NovoCache(fake.NewClock(inicio))
 	falhar := true
-	buscar := func(ctx context.Context) (oauth.Token, error) {
+	buscar := func(_ context.Context) (oauth.Token, error) {
 		if falhar {
 			return oauth.Token{}, errors.New("banco fora do ar")
 		}

@@ -44,6 +44,21 @@ func (a *api) recebido(i int) (corpo, auth string) {
 	return a.corpos[i], a.auths[i]
 }
 
+// pedir faz a requisição com o contexto do teste.
+func pedir(t *testing.T, cli *http.Client, metodo, url string, corpo io.Reader) *http.Response {
+	t.Helper()
+	req, err := http.NewRequestWithContext(t.Context(), metodo, url, corpo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := cli.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = resp.Body.Close()
+	return resp
+}
+
 // cliente sobe a API falsa e devolve um http.Client com o Transport do cache.
 func cliente(t *testing.T, aceitos ...string) (*http.Client, *api, *banco, string) {
 	t.Helper()
@@ -59,11 +74,7 @@ func cliente(t *testing.T, aceitos ...string) (*http.Client, *api, *banco, strin
 
 func TestTransportEnviaOToken(t *testing.T) {
 	cli, a, _, url := cliente(t, "token-1")
-	resp, err := cli.Get(url)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = resp.Body.Close()
+	resp := pedir(t, cli, http.MethodGet, url, nil)
 	if _, auth := a.recebido(0); resp.StatusCode != http.StatusOK || auth != "Bearer token-1" {
 		t.Fatalf("status %d, Authorization %q", resp.StatusCode, auth)
 	}
@@ -73,11 +84,7 @@ func Test401InvalidaOTokenETentaUmaVez(t *testing.T) {
 	// O banco revogou o token-1 antes de ele expirar: só aceita o token-2.
 	cli, a, b, url := cliente(t, "token-2")
 
-	resp, err := cli.Post(url, "application/json", strings.NewReader(`{"valor":"1.00"}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = resp.Body.Close()
+	resp := pedir(t, cli, http.MethodPost, url, strings.NewReader(`{"valor":"1.00"}`))
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status %d; quer 200 na segunda tentativa", resp.StatusCode)
 	}
@@ -92,8 +99,7 @@ func Test401InvalidaOTokenETentaUmaVez(t *testing.T) {
 	}
 
 	// O token novo fica no cache para as próximas chamadas.
-	resp, _ = cli.Get(url)
-	_ = resp.Body.Close()
+	pedir(t, cli, http.MethodGet, url, nil)
 	if n := b.buscas.Load(); n != 2 {
 		t.Fatalf("buscas = %d depois de renovar; quer 2", n)
 	}
@@ -102,11 +108,7 @@ func Test401InvalidaOTokenETentaUmaVez(t *testing.T) {
 func Test401DuasVezesNaoEntraEmLaco(t *testing.T) {
 	cli, a, b, url := cliente(t) // nenhum token é aceito
 
-	resp, err := cli.Get(url)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = resp.Body.Close()
+	resp := pedir(t, cli, http.MethodGet, url, nil)
 	if resp.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("status %d; quer o 401 do banco", resp.StatusCode)
 	}
@@ -121,13 +123,8 @@ func Test401DuasVezesNaoEntraEmLaco(t *testing.T) {
 func TestCorpoSemGetBodyNaoRepete(t *testing.T) {
 	cli, a, _, url := cliente(t, "token-2")
 
-	// io.MultiReader esconde o tipo: http.NewRequest não consegue criar GetBody.
-	req, _ := http.NewRequest(http.MethodPost, url, io.MultiReader(bytes.NewReader([]byte("x"))))
-	resp, err := cli.Do(req)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_ = resp.Body.Close()
+	// io.MultiReader esconde o tipo: a requisição fica sem GetBody.
+	resp := pedir(t, cli, http.MethodPost, url, io.MultiReader(bytes.NewReader([]byte("x"))))
 	if resp.StatusCode != http.StatusUnauthorized || a.chamadas.Load() != 1 {
 		t.Fatalf("status %d em %d chamadas; quer o 401 sem repetir", resp.StatusCode, a.chamadas.Load())
 	}
@@ -135,7 +132,7 @@ func TestCorpoSemGetBodyNaoRepete(t *testing.T) {
 
 func TestTransportNaoAlteraARequisicaoOriginal(t *testing.T) {
 	cli, _, _, url := cliente(t, "token-1")
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req, _ := http.NewRequestWithContext(t.Context(), http.MethodGet, url, nil)
 	resp, err := cli.Do(req)
 	if err != nil {
 		t.Fatal(err)
