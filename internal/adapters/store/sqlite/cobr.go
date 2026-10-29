@@ -140,3 +140,17 @@ func (r cobrs) DaRecorrencia(ctx context.Context, idRec string) ([]domain.Cobran
 	}
 	return out, nil
 }
+
+func (r cobrs) Abertas(ctx context.Context, contaID string) ([]domain.CobrancaRecorrente, error) {
+	rows, err := r.q.CobrsAbertas(ctx, contaID)
+	if err != nil {
+		return nil, traduzir(err, "cobranças recorrentes da conta "+contaID)
+	}
+	out := make([]domain.CobrancaRecorrente, len(rows))
+	for i, row := range rows {
+		if out[i], err = paraCobr(row); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}

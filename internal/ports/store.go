@@ -72,6 +72,9 @@ type CobrancaRecorrenteRepo interface {
 	Atualizar(ctx context.Context, c *domain.CobrancaRecorrente) error
 	// DaRecorrencia devolve as cobranças da recorrência em ordem de vencimento.
 	DaRecorrencia(ctx context.Context, idRec string) ([]domain.CobrancaRecorrente, error)
+	// Abertas devolve as cobranças da conta que ainda podem mudar (CRIADA e
+	// ATIVA), em ordem de criação, para a conciliação.
+	Abertas(ctx context.Context, contaID string) ([]domain.CobrancaRecorrente, error)
 }
 
 // ContaRepo guarda as contas recebedoras e as credenciais delas, já cifradas.

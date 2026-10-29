@@ -39,11 +39,13 @@ var escopoDaRota = map[string]domain.Escopo{
 // rotasPublicas não exigem API key. Os webhooks são chamados pelo banco e
 // autenticados pelo token da URL, conferido no caso de uso.
 var rotasPublicas = map[string]bool{
-	"GET /health":                              true,
-	"POST /webhooks/pix/{contaId}/{token}":     true,
-	"POST /webhooks/pix/{contaId}/{token}/pix": true,
-	"POST /webhooks/rec/{contaId}/{token}":     true,
-	"POST /webhooks/rec/{contaId}/{token}/rec": true,
+	"GET /health":                                true,
+	"POST /webhooks/pix/{contaId}/{token}":       true,
+	"POST /webhooks/pix/{contaId}/{token}/pix":   true,
+	"POST /webhooks/rec/{contaId}/{token}":       true,
+	"POST /webhooks/rec/{contaId}/{token}/rec":   true,
+	"POST /webhooks/cobr/{contaId}/{token}":      true,
+	"POST /webhooks/cobr/{contaId}/{token}/cobr": true,
 }
 
 // autenticar exige "Authorization: Bearer lst_..." com o escopo da rota, e

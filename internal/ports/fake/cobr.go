@@ -74,3 +74,17 @@ func (r cobrs) DaRecorrencia(_ context.Context, idRec string) ([]domain.Cobranca
 	})
 	return out, nil
 }
+
+func (r cobrs) Abertas(_ context.Context, contaID string) ([]domain.CobrancaRecorrente, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	var out []domain.CobrancaRecorrente
+	for _, c := range r.s.d.cobrs {
+		if c.ContaID == contaID && !domain.TransicoesCobrancaRecorrente.Terminal(c.Status) {
+			c.Tentativas = slices.Clone(c.Tentativas)
+			out = append(out, c)
+		}
+	}
+	slices.SortFunc(out, func(a, b domain.CobrancaRecorrente) int { return a.CriadaEm.Compare(b.CriadaEm) })
+	return out, nil
+}

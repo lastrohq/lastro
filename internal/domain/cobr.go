@@ -3,6 +3,7 @@ package domain
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 )
 
@@ -213,4 +214,49 @@ func (r Recorrencia) InicioDoCicloSeguinte(d Data) Data {
 			return inicio
 		}
 	}
+}
+
+// AtualizacaoCobrancaRecorrente é a cobrança recorrente segundo o banco, no
+// webhook de cobrança recorrente ou na consulta (RN-42).
+type AtualizacaoCobrancaRecorrente struct {
+	Txid   Txid
+	IDRec  string
+	Status StatusCobrancaRecorrente
+	// Tentativas é o histórico que o banco conhece; zero tentativas não apaga nada.
+	Tentativas []Tentativa
+	// MotivoEncerramento vem na rejeição e no cancelamento.
+	MotivoEncerramento string
+}
+
+// Aplicar leva para a cobrança o que o banco avisou e devolve se o status
+// mudou e quais tentativas são novas ou mudaram. O banco é a fonte da verdade
+// sobre cada tentativa, identificada pela data e pelo tipo; tentativa que só o
+// Lastro conhece (pedida e ainda não avisada) continua. Status fora da RN-42,
+// como uma volta de CONCLUIDA para ATIVA, é ErrTransicaoInvalida, e nada muda.
+func (c *CobrancaRecorrente) Aplicar(a AtualizacaoCobrancaRecorrente) (statusMudou bool, tentativas []Tentativa, err error) {
+	novo := *c
+	novo.Tentativas = append([]Tentativa(nil), c.Tentativas...)
+	if a.Status != "" && a.Status != c.Status {
+		if err := novo.Transitar(a.Status); err != nil {
+			return false, nil, err
+		}
+		statusMudou = true
+	}
+	if a.MotivoEncerramento != "" && a.MotivoEncerramento != c.MotivoEncerramento {
+		novo.MotivoEncerramento = a.MotivoEncerramento
+	}
+	for _, t := range a.Tentativas {
+		i := slices.IndexFunc(novo.Tentativas, func(x Tentativa) bool { return x.DataLiquidacao == t.DataLiquidacao && x.Tipo == t.Tipo })
+		switch {
+		case i < 0:
+			novo.Tentativas = append(novo.Tentativas, t)
+		case novo.Tentativas[i] == t:
+			continue
+		default:
+			novo.Tentativas[i] = t
+		}
+		tentativas = append(tentativas, t)
+	}
+	*c = novo
+	return statusMudou, tentativas, nil
 }

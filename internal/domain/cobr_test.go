@@ -222,3 +222,54 @@ func TestTabelaParametrosEmOrdemEComFonte(t *testing.T) {
 		t.Errorf("parâmetros de 29/10/2026 = %+v", p)
 	}
 }
+
+func TestAplicarAtualizacao(t *testing.T) {
+	agnd := Tentativa{DataLiquidacao: NovaData(2026, 11, 5), Tipo: TipoAgendamento, Status: TentativaAgendada}
+	base := func() CobrancaRecorrente {
+		c := cobrValida()
+		c.Status = CobrCriada
+		return c
+	}
+	t.Run("status e tentativa nova", func(t *testing.T) {
+		c := base()
+		mudou, ts, err := c.Aplicar(AtualizacaoCobrancaRecorrente{Status: CobrAtiva, Tentativas: []Tentativa{agnd}})
+		if err != nil || !mudou || len(ts) != 1 || c.Status != CobrAtiva || len(c.Tentativas) != 1 {
+			t.Fatalf("mudou %v, tentativas %+v, cobrança %+v, %v", mudou, ts, c, err)
+		}
+		// O mesmo aviso de novo não muda nada.
+		mudou, ts, err = c.Aplicar(AtualizacaoCobrancaRecorrente{Status: CobrAtiva, Tentativas: []Tentativa{agnd}})
+		if err != nil || mudou || len(ts) != 0 {
+			t.Fatalf("repetido: %v %+v %v", mudou, ts, err)
+		}
+	})
+	t.Run("tentativa muda pela data e pelo tipo, e a que só o Lastro conhece continua", func(t *testing.T) {
+		c := base()
+		c.Status = CobrAtiva
+		pedida := Tentativa{DataLiquidacao: NovaData(2026, 11, 7), Tipo: TipoNovaTentativa, Status: TentativaSolicitada}
+		c.Tentativas = []Tentativa{agnd, pedida}
+		rejeitada := agnd
+		rejeitada.Status, rejeitada.MotivoRejeicao = TentativaRejeitada, "AM04"
+		mudou, ts, err := c.Aplicar(AtualizacaoCobrancaRecorrente{Status: CobrAtiva, Tentativas: []Tentativa{rejeitada}})
+		if err != nil || mudou || len(ts) != 1 || ts[0] != rejeitada {
+			t.Fatalf("mudou %v, tentativas %+v, %v", mudou, ts, err)
+		}
+		if len(c.Tentativas) != 2 || c.Tentativas[0] != rejeitada || c.Tentativas[1] != pedida {
+			t.Fatalf("tentativas = %+v", c.Tentativas)
+		}
+	})
+	t.Run("motivo do encerramento", func(t *testing.T) {
+		c := base()
+		if _, _, err := c.Aplicar(AtualizacaoCobrancaRecorrente{Status: CobrRejeitada, MotivoEncerramento: "AC06"}); err != nil || c.MotivoEncerramento != "AC06" {
+			t.Fatalf("%+v, %v", c, err)
+		}
+	})
+	t.Run("status fora da RN-42 não muda nada", func(t *testing.T) {
+		c := base()
+		c.Status = CobrConcluida
+		antes := c
+		_, _, err := c.Aplicar(AtualizacaoCobrancaRecorrente{Status: CobrAtiva, Tentativas: []Tentativa{agnd}})
+		if !errors.Is(err, ErrTransicaoInvalida) || c.Status != CobrConcluida || len(c.Tentativas) != len(antes.Tentativas) {
+			t.Fatalf("%+v, %v", c, err)
+		}
+	})
+}

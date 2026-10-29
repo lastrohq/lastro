@@ -253,6 +253,48 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 	})
 
+	t.Run("cobr: criar devolve CRIADA, consultar acha, cancelar encerra", func(t *testing.T) {
+		a := novo(t)
+		exigir(t, a, ports.CapRec)
+		exigir(t, a, ports.CapCobr)
+		rec, ok := a.PSP.(ports.PSPRecorrencia)
+		if !ok {
+			t.Fatal("declara rec mas não implementa ports.PSPRecorrencia")
+		}
+		cobr, ok := a.PSP.(ports.PSPCobrancaRecorrente)
+		if !ok {
+			t.Fatal("declara cobr mas não implementa ports.PSPCobrancaRecorrente")
+		}
+		ctx := context.Background()
+		hoje := domain.DataDe(a.Agora())
+		r, err := rec.CriarRecorrencia(ctx, a.Conta, domain.Recorrencia{
+			ContaID: a.Conta.ID, Contrato: "conformidade-cobr", Devedor: domain.Devedor{Documento: "11222333000181", Nome: "Empresa de Teste"},
+			DataInicial: hoje.SomarDias(5), Periodicidade: domain.Mensal, ValorFixo: 1500, Politica: domain.Retentativa3Em7Dias,
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		c, err := cobr.CriarCobr(ctx, a.Conta, domain.CobrancaRecorrente{
+			Txid: "conformidadecobr0000000001", RecorrenciaID: r.ID, ContaID: a.Conta.ID, Valor: 1500,
+			Vencimento: hoje.SomarDias(5), AjusteDiaUtil: true, CriadaEm: a.Agora(),
+		})
+		if err != nil || c.Status != domain.CobrCriada || c.Txid != "conformidadecobr0000000001" {
+			t.Fatalf("criar: %+v, %v", c, err)
+		}
+		if lida, err := cobr.ConsultarCobr(ctx, a.Conta, c.Txid); err != nil || lida.Txid != c.Txid || lida.RecorrenciaID != r.ID {
+			t.Fatalf("consultar: %+v, %v", lida, err)
+		}
+		if cancelada, err := cobr.CancelarCobr(ctx, a.Conta, c.Txid); err != nil || cancelada.Status != domain.CobrCancelada {
+			t.Fatalf("cancelar: %+v, %v", cancelada, err)
+		}
+		if _, err := cobr.ConsultarCobr(ctx, a.Conta, "conformidadecobrinexistente1"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("inexistente: %v", err)
+		}
+		if err := cobr.ConfigurarWebhookCobr(ctx, a.Conta, "https://lastro.example.com/webhooks/cobr/"+a.Conta.ID+"/token"); err != nil {
+			t.Fatalf("configurar webhookcobr: %v", err)
+		}
+	})
+
 	t.Run("webhook: configurar URL", func(t *testing.T) {
 		a := novo(t)
 		exigir(t, a, ports.CapWebhook)

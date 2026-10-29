@@ -51,17 +51,18 @@ type PSP struct {
 	atraso time.Duration
 	store  ports.Store // opcional: de onde reconstruir as cobranças depois de reiniciar
 
-	mu          sync.Mutex
-	cobs        map[string]domain.Cobranca // chave: contaID/txid
-	cobvs       map[string]domain.CobrancaVencimento
-	devolucoes  map[string][]domain.Devolucao
-	webhooks    map[string]string
-	recs        map[string]domain.Recorrencia
-	webhooksRec map[string]string
-	solicitadas map[string]time.Time   // idRec → quando a confirmação foi pedida
-	cobrs       map[string]cobrSandbox // chave: contaID/txid
-	entregar    Entregador
-	locSeq      int
+	mu           sync.Mutex
+	cobs         map[string]domain.Cobranca // chave: contaID/txid
+	cobvs        map[string]domain.CobrancaVencimento
+	devolucoes   map[string][]domain.Devolucao
+	webhooks     map[string]string
+	recs         map[string]domain.Recorrencia
+	webhooksRec  map[string]string
+	solicitadas  map[string]time.Time   // idRec → quando a confirmação foi pedida
+	cobrs        map[string]cobrSandbox // chave: contaID/txid
+	webhooksCobr map[string]string
+	entregar     Entregador
+	locSeq       int
 }
 
 var _ ports.PSP = (*PSP)(nil)
@@ -78,7 +79,7 @@ func ComAtraso(d time.Duration) Opcao { return func(p *PSP) { p.atraso = d } }
 
 // New cria o sandbox com o relógio dado.
 func New(clock ports.Clock, opcoes ...Opcao) *PSP {
-	p := &PSP{clock: clock, atraso: AtrasoPadrao, cobs: map[string]domain.Cobranca{}, cobvs: map[string]domain.CobrancaVencimento{}, devolucoes: map[string][]domain.Devolucao{}, webhooks: map[string]string{}, recs: map[string]domain.Recorrencia{}, webhooksRec: map[string]string{}, solicitadas: map[string]time.Time{}, cobrs: map[string]cobrSandbox{}, entregar: entregarHTTP}
+	p := &PSP{clock: clock, atraso: AtrasoPadrao, cobs: map[string]domain.Cobranca{}, cobvs: map[string]domain.CobrancaVencimento{}, devolucoes: map[string][]domain.Devolucao{}, webhooks: map[string]string{}, recs: map[string]domain.Recorrencia{}, webhooksRec: map[string]string{}, solicitadas: map[string]time.Time{}, cobrs: map[string]cobrSandbox{}, webhooksCobr: map[string]string{}, entregar: entregarHTTP}
 	for _, o := range opcoes {
 		o(p)
 	}

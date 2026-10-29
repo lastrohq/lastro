@@ -2,10 +2,14 @@ package sandbox
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"strings"
 	"time"
 
+	"github.com/lastrohq/lastro/internal/adapters/psp"
 	"github.com/lastrohq/lastro/internal/domain"
 	"github.com/lastrohq/lastro/internal/ports"
 )
@@ -108,6 +112,7 @@ func (p *PSP) CriarCobr(ctx context.Context, conta domain.Conta, c domain.Cobran
 		return domain.CobrancaRecorrente{}, fmt.Errorf("sandbox: cobrança %s: %w", c.Txid, ports.ErrJaExiste)
 	}
 	p.cobrs[chave(conta.ID, c.Txid)] = cobrSandbox{c: c}
+	p.avisarCobr(conta, c.Txid, 1, 2)
 	return c, nil
 }
 
@@ -168,6 +173,7 @@ func (p *PSP) SolicitarRetentativa(ctx context.Context, conta domain.Conta, txid
 			return fmt.Errorf("sandbox: %w: a cobrança está %s; só ATIVA ganha nova data", domain.ErrTransicaoInvalida, atual.Status)
 		}
 		s.retentativas = append(s.retentativas, retentativa{data: data, pedida: p.clock.Now()})
+		p.avisarCobr(conta, txid, 1)
 		return nil
 	})
 }
@@ -184,4 +190,65 @@ func (p *PSP) mudarCobr(ctx context.Context, conta domain.Conta, txid domain.Txi
 	p.cobrs[chave(conta.ID, txid)] = s
 	p.mu.Unlock()
 	return p.estado(s, p.clock.Now()), nil
+}
+
+// ConfigurarWebhookCobr guarda a URL do aviso de cobrança recorrente da conta.
+func (p *PSP) ConfigurarWebhookCobr(_ context.Context, conta domain.Conta, url string) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.webhooksCobr[conta.ID] = url
+	return nil
+}
+
+// InterpretarWebhookCobr lê o aviso no formato da spec do BCB.
+func (p *PSP) InterpretarWebhookCobr(conta domain.Conta, corpo []byte) ([]domain.AtualizacaoCobrancaRecorrente, error) {
+	return psp.WebhookCobrBCB(conta, corpo)
+}
+
+// avisarCobr entrega, depois de cada número de atrasos dado, a cobrança como
+// ela está pelo webhook de cobrança recorrente, se a conta tiver um neste
+// processo. Sem webhook, a consulta e a conciliação encontram a mudança.
+func (p *PSP) avisarCobr(conta domain.Conta, txid domain.Txid, passos ...int) {
+	for _, n := range passos {
+		time.AfterFunc(time.Duration(n)*p.atraso, func() {
+			p.mu.Lock()
+			url := p.webhooksCobr[conta.ID]
+			s, ok := p.cobrs[chave(conta.ID, txid)]
+			p.mu.Unlock()
+			if url == "" || !ok {
+				return
+			}
+			corpo, _ := json.Marshal(map[string]any{"cobsr": []any{cobrBCB(p.estado(s, p.clock.Now()))}})
+			if err := p.entregar(context.Background(), url+"/cobr", corpo); err != nil {
+				slog.Warn("sandbox: aviso de cobrança recorrente não entregue", "txid", txid, "erro", err)
+			}
+		})
+	}
+}
+
+// cobrBCB monta a cobrança no formato do callback da spec (CobRNotification).
+func cobrBCB(c domain.CobrancaRecorrente) map[string]any {
+	tentativas := make([]map[string]any, len(c.Tentativas))
+	for i, t := range c.Tentativas {
+		tentativas[i] = map[string]any{"dataLiquidacao": t.DataLiquidacao.String(), "tipo": t.Tipo, "status": t.Status, "endToEndId": t.EndToEndID}
+		if t.MotivoRejeicao != "" {
+			tentativas[i]["rejeicao"] = motivoBCB(t.MotivoRejeicao)
+		}
+	}
+	out := map[string]any{"idRec": c.RecorrenciaID, "txid": c.Txid, "status": c.Status, "tentativas": tentativas, "valor": map[string]string{"original": c.Valor.String()}}
+	if c.MotivoEncerramento != "" {
+		motivo := motivoBCB(c.MotivoEncerramento)
+		if c.Status == domain.CobrCancelada {
+			out["encerramento"] = map[string]any{"cancelamento": motivo}
+		} else {
+			out["encerramento"] = map[string]any{"rejeicao": motivo}
+		}
+	}
+	return out
+}
+
+// motivoBCB separa "AM04 saldo insuficiente" em código e descrição.
+func motivoBCB(m string) map[string]string {
+	codigo, descricao, _ := strings.Cut(m, " ")
+	return map[string]string{"codigo": codigo, "descricao": descricao}
 }

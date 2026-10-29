@@ -128,4 +128,26 @@ func runCobr(t *testing.T, novo func(t *testing.T) ports.Store) {
 			t.Fatalf("de recorrência sem cobrança: %+v, %v", vazia, err)
 		}
 	})
+
+	t.Run("cobr: abertas são as CRIADA e ATIVA da conta, em ordem de criação", func(t *testing.T) {
+		s, ctx := comRecorrencia(t, novo), context.Background()
+		recC2 := recorrencia("RR1234567820261029abcDEF00102", "c2")
+		_ = s.Recorrencias().Criar(ctx, recC2)
+		status := []domain.StatusCobrancaRecorrente{domain.CobrAtiva, domain.CobrConcluida, domain.CobrCriada, domain.CobrCancelada}
+		for i, st := range status {
+			c := cobr("cobr00000000000000000000002"+string(rune('a'+i)), domain.NovaData(2026, 11, 10+i), 10-i)
+			c.Status = st
+			if err := s.CobrancasRecorrentes().Criar(ctx, c); err != nil {
+				t.Fatal(err)
+			}
+		}
+		daOutra := cobr("cobr0000000000000000000000030", domain.NovaData(2026, 11, 10), 0)
+		daOutra.RecorrenciaID, daOutra.ContaID, daOutra.Status = recC2.ID, "c2", domain.CobrAtiva
+		_ = s.CobrancasRecorrentes().Criar(ctx, daOutra)
+		abertas, err := s.CobrancasRecorrentes().Abertas(ctx, "c1")
+		// A CRIADA (minuto 8) foi criada antes da ATIVA (minuto 10).
+		if err != nil || len(abertas) != 2 || abertas[0].Status != domain.CobrCriada || abertas[1].Status != domain.CobrAtiva {
+			t.Fatalf("Abertas = %+v, %v", abertas, err)
+		}
+	})
 }

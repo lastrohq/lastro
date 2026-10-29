@@ -180,7 +180,8 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 			return err
 		}
 		wh := app.Webhooks{Store: contas.Store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock},
-			Recorrencias: app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}}
+			Recorrencias:         app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock},
+			CobrancasRecorrentes: app.CobrancasRecorrentes{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}}
 		endereco, err := wh.Configurar(ctx, args[1], *urlPublica)
 		if err != nil {
 			return err
@@ -308,6 +309,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 	store := contas.Store
 	conc.Store, conc.Recebimentos.Store, conc.PSPs = store, store, contas.PSPs
 	conc.Recorrencias = app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}
+	conc.CobrancasRecorrentes = app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}
 	if intervalo > 0 {
 		rodando.Go(func() {
 			jobs.Periodico(ctxJobs, "conciliação", intervalo, func(ctx context.Context) error {
@@ -354,7 +356,8 @@ func serve(ctx context.Context, amb Ambiente) error {
 			CobrancasV: app.CobrancasV{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			Contas:     contas,
 			Webhooks: app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock},
-				Recorrencias: app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}},
+				Recorrencias:         app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+				CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}},
 			Recorrencias:         app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			APIKeys:              app.APIKeys{Store: store, Clock: amb.Clock},
@@ -484,11 +487,12 @@ func conciliar(ctx context.Context, amb Ambiente) error {
 	defer fechar()
 	conc.Store, conc.Recebimentos.Store, conc.PSPs = contas.Store, contas.Store, contas.PSPs
 	conc.Recorrencias = app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}
+	conc.CobrancasRecorrentes = app.CobrancasRecorrentes{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}
 	r, err := conc.Rodar(ctx)
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d recorrências atualizadas, %d falhas\n", r.Contas, r.Novos, r.Recorrencias, r.Falhas)
+	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d recorrências atualizadas, %d cobranças recorrentes atualizadas, %d falhas\n", r.Contas, r.Novos, r.Recorrencias, r.CobrancasRecorrentes, r.Falhas)
 	if err == nil && r.Falhas > 0 {
 		err = fmt.Errorf("%d contas falharam (detalhes no log)", r.Falhas)
 	}
