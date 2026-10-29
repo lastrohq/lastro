@@ -31,3 +31,53 @@ func (q *Queries) AdicionarEvento(ctx context.Context, arg AdicionarEventoParams
 	)
 	return err
 }
+
+const marcarDistribuido = `-- name: MarcarDistribuido :exec
+UPDATE outbox SET distribuido = 1 WHERE id = ?
+`
+
+func (q *Queries) MarcarDistribuido(ctx context.Context, id string) error {
+	_, err := q.db.ExecContext(ctx, marcarDistribuido, id)
+	return err
+}
+
+const naoDistribuidos = `-- name: NaoDistribuidos :many
+SELECT id, tipo, conta_id, ocorrido_em, dados FROM outbox WHERE distribuido = 0 ORDER BY seq LIMIT ?
+`
+
+type NaoDistribuidosRow struct {
+	ID         string
+	Tipo       string
+	ContaID    string
+	OcorridoEm int64
+	Dados      string
+}
+
+func (q *Queries) NaoDistribuidos(ctx context.Context, limit int64) ([]NaoDistribuidosRow, error) {
+	rows, err := q.db.QueryContext(ctx, naoDistribuidos, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []NaoDistribuidosRow
+	for rows.Next() {
+		var i NaoDistribuidosRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Tipo,
+			&i.ContaID,
+			&i.OcorridoEm,
+			&i.Dados,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

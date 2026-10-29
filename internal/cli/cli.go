@@ -11,10 +11,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"text/tabwriter"
 	"time"
 
 	"github.com/lastrohq/lastro/internal/adapters/httpapi"
+	"github.com/lastrohq/lastro/internal/adapters/jobs"
+	"github.com/lastrohq/lastro/internal/adapters/notifier"
 	"github.com/lastrohq/lastro/internal/adapters/store/sqlite"
 	"github.com/lastrohq/lastro/internal/app"
 	"github.com/lastrohq/lastro/internal/domain"
@@ -39,6 +42,15 @@ const uso = `uso: lastro <comando>
   conta criar  [flags]           cadastra uma conta recebedora
   conta listar                   lista as contas
   conta desativar <id>           impede novas cobranças na conta
+  conta webhook <id> --url-publica https://...
+                                 gera a URL de aviso de Pix e registra no banco
+  conciliar                      roda a conciliação uma vez (GET /pix de cada conta)
+  destino criar --url URL [--conta ID]
+                                 cadastra onde entregar os eventos (sem --conta: todas)
+  destino listar                 lista os destinos
+  destino remover <id>           remove um destino
+  dlq listar                     lista as entregas que desistiram depois de 24 h
+  dlq reenviar <evento-id>       devolve as entregas do evento à fila
   apikey criar --nome N --escopo E [--escopo E...] [--conta ID]
                                  cria uma API key (o token aparece uma vez só)
   apikey listar                  lista as API keys
@@ -47,7 +59,9 @@ const uso = `uso: lastro <comando>
 escopos: cob:read cob:write cobv:read cobv:write pix:read devolucao:write
          rec:read rec:write webhook:admin conta:admin
 
-variáveis: LASTRO_DB (padrão lastro.db), LASTRO_MASTER_KEY, LASTRO_ADDR (padrão :8080)`
+variáveis: LASTRO_DB (padrão lastro.db), LASTRO_MASTER_KEY, LASTRO_ADDR (padrão :8080),
+           LASTRO_CONCILIACAO_INTERVALO (padrão 5m; 0 desliga), LASTRO_CONCILIACAO_JANELA (padrão 2h),
+           LASTRO_WEBHOOK_INTERVALO (padrão 2s; 0 desliga a entrega de eventos)`
 
 // Run executa o comando em args.
 func Run(ctx context.Context, args []string, amb Ambiente) error {
@@ -70,6 +84,12 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 		return conta(ctx, args[1:], amb)
 	case "apikey":
 		return apikey(ctx, args[1:], amb)
+	case "conciliar":
+		return conciliar(ctx, amb)
+	case "destino":
+		return destino(ctx, args[1:], amb)
+	case "dlq":
+		return dlq(ctx, args[1:], amb)
 	case "help", "-h", "--help":
 		_, err := fmt.Fprintln(amb.Saida, uso)
 		return err
@@ -126,6 +146,23 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%v\n", c.ID, c.Nome, c.PSP, c.ChavePix, c.Ambiente, c.Ativa)
 		}
 		return tw.Flush()
+	case "webhook":
+		fs := flag.NewFlagSet("conta webhook", flag.ContinueOnError)
+		fs.SetOutput(amb.Saida)
+		urlPublica := fs.String("url-publica", "", "endereço público deste Lastro (https://lastro.suaempresa.com)")
+		if len(args) < 2 || strings.HasPrefix(args[1], "-") {
+			return errors.New("use: lastro conta webhook <id> --url-publica URL")
+		}
+		if err := fs.Parse(args[2:]); err != nil {
+			return err
+		}
+		wh := app.Webhooks{Store: contas.Store, PSPs: amb.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock}}
+		endereco, err := wh.Configurar(ctx, args[1], *urlPublica)
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintf(amb.Saida, "webhook da conta %s registrado no PSP:\n\n  %s\n\nO token faz parte da URL: trate a URL como segredo. Rodar de novo troca o token.\n", args[1], endereco)
+		return err
 	case "desativar":
 		if len(args) != 2 {
 			return errors.New("use: lastro conta desativar <id>")
@@ -201,12 +238,45 @@ func trimFinal(b []byte) []byte {
 
 func serve(ctx context.Context, amb Ambiente) error {
 	addr := getenv(amb, "LASTRO_ADDR", ":8080")
+	intervalo, err := duracao(amb, "LASTRO_CONCILIACAO_INTERVALO", "5m")
+	if err != nil {
+		return err
+	}
+	conc, err := conciliacao(amb)
+	if err != nil {
+		return err
+	}
+	intervaloWebhook, err := duracao(amb, "LASTRO_WEBHOOK_INTERVALO", "2s")
+	if err != nil {
+		return err
+	}
 	contas, fechar, err := abrir(ctx, amb)
 	if err != nil {
 		return err
 	}
 	defer fechar()
 	store := contas.Store
+	conc.Store, conc.Recebimentos.Store = store, store
+	if intervalo > 0 {
+		go jobs.Periodico(ctx, "conciliação", intervalo, func(ctx context.Context) error {
+			_, err := conc.Rodar(ctx)
+			return err
+		})
+	} else {
+		slog.Warn("conciliação desligada: Pix sem aviso do banco não serão recuperados")
+	}
+	saida := app.Saida{Store: store, Vault: contas.Vault, Clock: amb.Clock, Enviador: notifier.NovoHTTP(amb.Versao)}
+	if intervaloWebhook > 0 {
+		go jobs.Periodico(ctx, "webhooks", intervaloWebhook, func(ctx context.Context) error {
+			if _, err := saida.Distribuir(ctx); err != nil {
+				return err
+			}
+			_, err := saida.Entregar(ctx)
+			return err
+		})
+	} else {
+		slog.Warn("entrega de eventos desligada: os webhooks de saída ficam parados no outbox")
+	}
 	srv := &http.Server{
 		Addr: addr,
 		Handler: httpapi.NewRouter(httpapi.Opcoes{
@@ -214,6 +284,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 			Cobrancas:    app.Cobrancas{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
 			CobrancasV:   app.CobrancasV{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
 			Contas:       contas,
+			Webhooks:     app.Webhooks{Store: store, PSPs: amb.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock}},
 			APIKeys:      app.APIKeys{Store: store, Clock: amb.Clock},
 			Idempotencia: app.Idempotencia{Store: store, Clock: amb.Clock},
 			Clock:        amb.Clock,
@@ -304,5 +375,143 @@ func apikey(ctx context.Context, args []string, amb Ambiente) error {
 		return err
 	default:
 		return fmt.Errorf("subcomando desconhecido %q (use criar, listar ou revogar)", args[0])
+	}
+}
+
+// duracao lê uma variável no formato do Go (5m, 2h, 30s).
+func duracao(amb Ambiente, chave, padrao string) (time.Duration, error) {
+	v := getenv(amb, chave, padrao)
+	d, err := time.ParseDuration(v)
+	if err != nil || d < 0 {
+		return 0, fmt.Errorf("%s=%q: use uma duração como 5m ou 2h", chave, v)
+	}
+	return d, nil
+}
+
+// conciliacao monta o caso de uso sem Store; quem chama completa com o banco aberto.
+func conciliacao(amb Ambiente) (app.Conciliacao, error) {
+	janela, err := duracao(amb, "LASTRO_CONCILIACAO_JANELA", "2h")
+	if err != nil {
+		return app.Conciliacao{}, err
+	}
+	if janela == 0 {
+		return app.Conciliacao{}, errors.New("LASTRO_CONCILIACAO_JANELA não pode ser zero")
+	}
+	return app.Conciliacao{PSPs: amb.PSPs, Recebimentos: app.Recebimentos{Clock: amb.Clock}, Clock: amb.Clock, Janela: janela}, nil
+}
+
+func conciliar(ctx context.Context, amb Ambiente) error {
+	conc, err := conciliacao(amb)
+	if err != nil {
+		return err
+	}
+	contas, fechar, err := abrir(ctx, amb)
+	if err != nil {
+		return err
+	}
+	defer fechar()
+	conc.Store, conc.Recebimentos.Store = contas.Store, contas.Store
+	r, err := conc.Rodar(ctx)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d falhas\n", r.Contas, r.Novos, r.Falhas)
+	if err == nil && r.Falhas > 0 {
+		err = fmt.Errorf("%d contas falharam (detalhes no log)", r.Falhas)
+	}
+	return err
+}
+
+func destino(ctx context.Context, args []string, amb Ambiente) error {
+	if len(args) == 0 {
+		return errors.New("use: lastro destino criar|listar|remover")
+	}
+	contas, fechar, err := abrir(ctx, amb)
+	if err != nil {
+		return err
+	}
+	defer fechar()
+	saida := app.Saida{Store: contas.Store, Vault: contas.Vault, Clock: amb.Clock}
+	switch args[0] {
+	case "criar":
+		fs := flag.NewFlagSet("destino criar", flag.ContinueOnError)
+		fs.SetOutput(amb.Saida)
+		endereco := fs.String("url", "", "URL da sua aplicação que recebe os eventos")
+		conta := fs.String("conta", "", "só os eventos desta conta (vazio: todas)")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		d, whsec, err := saida.ConfigurarDestino(ctx, *conta, *endereco)
+		if err != nil {
+			return err
+		}
+		_, err = fmt.Fprintf(amb.Saida, "destino %s criado para %s\n\n  segredo: %s\n\nConfigure o segredo na sua aplicação para verificar a assinatura (Standard Webhooks).\nGuarde agora: ele não aparece de novo.\n", d.ID, d.URL, whsec)
+		return err
+	case "listar":
+		lista, err := contas.Store.Destinos().Listar(ctx)
+		if err != nil {
+			return err
+		}
+		tw := tabwriter.NewWriter(amb.Saida, 0, 4, 2, ' ', 0)
+		_, _ = fmt.Fprintln(tw, "ID\tCONTA\tURL\tCRIADO")
+		for _, d := range lista {
+			conta := d.ContaID
+			if conta == "" {
+				conta = "(todas)"
+			}
+			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%s\n", d.ID, conta, d.URL, d.CriadoEm.Format(time.DateTime))
+		}
+		return tw.Flush()
+	case "remover":
+		if len(args) != 2 {
+			return errors.New("use: lastro destino remover <id>")
+		}
+		if err := contas.Store.Destinos().Remover(ctx, args[1]); err != nil {
+			return err
+		}
+		_, err := fmt.Fprintf(amb.Saida, "destino %s removido\n", args[1])
+		return err
+	default:
+		return fmt.Errorf("subcomando desconhecido %q (use criar, listar ou remover)", args[0])
+	}
+}
+
+func dlq(ctx context.Context, args []string, amb Ambiente) error {
+	if len(args) == 0 {
+		return errors.New("use: lastro dlq listar|reenviar")
+	}
+	contas, fechar, err := abrir(ctx, amb)
+	if err != nil {
+		return err
+	}
+	defer fechar()
+	saida := app.Saida{Store: contas.Store, Vault: contas.Vault, Clock: amb.Clock}
+	switch args[0] {
+	case "listar":
+		lista, err := saida.DLQ(ctx, 200)
+		if err != nil {
+			return err
+		}
+		tw := tabwriter.NewWriter(amb.Saida, 0, 4, 2, ' ', 0)
+		_, _ = fmt.Fprintln(tw, "EVENTO\tTIPO\tDESTINO\tTENTATIVAS\tÚLTIMO ERRO\tEVENTO EM")
+		for _, e := range lista {
+			_, _ = fmt.Fprintf(tw, "%s\t%s\t%s\t%d\t%s\t%s\n", e.EventoID, e.Tipo, e.DestinoID, e.Tentativas, e.UltimoErro, e.CriadaEm.Format(time.DateTime))
+		}
+		return tw.Flush()
+	case "reenviar":
+		if len(args) != 2 {
+			return errors.New("use: lastro dlq reenviar <evento-id>")
+		}
+		n, err := saida.Reenviar(ctx, args[1])
+		if err != nil {
+			return err
+		}
+		if n == 0 {
+			return fmt.Errorf("nenhuma entrega do evento %s está na DLQ", args[1])
+		}
+		_, err = fmt.Fprintf(amb.Saida, "%d entrega(s) do evento %s de volta à fila\n", n, args[1])
+		return err
+	default:
+		return fmt.Errorf("subcomando desconhecido %q (use listar ou reenviar)", args[0])
 	}
 }

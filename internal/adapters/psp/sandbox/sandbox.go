@@ -20,6 +20,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/lastrohq/lastro/internal/adapters/psp"
 	"github.com/lastrohq/lastro/internal/domain"
 	"github.com/lastrohq/lastro/internal/ports"
 	"github.com/lastrohq/lastro/pkg/brcode"
@@ -315,6 +316,11 @@ func (p *PSP) ConfigurarWebhook(_ context.Context, conta domain.Conta, url strin
 	defer p.mu.Unlock()
 	p.webhooks[conta.ID] = url
 	return nil
+}
+
+// InterpretarWebhook lê o callback no formato da spec do BCB.
+func (p *PSP) InterpretarWebhook(conta domain.Conta, corpo []byte) ([]domain.PixRecebido, error) {
+	return psp.WebhookPixBCB(conta, corpo)
 }
 
 // endToEndID segue o formato do SPI: E + ISPB(8) + AAAAMMDDHHmm + 11 caracteres.

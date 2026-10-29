@@ -194,28 +194,74 @@ release com nota.
 
 ### RN-30 · Entrada (banco → Lastro)
 
-- Só é aceito webhook de origem configurada para a conta: mTLS (quando o banco
-  exige, como o Efí) ou segredo na URL/header.
+- A URL de aviso é **por conta**, com um token secreto:
+  `https://<seu-lastro>/webhooks/pix/{conta}/{token}`. Ela é gerada por
+  `lastro conta webhook <id> --url-publica https://...`, que também a registra no
+  PSP. Só o hash do token é gravado; rodar de novo troca o token (e o antigo para
+  de valer). O token faz parte da URL: trate a URL como segredo.
+- A spec do BCB manda o banco acrescentar `/pix` à URL: os dois caminhos são aceitos.
+- A rota não exige API key (quem chama é o banco). Token ausente, errado ou fora
+  do formato responde **401**, sem dizer qual dos três.
+- O corpo é interpretado pelo **adapter da conta**: quem segue a spec usa o
+  formato padrão (`{"pix": [...]}`), quem desvia trata o desvio no adapter. Um
+  item inválido recusa o lote inteiro (**400**): melhor o banco reenviar que
+  perder um Pix em silêncio.
 - O evento é **persistido antes** de responder 200. Se a persistência falhar, o
   Lastro responde 5xx e deixa o banco reenviar.
-- Deduplicação por `endToEndId`: o mesmo Pix avisado duas vezes gera um evento só.
+- Deduplicação por `endToEndId`: o mesmo Pix avisado duas vezes gera um registro
+  e um evento só.
+- Pix com `txid` de uma cob ou cobv **ativa da mesma conta** conclui a cobrança
+  na mesma transação. O banco é a fonte da verdade: valor diferente do cobrado
+  ainda conclui, mas o evento `pix.recebido` sai com `divergente: true`. Pix sem
+  txid, ou com txid de outra conta, é registrado sem concluir nada.
+- Corpo acima de 1 MiB é recusado em qualquer rota.
 
 ### RN-31 · Conciliação
 
-Um job periódico consulta `GET /pix?inicio&fim` em cada conta (janela
-deslizante, padrão a cada 5 min olhando as últimas 2 h) e trata como recebido
-todo Pix que não chegou por webhook. **Nenhum Pix some** porque o banco falhou
-em avisar.
+Um job dentro do `serve` consulta `GET /pix` de **cada conta** numa janela
+deslizante e registra todo Pix que não chegou por webhook, pelo mesmo caminho do
+webhook (RN-30): deduplicado por `endToEndId`, concluindo a cobrança e publicando
+`pix.recebido`. **Nenhum Pix some** porque o banco falhou em avisar.
+
+- Padrão: a cada **5 min**, olhando as últimas **2 h**
+  (`LASTRO_CONCILIACAO_INTERVALO`, `LASTRO_CONCILIACAO_JANELA`). Intervalo `0`
+  desliga, com aviso no log; janela zero é recusada.
+- A janela é `[agora − janela, agora)`. Um Pix no instante exato de `agora` entra
+  na rodada seguinte: as janelas se sobrepõem.
+- Conta **desativada também entra**: as cobranças antigas dela ainda podem ser pagas.
+- Uma conta que falha (PSP fora, PSP desconhecido) não impede as outras; a falha
+  vai para o log e a rodada seguinte tenta de novo.
+- As rodadas nunca se sobrepõem, e um atraso aleatório de até 10% evita que
+  várias instâncias consultem o banco no mesmo segundo.
+- `lastro conciliar` roda uma rodada sob demanda (útil depois de uma indisponibilidade).
 
 ### RN-32 · Saída (Lastro → aplicação do cliente)
 
-- Payload **normalizado**: o mesmo formato, seja qual for o banco.
-- Assinado conforme [Standard Webhooks](https://www.standardwebhooks.com/)
-  (`webhook-id`, `webhook-timestamp`, `webhook-signature` HMAC-SHA256).
-- Entrega *at-least-once*: o cliente deve deduplicar pelo `webhook-id`.
-- Retry com backoff exponencial e jitter por até **24 h**; depois disso o evento
-  vai para a **DLQ**, visível no painel e reenviável manualmente.
-- Registro de cada tentativa (status, latência, corpo da resposta truncado).
+- **Destinos:** `lastro destino criar --url https://... [--conta ID]`. Sem `--conta`,
+  o destino recebe os eventos de todas as contas. O segredo `whsec_...` aparece
+  **uma vez**, na criação, e fica cifrado pelo Vault (é preciso tê-lo em claro
+  para assinar). https obrigatório (http só para localhost).
+- **Eventos:** `cobranca.criada`, `cobranca.revisada`, `cobranca.concluida`,
+  `cobranca.removida` e `pix.recebido` (com `divergente` quando o valor pago
+  difere do cobrado). O corpo é o envelope do Standard Webhooks:
+  `{"type": ..., "timestamp": ..., "data": {...}}`, normalizado, igual para
+  qualquer banco.
+- **Assinatura** no padrão [Standard Webhooks](https://www.standardwebhooks.com/):
+  `webhook-id` (o id do evento), `webhook-timestamp` e `webhook-signature`
+  (`v1,` + HMAC-SHA256). Verificável com as bibliotecas oficiais — o teste usa a
+  de Go para conferir o que o Lastro envia.
+- **Entrega *at-least-once*:** o cliente deve deduplicar pelo `webhook-id`, que é
+  o mesmo em todas as tentativas. O corpo também é o mesmo, byte a byte.
+- **Distribuição:** cada evento do outbox vira uma entrega por destino que casa
+  com a conta. Evento sem destino na hora é descartado: destino criado depois não
+  recebe o passado.
+- **Retry:** sucesso é qualquer 2xx; redirecionamento não é seguido (conta como
+  falha). Esperas de 5 s, 30 s, 2 min, 10 min, 30 min, 1 h, 2 h e depois 4 h, com
+  até 10% de jitter, até **24 h** depois do evento; então a entrega vai para a
+  **DLQ** (`lastro dlq listar`) e volta à fila com `lastro dlq reenviar <evento>`.
+- Até 8 entregas em paralelo e 10 s de timeout por tentativa: um destino lento não
+  trava os outros. O job roda a cada 2 s (`LASTRO_WEBHOOK_INTERVALO`; `0` desliga).
+- Destino removido com entregas pendentes: elas vão para a DLQ.
 
 ---
 

@@ -18,3 +18,9 @@ SELECT credenciais FROM contas WHERE id = ?;
 
 -- name: BuscarContaPorChave :one
 SELECT id, nome, psp, chave_pix, ambiente, ativa FROM contas WHERE chave_pix = ?;
+
+-- name: SalvarTokenWebhook :execrows
+UPDATE contas SET webhook_token_hash = ? WHERE id = ?;
+
+-- name: BuscarTokenWebhook :one
+SELECT webhook_token_hash FROM contas WHERE id = ?;

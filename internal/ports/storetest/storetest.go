@@ -351,6 +351,137 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 	})
 
+	t.Run("pix: registra uma vez só por endToEndId e lista por txid", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		p := domain.PixRecebido{EndToEndID: "E12345678202610291200abcdefghijk", ContaID: "c1", Txid: "txid00000000000000000000001",
+			Valor: 4990, Chave: "c1@example.com", Horario: base.Add(time.Minute), InfoPagador: "obrigado"}
+		novo1, err := s.Pix().Registrar(ctx, p)
+		if err != nil || !novo1 {
+			t.Fatalf("primeiro registro: novo=%v err=%v", novo1, err)
+		}
+		dup := p
+		dup.Valor = 1
+		novo2, err := s.Pix().Registrar(ctx, dup)
+		if err != nil || novo2 {
+			t.Fatalf("repetido: novo=%v err=%v", novo2, err)
+		}
+		got, err := s.Pix().BuscarPorE2E(ctx, p.EndToEndID)
+		if err != nil || got.Valor != 4990 || got.Txid != p.Txid || !got.Horario.Equal(p.Horario) || got.InfoPagador != "obrigado" || got.Chave != p.Chave {
+			t.Fatalf("BuscarPorE2E = %+v, %v", got, err)
+		}
+		cedo := p
+		cedo.EndToEndID, cedo.Horario = "E12345678202610291100abcdefghijk", base
+		_, _ = s.Pix().Registrar(ctx, cedo)
+		lista, err := s.Pix().ListarPorTxid(ctx, p.Txid)
+		if err != nil || len(lista) != 2 || lista[0].EndToEndID != cedo.EndToEndID {
+			t.Fatalf("ListarPorTxid = %+v, %v", lista, err)
+		}
+		if _, err := s.Pix().BuscarPorE2E(ctx, "Enadanadanadanadanadanadanadanad"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("inexistente: err = %v", err)
+		}
+	})
+
+	t.Run("conta: token de webhook", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		if _, err := s.Contas().BuscarTokenWebhook(ctx, "c1"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("sem token: err = %v", err)
+		}
+		if err := s.Contas().SalvarTokenWebhook(ctx, "c1", []byte{7, 7}); err != nil {
+			t.Fatal(err)
+		}
+		if h, err := s.Contas().BuscarTokenWebhook(ctx, "c1"); err != nil || string(h) != string([]byte{7, 7}) {
+			t.Fatalf("BuscarTokenWebhook = %v, %v", h, err)
+		}
+		if err := s.Contas().SalvarTokenWebhook(ctx, "nada", []byte{1}); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("conta inexistente: err = %v", err)
+		}
+	})
+
+	t.Run("outbox: distribui cada evento uma vez, em ordem", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		for i, id := range []string{"e1", "e2", "e3"} {
+			ev := domain.Evento{ID: id, Tipo: domain.EventoPixRecebido, ContaID: "c1", OcorridoEm: base.Add(time.Duration(i) * time.Second), Dados: map[string]string{"n": id}}
+			if err := s.Outbox().Adicionar(ctx, ev); err != nil {
+				t.Fatal(err)
+			}
+		}
+		lote, err := s.Outbox().NaoDistribuidos(ctx, 2)
+		if err != nil || len(lote) != 2 || lote[0].ID != "e1" || string(lote[0].Dados) != `{"n":"e1"}` || lote[0].Tipo != domain.EventoPixRecebido || !lote[0].OcorridoEm.Equal(base) {
+			t.Fatalf("NaoDistribuidos = %+v, %v", lote, err)
+		}
+		_ = s.Outbox().MarcarDistribuido(ctx, "e1")
+		_ = s.Outbox().MarcarDistribuido(ctx, "e2")
+		if lote, _ = s.Outbox().NaoDistribuidos(ctx, 10); len(lote) != 1 || lote[0].ID != "e3" {
+			t.Fatalf("depois de marcar: %+v", lote)
+		}
+	})
+
+	t.Run("destinos: da conta inclui os globais", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		for i, d := range []domain.Destino{
+			{ID: "d1", ContaID: "c1", URL: "https://a.example.com", SegredoCifrado: []byte{1}},
+			{ID: "d2", URL: "https://global.example.com", SegredoCifrado: []byte{2}},
+			{ID: "d3", ContaID: "c2", URL: "https://b.example.com", SegredoCifrado: []byte{3}},
+		} {
+			d.CriadoEm = base.Add(time.Duration(i) * time.Second)
+			if err := s.Destinos().Criar(ctx, d); err != nil {
+				t.Fatal(err)
+			}
+		}
+		dc1, err := s.Destinos().DaConta(ctx, "c1")
+		if err != nil || len(dc1) != 2 || dc1[0].ID != "d1" || dc1[1].ID != "d2" || string(dc1[0].SegredoCifrado) != string([]byte{1}) {
+			t.Fatalf("DaConta(c1) = %+v, %v", dc1, err)
+		}
+		if err := s.Destinos().Remover(ctx, "d2"); err != nil {
+			t.Fatal(err)
+		}
+		if todos, _ := s.Destinos().Listar(ctx); len(todos) != 2 {
+			t.Fatalf("depois de remover: %d", len(todos))
+		}
+		if err := s.Destinos().Remover(ctx, "d2"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("remover de novo: err = %v", err)
+		}
+	})
+
+	t.Run("entregas: fila por horário, atualização, DLQ e reenvio", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		_ = s.Destinos().Criar(ctx, domain.Destino{ID: "d1", URL: "https://a.example.com", SegredoCifrado: []byte{1}, CriadoEm: base})
+		nova := func(ev string, prox time.Duration) domain.Entrega {
+			return domain.Entrega{EventoID: ev, DestinoID: "d1", ContaID: "c1", Tipo: domain.EventoPixRecebido, Corpo: []byte(`{"type":"x"}`),
+				CriadaEm: base, Status: domain.EntregaPendente, ProximaEm: base.Add(prox), AtualizadaEm: base}
+		}
+		for _, e := range []domain.Entrega{nova("e2", 2*time.Second), nova("e1", time.Second), nova("e3", time.Hour)} {
+			if err := s.Entregas().Criar(ctx, e); err != nil {
+				t.Fatal(err)
+			}
+		}
+		_ = s.Entregas().Criar(ctx, nova("e1", 0)) // repetida: ignorada
+		prox, err := s.Entregas().Proximas(ctx, base.Add(10*time.Second), 10)
+		if err != nil || len(prox) != 2 || prox[0].EventoID != "e1" || string(prox[0].Corpo) != `{"type":"x"}` || !prox[0].ProximaEm.Equal(base.Add(time.Second)) {
+			t.Fatalf("Proximas = %+v, %v", prox, err)
+		}
+		e := prox[0]
+		e.Status, e.Tentativas, e.UltimoHTTP, e.UltimoErro = domain.EntregaDLQ, 9, 503, "indisponível"
+		if err := s.Entregas().Atualizar(ctx, e); err != nil {
+			t.Fatal(err)
+		}
+		dlq, _ := s.Entregas().Listar(ctx, domain.EntregaDLQ, 10)
+		if len(dlq) != 1 || dlq[0].Tentativas != 9 || dlq[0].UltimoHTTP != 503 || dlq[0].UltimoErro != "indisponível" {
+			t.Fatalf("DLQ = %+v", dlq)
+		}
+		n, err := s.Entregas().Reenviar(ctx, "e1", base.Add(time.Minute))
+		if err != nil || n != 1 {
+			t.Fatalf("Reenviar = %d, %v", n, err)
+		}
+		prox, _ = s.Entregas().Proximas(ctx, base.Add(time.Minute), 10)
+		if len(prox) != 2 || prox[1].EventoID != "e1" || prox[1].Tentativas != 0 || prox[1].Status != domain.EntregaPendente {
+			t.Fatalf("depois de reenviar: %+v", prox)
+		}
+		if n, _ := s.Entregas().Reenviar(ctx, "e1", base); n != 0 {
+			t.Fatalf("reenviar o que não está na DLQ mudou %d", n)
+		}
+	})
+
 	t.Run("transação: erro desfaz tudo, sucesso grava tudo", func(t *testing.T) {
 		s, ctx := comContas(t, novo), context.Background()
 		falha := errors.New("falhou no meio")

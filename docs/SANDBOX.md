@@ -28,8 +28,9 @@ curl -H "Authorization: Bearer $LASTRO_TOKEN" localhost:8080/cob/pedido000000000
 # → status CONCLUIDA, revisao 1
 ```
 
-A consulta pergunta ao PSP quando a cobrança ainda está `ATIVA`; é assim que
-ela vira `CONCLUIDA` antes de os webhooks existirem (F4).
+Você nem precisa consultar: a **conciliação** (a cada 5 min no `serve`, ou na
+hora com `lastro conciliar`) encontra o pagamento do sandbox e conclui a cobrança
+sozinha. A consulta também pergunta ao PSP quando a cobrança ainda está `ATIVA`.
 
 ## Como ele se comporta
 
@@ -51,8 +52,9 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
 
 ## O que ainda não faz
 
-- **Webhook:** a URL é aceita, mas o aviso de pagamento só passa a ser entregue
-  com a F4 (#22, #23). Até lá, consulte a cobrança ou `GET /pix`.
+- **Webhook do banco:** o sandbox não chama o webhook de entrada sozinho; o
+  pagamento chega pela conciliação. Para testar o webhook, simule o banco com
+  `curl -X POST {url-do-webhook}/pix` (veja a RN-30).
 - **Estado:** fica em memória. Reiniciar o Lastro esquece as cobranças do sandbox.
 - **Valor da cobv:** o sandbox paga o valor **original**. Multa, juros e desconto
   são calculados pelo banco de verdade.

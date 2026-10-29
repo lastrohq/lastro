@@ -96,6 +96,15 @@ func (s *Store) Idempotencia() ports.IdempotenciaRepo { return idem{s.q} }
 // CobrancasV devolve o repositório de cobranças com vencimento.
 func (s *Store) CobrancasV() ports.CobrancaVRepo { return cobvs{s.q} }
 
+// Pix devolve o repositório de Pix recebidos.
+func (s *Store) Pix() ports.PixRepo { return pixes{s.q} }
+
+// Destinos devolve o repositório de destinos de webhook.
+func (s *Store) Destinos() ports.DestinoRepo { return destinos{s.q} }
+
+// Entregas devolve o repositório de entregas de webhook.
+func (s *Store) Entregas() ports.EntregaRepo { return entregas{s.q} }
+
 // Outbox devolve o repositório do outbox.
 func (s *Store) Outbox() ports.OutboxRepo { return outbox{s.q} }
 
