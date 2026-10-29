@@ -20,6 +20,7 @@ var (
 type Store interface {
 	Contas() ContaRepo
 	Cobrancas() CobrancaRepo
+	CobrancasV() CobrancaVRepo
 	Outbox() OutboxRepo
 	APIKeys() APIKeyRepo
 	Idempotencia() IdempotenciaRepo
@@ -95,4 +96,16 @@ type IdempotenciaRepo interface {
 	Salvar(ctx context.Context, r domain.RegistroIdempotencia) error
 	// Remover apaga o registro; apagar o que não existe não é erro.
 	Remover(ctx context.Context, dono, chave string) error
+}
+
+// CobrancaVRepo guarda cobranças com vencimento. O txid é único na instância,
+// compartilhado com as cobs: um txid usado numa cob não serve para uma cobv (RN-10).
+type CobrancaVRepo interface {
+	Criar(ctx context.Context, c domain.CobrancaVencimento) error
+	BuscarPorTxid(ctx context.Context, txid domain.Txid) (domain.CobrancaVencimento, error)
+	// Atualizar segue a mesma revisão otimista de CobrancaRepo.Atualizar.
+	Atualizar(ctx context.Context, c *domain.CobrancaVencimento) error
+	// Listar usa os mesmos filtros e paginação da cob; Janela filtra pela criação.
+	Listar(ctx context.Context, f FiltroCobrancas) ([]domain.CobrancaVencimento, string, error)
+	Contar(ctx context.Context, f FiltroCobrancas) (int, error)
 }

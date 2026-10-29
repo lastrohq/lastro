@@ -212,6 +212,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 		Handler: httpapi.NewRouter(httpapi.Opcoes{
 			Versao:       amb.Versao,
 			Cobrancas:    app.Cobrancas{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
+			CobrancasV:   app.CobrancasV{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
 			Contas:       contas,
 			APIKeys:      app.APIKeys{Store: store, Clock: amb.Clock},
 			Idempotencia: app.Idempotencia{Store: store, Clock: amb.Clock},

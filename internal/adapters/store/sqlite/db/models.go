@@ -36,6 +36,25 @@ type Cobranca struct {
 	Chave              string
 }
 
+type CobrancasVencimento struct {
+	Seq                int64
+	ContaID            string
+	Txid               string
+	Chave              string
+	Status             string
+	Valor              int64
+	Vencimento         string
+	ValidadeDias       int64
+	DevedorDocumento   string
+	DevedorNome        string
+	Detalhes           string
+	SolicitacaoPagador string
+	Location           string
+	BrCode             string
+	CriadaEm           int64
+	Revisao            int64
+}
+
 type Conta struct {
 	ID          string
 	Nome        string
@@ -63,4 +82,9 @@ type Outbox struct {
 	ContaID    string
 	OcorridoEm int64
 	Dados      string
+}
+
+type Txid struct {
+	Txid string
+	Tipo string
 }

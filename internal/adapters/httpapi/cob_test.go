@@ -48,6 +48,7 @@ func novaAPI(t *testing.T) *api {
 	h := NewRouter(Opcoes{
 		Versao:       "v-test",
 		Cobrancas:    app.Cobrancas{Store: store, PSPs: registry, Clock: clock},
+		CobrancasV:   app.CobrancasV{Store: store, PSPs: registry, Clock: clock},
 		Contas:       app.Contas{Store: store, Vault: v, PSPs: registry},
 		APIKeys:      keys,
 		Idempotencia: app.Idempotencia{Store: store, Clock: clock},
@@ -165,8 +166,8 @@ func TestCobErrosNoFormatoDaSpec(t *testing.T) {
 	if st := a.chamar(http.MethodPut, "/cob/recusado0000000000000000000001", recusado, nil, &p); st != http.StatusBadGateway || !strings.HasSuffix(p.Type, "PSPIndisponivel") {
 		t.Fatalf("recusa do PSP: %d %+v", st, p)
 	}
-	if st := a.chamar(http.MethodGet, "/cobv/"+txid, "", nil, &p); st != http.StatusNotImplemented {
-		t.Fatalf("cobv: %d", st)
+	if st := a.chamar(http.MethodGet, "/cobv/"+txid, "", nil, &p); st != http.StatusNotFound {
+		t.Fatalf("cobv inexistente: %d", st)
 	}
 }
 

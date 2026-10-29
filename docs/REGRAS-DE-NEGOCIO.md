@@ -102,13 +102,27 @@ chamada da API do cliente.
 
 ### RN-14 · Cobrança com vencimento (`cobv`)
 
-- Exige devedor identificado (CPF ou CNPJ válido + nome). CNPJ aceita o formato
-  alfanumérico (`^[0-9A-Z]{14}$`), como na spec.
-- `dataDeVencimento` + `validadeAposVencimento` (dias corridos) definem até
-  quando pode ser paga.
-- Multa, juros, abatimento e desconto seguem as modalidades da spec; o Lastro
-  **valida** as combinações, mas o cálculo final é do banco. O valor que vale é
-  o que o banco liquidou.
+- Exige devedor identificado: CPF ou CNPJ válido (inclusive o CNPJ alfanumérico,
+  `^[0-9A-Z]{14}$`) e nome. UF, se vier, são 2 letras maiúsculas; CEP, 8 dígitos.
+- `dataDeVencimento` é uma **data civil** avaliada no fuso de **Brasília**; não pode
+  estar no passado. `validadeAposVencimento` (dias corridos, padrão **30**) define o
+  último dia para pagar; depois dele a cobv aparece com `expirada`.
+- Usa a mesma máquina de estados da cob (RN-12) e compartilha o **txid** com ela:
+  um txid usado numa cob não serve para uma cobv, e vice-versa (garantido por
+  gatilho no banco).
+- O Lastro **valida** as combinações; o **cálculo final é do banco**, e o valor que
+  vale é o que o banco liquidou:
+
+| Campo | Modalidades | Regras |
+|---|---|---|
+| `multa` | 1 valor fixo · 2 percentual | valor positivo; percentual até 100,00 |
+| `juros` | 1 a 8 (valor ou percentual, ao dia/mês/ano, dias corridos ou úteis) | valor positivo |
+| `abatimento` | 1 valor fixo · 2 percentual | fixo menor que o valor original; percentual até 100,00 |
+| `desconto` | 1 e 2: até datas fixas · 3 a 6: por antecipação | 1–2 usam `descontoDataFixa` (1 a 3 datas, sem repetir, até o vencimento) e nunca `valorPerc`; 3–6 usam `valorPerc` e nunca datas; fixo menor que o valor; percentual menor que 100,00 |
+
+- No `PATCH`, cada bloco (`multa`, `juros`, `abatimento`, `desconto`) que vier
+  **substitui** o anterior inteiro, e a cobv resultante é revalidada por completo
+  (um abatimento que ficou maior que o valor revisado é recusado).
 
 ### RN-15 · BR Code
 

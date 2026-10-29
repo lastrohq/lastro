@@ -22,6 +22,19 @@ func cob(conta, txid string, minuto int) domain.Cobranca {
 	}
 }
 
+func cobv(conta, txid string, minuto int) domain.CobrancaVencimento {
+	venc := domain.NovaData(2026, 11, 30)
+	return domain.CobrancaVencimento{
+		Txid: domain.Txid(txid), ContaID: conta, Chave: conta + "@example.com", Status: domain.CobrancaAtiva, Valor: 15000,
+		Multa:      &domain.ValorModalidade{Modalidade: 2, ValorPerc: 200},
+		Juros:      &domain.ValorModalidade{Modalidade: 2, ValorPerc: 33},
+		Desconto:   &domain.Desconto{Modalidade: 1, DatasFixas: []domain.DescontoData{{Data: venc.SomarDias(-10), ValorPerc: 1000}, {Data: venc.SomarDias(-5), ValorPerc: 500}}},
+		Vencimento: venc, ValidadeAposVencimento: 5,
+		Devedor:  domain.DevedorCompleto{Devedor: domain.Devedor{Documento: "11222333000181", Nome: "Empresa"}, Email: "fin@example.com", Cidade: "Recife", UF: "PE", CEP: "50000000"},
+		CriadaEm: base.Add(time.Duration(minuto) * time.Minute),
+	}
+}
+
 // comContas cria um Store novo já com as contas c1 e c2, porque cobrança
 // pertence a uma conta existente.
 func comContas(t *testing.T, novo func(t *testing.T) ports.Store) ports.Store {
@@ -287,6 +300,54 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 		if _, err := s.Idempotencia().Buscar(ctx, "k1", "pedido-1"); !errors.Is(err, ports.ErrNaoEncontrado) {
 			t.Fatal("não removeu")
+		}
+	})
+
+	t.Run("cobv: grava tudo, compartilha o txid com a cob e pagina", func(t *testing.T) {
+		s, ctx := comContas(t, novo), context.Background()
+		v := cobv("c1", "cobv00000000000000000000001", 0)
+		if err := s.CobrancasV().Criar(ctx, v); err != nil {
+			t.Fatal(err)
+		}
+		got, err := s.CobrancasV().BuscarPorTxid(ctx, v.Txid)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got.Vencimento != v.Vencimento || got.ValidadeAposVencimento != 5 || got.Multa == nil || *got.Multa != *v.Multa ||
+			got.Juros == nil || *got.Juros != *v.Juros || got.Desconto == nil || len(got.Desconto.DatasFixas) != 2 ||
+			got.Desconto.DatasFixas[1] != v.Desconto.DatasFixas[1] || got.Abatimento != nil ||
+			got.Devedor != v.Devedor || got.Chave != v.Chave || !got.CriadaEm.Equal(v.CriadaEm) || got.Revisao != 0 {
+			t.Fatalf("BuscarPorTxid = %+v", got)
+		}
+		if err := s.Cobrancas().Criar(ctx, cob("c1", string(v.Txid), 1)); !errors.Is(err, ports.ErrJaExiste) {
+			t.Fatalf("cob com o txid de uma cobv: err = %v", err)
+		}
+		_ = s.Cobrancas().Criar(ctx, cob("c1", "cob000000000000000000000001", 1))
+		if err := s.CobrancasV().Criar(ctx, cobv("c2", "cob000000000000000000000001", 1)); !errors.Is(err, ports.ErrJaExiste) {
+			t.Fatalf("cobv com o txid de uma cob: err = %v", err)
+		}
+
+		got.Status = domain.CobrancaConcluida
+		stale := got
+		if err := s.CobrancasV().Atualizar(ctx, &got); err != nil || got.Revisao != 1 {
+			t.Fatalf("Atualizar: %v rev %d", err, got.Revisao)
+		}
+		if err := s.CobrancasV().Atualizar(ctx, &stale); !errors.Is(err, ports.ErrConflito) {
+			t.Fatalf("revisão velha: err = %v", err)
+		}
+
+		for i := 1; i <= 3; i++ {
+			_ = s.CobrancasV().Criar(ctx, cobv("c2", "cobv0000000000000000000000"+string(rune('a'+i)), i))
+		}
+		pag, _, err := s.CobrancasV().Listar(ctx, ports.FiltroCobrancas{ContaID: "c2", Limite: 2, Pular: 1})
+		if err != nil || len(pag) != 2 || pag[0].Txid != "cobv0000000000000000000000c" {
+			t.Fatalf("Listar: %+v, %v", pag, err)
+		}
+		if n, _ := s.CobrancasV().Contar(ctx, ports.FiltroCobrancas{Status: domain.CobrancaAtiva}); n != 3 {
+			t.Fatalf("Contar ativas = %d, quer 3", n)
+		}
+		if _, err := s.CobrancasV().BuscarPorTxid(ctx, "nadanadanadanadanadanadana1"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("inexistente: err = %v", err)
 		}
 	})
 
