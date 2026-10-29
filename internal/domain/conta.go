@@ -28,6 +28,9 @@ var (
 	// ErrCertificadoVencido indica certificado com validade no passado (RN-62).
 	// É uma ErrContaInvalida.
 	ErrCertificadoVencido = fmt.Errorf("%w: certificado vencido", ErrContaInvalida)
+	// ErrCertificadoDeHomologacao indica, numa conta de produção, um certificado
+	// já cadastrado numa conta de homologação (RN-62). É uma ErrContaInvalida.
+	ErrCertificadoDeHomologacao = fmt.Errorf("%w: certificado de homologação", ErrContaInvalida)
 )
 
 var idConta = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)

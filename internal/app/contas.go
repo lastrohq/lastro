@@ -49,11 +49,33 @@ func (s Contas) Criar(ctx context.Context, c domain.Conta, cred domain.Credencia
 		return fmt.Errorf("cifrando credenciais: %w", err)
 	}
 	return s.Store.WithTx(ctx, func(tx ports.Store) error {
+		if err := certificadoServeNoAmbiente(ctx, tx, c); err != nil {
+			return err
+		}
 		if err := tx.Contas().Criar(ctx, c); err != nil {
 			return err
 		}
 		return tx.Contas().SalvarCredenciais(ctx, c.ID, cifrado)
 	})
+}
+
+// certificadoServeNoAmbiente recusa, em conta de produção, um certificado que já
+// está numa conta de homologação (RN-62). Nada no X.509 diz o ambiente; o que
+// vale é onde o certificado já foi usado, pela impressão digital.
+func certificadoServeNoAmbiente(ctx context.Context, tx ports.Store, c domain.Conta) error {
+	if c.Ambiente != domain.Producao || c.Certificado == nil {
+		return nil
+	}
+	contas, err := tx.Contas().Listar(ctx)
+	if err != nil {
+		return err
+	}
+	for _, outra := range contas {
+		if outra.Ambiente == domain.Homologacao && outra.Certificado != nil && outra.Certificado.ImpressaoDigital == c.Certificado.ImpressaoDigital {
+			return fmt.Errorf("%w: este certificado já está na conta de homologação %s; use o certificado que o banco emitiu para produção", domain.ErrCertificadoDeHomologacao, outra.ID)
+		}
+	}
+	return nil
 }
 
 func (s Contas) lerCertificado(cred domain.Credenciais) (domain.Certificado, error) {
