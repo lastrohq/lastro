@@ -86,3 +86,18 @@ func TestErroNaoMostraOConteudo(t *testing.T) {
 		}
 	}
 }
+
+func TestTLSDevolveOParParaOMTLS(t *testing.T) {
+	par := certificadotest.Gerar(t, "loja", validade)
+	for nome, arquivo := range map[string][]byte{"p12": par.P12, "pem": par.PEM} {
+		t.Run(nome, func(t *testing.T) {
+			tlsPar, err := certificado.TLS(arquivo, certificadotest.Senha)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tlsPar.Leaf == nil || !tlsPar.Leaf.Equal(par.Certificado) || tlsPar.PrivateKey == nil {
+				t.Fatalf("par incompleto: leaf=%v chave=%v", tlsPar.Leaf != nil, tlsPar.PrivateKey != nil)
+			}
+		})
+	}
+}

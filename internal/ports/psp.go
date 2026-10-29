@@ -68,6 +68,12 @@ type PSP interface {
 	InterpretarWebhook(conta domain.Conta, corpo []byte) ([]domain.PixRecebido, error)
 }
 
+// Credenciais entrega a um adapter de PSP as credenciais decifradas de uma conta
+// (RN-61). Só o adapter pede; nada mais no núcleo vê o segredo em claro.
+type Credenciais interface {
+	Credenciais(ctx context.Context, contaID string) (domain.Credenciais, error)
+}
+
 // ErrPSPDesconhecido indica um nome de PSP que nenhum adapter registrou.
 var ErrPSPDesconhecido = errors.New("psp desconhecido")
 

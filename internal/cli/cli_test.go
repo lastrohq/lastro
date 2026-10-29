@@ -199,3 +199,36 @@ func TestDestinoEDLQ(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// Os adapters de banco real recebem as credenciais pelo MontarPSPs, montado
+// depois de abrir o store e o vault.
+func TestMontarPSPsRecebeAsCredenciaisDasContas(t *testing.T) {
+	amb, _ := ambiente(t, envComBanco(t))
+	var recebido ports.Credenciais
+	amb.MontarPSPs = func(c ports.Credenciais) ports.Registry {
+		recebido = c
+		return psp.NewRegistry(pspFalso{})
+	}
+	ctx := context.Background()
+	secret := filepath.Join(t.TempDir(), "secret")
+	if err := os.WriteFile(secret, []byte("secret-do-banco"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Run(ctx, []string{"conta", "criar", "--id", "loja", "--nome", "Loja", "--psp", "sandbox", "--chave", "x@example.com",
+		"--client-id", "abc", "--client-secret-arquivo", secret}, amb); err != nil {
+		t.Fatal(err)
+	}
+	// O provedor vale enquanto o store estiver aberto, como no serve.
+	contas, fechar, err := abrir(ctx, amb)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fechar()
+	if recebido == nil || contas.PSPs == nil {
+		t.Fatal("MontarPSPs não foi chamado")
+	}
+	cred, err := recebido.Credenciais(ctx, "loja")
+	if err != nil || cred.ClientSecret != "secret-do-banco" || cred.ClientID != "abc" {
+		t.Fatalf("Credenciais = %q, %v", cred.ClientID, err)
+	}
+}
