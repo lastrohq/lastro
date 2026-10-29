@@ -360,6 +360,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 				CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}},
 			Recorrencias:         app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			Devolucoes:           app.Devolucoes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			APIKeys:              app.APIKeys{Store: store, Clock: amb.Clock},
 			Idempotencia:         app.Idempotencia{Store: store, Clock: amb.Clock},
 			Clock:                amb.Clock,

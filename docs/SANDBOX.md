@@ -73,8 +73,11 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
 - **Estado:** o sandbox lembra das cobranças depois de reiniciar o Lastro. Ele
   reconstrói a partir das cobranças que o próprio Lastro gravou no SQLite: uma
   cobrança criada antes do restart é paga no horário de sempre, e os valores
-  mágicos continuam valendo. As **devoluções** do sandbox ainda ficam só em
-  memória, até o Lastro gravar devoluções (F7).
+  mágicos continuam valendo. As **devoluções** também: as que o Lastro gravou
+  contam no saldo do Pix e respondem pelo id depois do restart.
+- **Devolução:** `PUT /pix/{e2eid}/devolucao/{id}` devolve um Pix que o Lastro
+  já gravou (pelo webhook ou pela conciliação). O sandbox responde `DEVOLVIDO`
+  na hora, com `rtrId` e horário de liquidação.
 - **Valor da cobv:** o sandbox paga o valor **original**. Multa, juros e desconto
   são calculados pelo banco de verdade.
 - **Cobrança recorrente:** `PUT /cobr/{txid}` (ou `POST /cobr`) cobra um ciclo

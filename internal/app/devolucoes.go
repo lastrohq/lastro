@@ -61,7 +61,7 @@ func travarPix(e2e string) func() {
 // Conta desativada continua devolvendo: a devolução é de um Pix que já entrou.
 func (s Devolucoes) Solicitar(ctx context.Context, d domain.Devolucao) (domain.Devolucao, error) {
 	if err := domain.ValidarEndToEndID(d.EndToEndID); err != nil {
-		return domain.Devolucao{}, err
+		return domain.Devolucao{}, &ErroValidacao{Violacoes: []Violacao{{Propriedade: "e2eid", Razao: err.Error(), Valor: d.EndToEndID}}}
 	}
 	if err := domain.ValidarIDDevolucao(d.ID); err != nil {
 		return domain.Devolucao{}, err

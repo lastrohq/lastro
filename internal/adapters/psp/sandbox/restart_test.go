@@ -151,3 +151,36 @@ func TestConformidadeComStore(t *testing.T) {
 		}
 	})
 }
+
+func TestDevolucoesSobrevivemAoRestart(t *testing.T) {
+	store, clock := fake.NewStore(), fake.NewClock(inicio)
+	c := antesDoRestart(t, store, clock, "restart000000000000000000009", 5000)
+	clock.Avancar(sandbox.AtrasoPadrao)
+	ctx := context.Background()
+	antigo := sandbox.New(clock, sandbox.ComStore(store))
+	pix, err := antigo.ListarPix(ctx, conta, ports.Janela{Inicio: inicio, Fim: clock.Now().Add(time.Second)})
+	if err != nil || len(pix) != 1 || pix[0].Txid != c.Txid {
+		t.Fatalf("ListarPix = %+v, %v", pix, err)
+	}
+	if _, err := store.Pix().Registrar(ctx, pix[0]); err != nil {
+		t.Fatal(err)
+	}
+	d, err := antigo.Devolver(ctx, conta, domain.Devolucao{ID: "d1", EndToEndID: pix[0].EndToEndID, Valor: 3000, Natureza: domain.DevolucaoOriginal})
+	if err != nil || d.Status != domain.DevolucaoDevolvido || len(d.RtrID) != 32 || d.RtrID[0] != 'D' || !d.LiquidadaEm.Equal(clock.Now()) {
+		t.Fatalf("devolução = %+v, %v", d, err)
+	}
+	if err := store.Devolucoes().Criar(ctx, d); err != nil {
+		t.Fatal(err)
+	}
+
+	novo := sandbox.New(clock, sandbox.ComStore(store)) // memória vazia
+	if repetida, err := novo.Devolver(ctx, conta, domain.Devolucao{ID: "d1", EndToEndID: pix[0].EndToEndID, Valor: 3000}); err != nil || repetida.RtrID != d.RtrID {
+		t.Fatalf("a mesma devolução depois do restart: %+v, %v", repetida, err)
+	}
+	if _, err := novo.Devolver(ctx, conta, domain.Devolucao{ID: "d2", EndToEndID: pix[0].EndToEndID, Valor: 2001}); err == nil {
+		t.Fatal("depois do restart, o sandbox esqueceu os 30,00 já devolvidos")
+	}
+	if _, err := novo.Devolver(ctx, conta, domain.Devolucao{ID: "d2", EndToEndID: pix[0].EndToEndID, Valor: 2000}); err != nil {
+		t.Fatalf("o resto do saldo: %v", err)
+	}
+}
