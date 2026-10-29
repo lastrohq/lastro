@@ -113,6 +113,8 @@ var errosConhecidos = map[string]error{
 	"status_cobranca_invalido": domain.ErrTransicaoInvalida,
 	"pix_nao_encontrado":       ports.ErrNaoEncontrado,
 	"devolucao_id_duplicado":   errDevolucaoDuplicada,
+	// Devolução inexistente vem como 400, não 404 (visto na homologação em 29/10/2026).
+	"devolucao_nao_encontrada": ports.ErrNaoEncontrado,
 }
 
 // errDevolucaoDuplicada não sai do adapter: o Devolver a transforma em idempotência.

@@ -13,13 +13,20 @@
 
 ## 1. Conta e credenciais
 
-1. **Conta Efí com acesso à API.** Pessoa física precisa da modalidade **Efí Pro**,
-   porque a "Efí para você" não tem API. Pessoa jurídica usa a **Efí Empresas**.
+1. **Conta Digital Efí com o menu "API".** É o que a [documentação da
+   Efí](https://dev.efipay.com.br/docs/api-pix/credenciais) pede; conta de
+   pessoa física também serve se o menu aparecer. O menu só existe no painel
+   web, não no app.
 2. No painel, em **API → Aplicações**, crie uma aplicação e ative a **API Pix**
    com os escopos de **homologação** (e de produção, quando for a hora):
    os escopos que o Lastro usa são `cob.write`, `cob.read`, `cobv.write`,
    `cobv.read`, `pix.read` (Pix recebidos), `pix.write` (devolução) e
    `webhook.write`.
+   No painel eles aparecem como Alterar/Consultar cobranças, Alterar/Consultar
+   Pix, Alterar Webhooks e Alterar/Consultar cobranças com vencimento. Não
+   marque Enviar Pix nem Pagar QR Code: o Lastro só recebe. O painel não deixa
+   criar a aplicação sem ao menos um escopo de **produção**; para testar só na
+   homologação, marque em produção apenas "Consultar cobranças", que só lê.
 3. Copie o **Client ID** e o **Client Secret** do ambiente que vai usar. Cada
    aplicação tem um par para produção e outro para homologação.
 4. Em **API → Meus Certificados**, gere o certificado do **mesmo ambiente** e

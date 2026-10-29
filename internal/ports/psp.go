@@ -62,6 +62,9 @@ type PSP interface {
 
 	ListarPix(ctx context.Context, conta domain.Conta, j Janela) ([]domain.PixRecebido, error)
 	Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error)
+	// ConsultarDevolucao devolve a devolução como o banco a conhece (GET
+	// /pix/{e2eid}/devolucao/{id}); inexistente é ErrNaoEncontrado.
+	ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, id string) (domain.Devolucao, error)
 	ConfigurarWebhook(ctx context.Context, conta domain.Conta, url string) error
 	// InterpretarWebhook lê o corpo que o PSP enviou ao webhook. Quem segue a
 	// spec usa psp.WebhookPixBCB; quem desvia trata o desvio aqui.
@@ -83,6 +86,25 @@ type PSPRecorrencia interface {
 	// InterpretarWebhookRec lê o aviso de recorrência que o PSP enviou. Quem
 	// segue a spec usa psp.WebhookRecBCB.
 	InterpretarWebhookRec(conta domain.Conta, corpo []byte) ([]domain.AtualizacaoRecorrencia, error)
+}
+
+// PSPCobrancaRecorrente é a parte opcional do PSP para a cobrança recorrente
+// do Pix Automático (RN-42). Só o adapter que declara CapCobr a implementa.
+type PSPCobrancaRecorrente interface {
+	// CriarCobr envia a cobrança com o txid dela (PUT /cobr/{txid}) e devolve
+	// o que o PSP gravou.
+	CriarCobr(ctx context.Context, conta domain.Conta, c domain.CobrancaRecorrente) (domain.CobrancaRecorrente, error)
+	ConsultarCobr(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.CobrancaRecorrente, error)
+	// CancelarCobr pede o cancelamento (PATCH /cobr/{txid} com CANCELADA).
+	CancelarCobr(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.CobrancaRecorrente, error)
+	// SolicitarRetentativa pede uma nova data de liquidação (POST
+	// /cobr/{txid}/retentativa/{data}) e devolve a cobrança com a tentativa nova.
+	SolicitarRetentativa(ctx context.Context, conta domain.Conta, txid domain.Txid, data domain.Data) (domain.CobrancaRecorrente, error)
+	// ConfigurarWebhookCobr registra a URL do webhook de cobrança recorrente (PUT /webhookcobr).
+	ConfigurarWebhookCobr(ctx context.Context, conta domain.Conta, url string) error
+	// InterpretarWebhookCobr lê o aviso de cobrança recorrente que o PSP
+	// enviou. Quem segue a spec usa psp.WebhookCobrBCB.
+	InterpretarWebhookCobr(conta domain.Conta, corpo []byte) ([]domain.AtualizacaoCobrancaRecorrente, error)
 }
 
 // Credenciais entrega a um adapter de PSP as credenciais decifradas de uma conta

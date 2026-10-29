@@ -32,7 +32,9 @@ type api struct {
 	token string
 	// certs decide o que o cadastro de conta acha do certificado enviado.
 	certs *fake.Certificados
-	t     *testing.T
+	// sandbox é o PSP da conta loja.
+	sandbox *sandbox.PSP
+	t       *testing.T
 }
 
 func novaAPI(t *testing.T) *api {
@@ -47,7 +49,8 @@ func novaAPI(t *testing.T) *api {
 	if err != nil {
 		t.Fatal(err)
 	}
-	registry := psp.NewRegistry(sandbox.New(clock))
+	sb := sandbox.New(clock)
+	registry := psp.NewRegistry(sb)
 	certs := &fake.Certificados{Certificado: domain.Certificado{
 		Sujeito: "CN=loja", ImpressaoDigital: strings.Repeat("ab", 32), Validade: clock.Now().Add(90 * 24 * time.Hour),
 	}}
@@ -55,22 +58,24 @@ func novaAPI(t *testing.T) *api {
 	webhooks := app.Webhooks{Store: store, PSPs: registry, Recebimentos: app.Recebimentos{Store: store, Clock: clock},
 		Recorrencias: app.Recorrencias{Store: store, PSPs: registry, Clock: clock}}
 	h := NewRouter(Opcoes{
-		Versao:       "v-test",
-		Cobrancas:    app.Cobrancas{Store: store, PSPs: registry, Clock: clock},
-		CobrancasV:   app.CobrancasV{Store: store, PSPs: registry, Clock: clock},
-		Contas:       app.Contas{Store: store, Vault: v, PSPs: registry, Certificados: certs, Clock: clock},
-		Webhooks:     webhooks,
-		Recorrencias: app.Recorrencias{Store: store, PSPs: registry, Clock: clock},
-		APIKeys:      keys,
-		Idempotencia: app.Idempotencia{Store: store, Clock: clock},
-		Clock:        clock,
+		Versao:               "v-test",
+		Cobrancas:            app.Cobrancas{Store: store, PSPs: registry, Clock: clock},
+		CobrancasV:           app.CobrancasV{Store: store, PSPs: registry, Clock: clock},
+		Contas:               app.Contas{Store: store, Vault: v, PSPs: registry, Certificados: certs, Clock: clock},
+		Webhooks:             webhooks,
+		Recorrencias:         app.Recorrencias{Store: store, PSPs: registry, Clock: clock},
+		CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: registry, Clock: clock},
+		Devolucoes:           app.Devolucoes{Store: store, PSPs: registry, Clock: clock},
+		APIKeys:              keys,
+		Idempotencia:         app.Idempotencia{Store: store, Clock: clock},
+		Clock:                clock,
 	})
 	_, r := carregarContrato(t)
 	_, token, err := keys.Criar(context.Background(), "testes", domain.TodosEscopos, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &api{h: h, r: r, clock: clock, store: store, keys: keys, webhooks: webhooks, token: token, certs: certs, t: t}
+	return &api{h: h, r: r, clock: clock, store: store, keys: keys, webhooks: webhooks, token: token, certs: certs, sandbox: sb, t: t}
 }
 
 // novoToken cria uma API key com os escopos e a conta dados.

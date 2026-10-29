@@ -62,6 +62,9 @@ type PixRecebido struct {
 	Horario     time.Time
 	InfoPagador string
 	Pagador     *Devedor
+	// Devolucoes é o que o banco informa das devoluções do Pix, no aviso ou na
+	// consulta. Não é gravado com o Pix: cada devolução tem a própria tabela.
+	Devolucoes []Devolucao
 }
 
 // ValidarEndToEndID confere o formato do SPI: 32 caracteres alfanuméricos.
@@ -80,14 +83,3 @@ func ValidarEndToEndID(e2e string) error {
 
 // ErrPixInvalido indica um Pix recebido com dados fora do formato da spec.
 var ErrPixInvalido = errors.New("pix recebido inválido")
-
-// Devolucao é a devolução total ou parcial de um Pix recebido (RN-20, RN-21).
-type Devolucao struct {
-	ID         string
-	EndToEndID string
-	ContaID    string
-	Valor      Money
-	Status     StatusDevolucao
-	Motivo     string
-	CriadaEm   time.Time
-}

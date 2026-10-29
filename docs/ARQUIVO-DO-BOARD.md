@@ -34,6 +34,52 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 29/10/2026 (fim da tarde) — v0.5.0: Pix Automático de ponta a ponta, por enquanto no sandbox
+
+A F6 começou: recorrência criada, pedido de autorização ao pagador, aviso de
+aprovação, rejeição ou expiração pelo webhook de recorrência, e a conciliação
+recuperando o aviso que se perdeu. Tudo isso só no sandbox, porque nenhum banco
+real deixa testar Pix Automático sem conta PJ. E as contas cadastradas antes do
+v0.3.0 passaram a receber o aviso de vencimento do certificado.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#79](https://github.com/lastrohq/lastro/issues/79) | Contas cadastradas antes do v0.3.0 também recebem o aviso de vencimento do certificado | Segurança | P | Média | [#87](https://github.com/lastrohq/lastro/pull/87) `15c6d9b` | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 14:18 |
+| [#1](https://github.com/lastrohq/lastro/issues/1) | Saber quais bancos expõem /rec e /cobr (Pix Automático) em produção para PJ | Estudo | M | Alta | — (estudo) | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 14:46 |
+| [#31](https://github.com/lastrohq/lastro/issues/31) | Criar recorrência de Pix Automático e pedir autorização ao pagador | Core | G | Alta | [#90](https://github.com/lastrohq/lastro/pull/90) `054cc34`, [#91](https://github.com/lastrohq/lastro/pull/91) `ea30346`, [#92](https://github.com/lastrohq/lastro/pull/92) `d0145c0`, [#94](https://github.com/lastrohq/lastro/pull/94) `deda649` | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 15:20 |
+| [#93](https://github.com/lastrohq/lastro/issues/93) | Recorrência aprovada sem aviso do banco aparece no Lastro (conciliação de recorrências) | Core | M | Alta | [#95](https://github.com/lastrohq/lastro/pull/95) `8a9c095` | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 15:31 |
+
+> Release [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) com 6 binários e checksums; o workflow
+> `Release` passou e publicou `ghcr.io/lastrohq/lastro:0.5.0`. O binário linux/amd64 foi baixado, conferido contra o
+> `checksums.txt` e respondeu `0.5.0`.
+>
+> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/lastrohq/lastro/issues/98)): por isso o digest da imagem
+> não foi conferido nesta leva.
+
+### O estudo antes do código
+
+A #1 decidiu a ordem da F6: as RN-40 a RN-43 foram revisadas contra a API Pix
+2.10.0 e o Guia do Pix Automático v1.3 antes de qualquer tabela existir. O
+resultado também disse o que não dava para fazer ainda: o Efí só libera `/rec`
+para conta PJ, o que virou a [#89](https://github.com/lastrohq/lastro/issues/89).
+
+### O sandbox faz o papel do pagador
+
+Sem banco real para testar, o sandbox responde pelo pagador: aprova, rejeita
+(R$ 0,77) ou deixa expirar (R$ 0,88) conforme o valor fixo da recorrência, e
+avisa pelo webhook de recorrência. A conciliação (#93) existe porque aviso de
+banco se perde; ela consulta no PSP cada recorrência ainda aberta e aplica o que
+mudou pelo mesmo caminho do webhook.
+
+### Ficou aberto
+
+- [#32](https://github.com/lastrohq/lastro/issues/32) — cobrança recorrente (`/cobr`), a segunda metade do Pix Automático.
+- [#33](https://github.com/lastrohq/lastro/issues/33) — devoluções (F7).
+- [#89](https://github.com/lastrohq/lastro/issues/89) — conta PJ para testar Pix Automático num banco real.
+- [#27](https://github.com/lastrohq/lastro/issues/27) e [#21](https://github.com/lastrohq/lastro/issues/21) — teste do Efí na homologação e fixtures gravadas.
+
+---
+
 ## Leva de 29/10/2026 (tarde) — v0.4.0: o primeiro banco de verdade, ainda sem falar com ele
 
 O Lastro ganhou o adapter do Efí: cob, cobv, Pix recebidos, devolução e webhook,

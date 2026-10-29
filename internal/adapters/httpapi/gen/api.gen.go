@@ -24,6 +24,102 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// Defines values for CobRGeradaStatus.
+const (
+	CobRGeradaStatusATIVA     CobRGeradaStatus = "ATIVA"
+	CobRGeradaStatusCANCELADA CobRGeradaStatus = "CANCELADA"
+	CobRGeradaStatusCONCLUIDA CobRGeradaStatus = "CONCLUIDA"
+	CobRGeradaStatusCRIADA    CobRGeradaStatus = "CRIADA"
+	CobRGeradaStatusEXPIRADA  CobRGeradaStatus = "EXPIRADA"
+	CobRGeradaStatusREJEITADA CobRGeradaStatus = "REJEITADA"
+)
+
+// Valid indicates whether the value is a known member of the CobRGeradaStatus enum.
+func (e CobRGeradaStatus) Valid() bool {
+	switch e {
+	case CobRGeradaStatusATIVA:
+		return true
+	case CobRGeradaStatusCANCELADA:
+		return true
+	case CobRGeradaStatusCONCLUIDA:
+		return true
+	case CobRGeradaStatusCRIADA:
+		return true
+	case CobRGeradaStatusEXPIRADA:
+		return true
+	case CobRGeradaStatusREJEITADA:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CobRRevisadaStatus.
+const (
+	CobRRevisadaStatusCANCELADA CobRRevisadaStatus = "CANCELADA"
+)
+
+// Valid indicates whether the value is a known member of the CobRRevisadaStatus enum.
+func (e CobRRevisadaStatus) Valid() bool {
+	switch e {
+	case CobRRevisadaStatusCANCELADA:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CobRTentativaStatus.
+const (
+	CobRTentativaStatusAGENDADA   CobRTentativaStatus = "AGENDADA"
+	CobRTentativaStatusCANCELADA  CobRTentativaStatus = "CANCELADA"
+	CobRTentativaStatusEXPIRADA   CobRTentativaStatus = "EXPIRADA"
+	CobRTentativaStatusPAGA       CobRTentativaStatus = "PAGA"
+	CobRTentativaStatusREJEITADA  CobRTentativaStatus = "REJEITADA"
+	CobRTentativaStatusSOLICITADA CobRTentativaStatus = "SOLICITADA"
+)
+
+// Valid indicates whether the value is a known member of the CobRTentativaStatus enum.
+func (e CobRTentativaStatus) Valid() bool {
+	switch e {
+	case CobRTentativaStatusAGENDADA:
+		return true
+	case CobRTentativaStatusCANCELADA:
+		return true
+	case CobRTentativaStatusEXPIRADA:
+		return true
+	case CobRTentativaStatusPAGA:
+		return true
+	case CobRTentativaStatusREJEITADA:
+		return true
+	case CobRTentativaStatusSOLICITADA:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for CobRTentativaTipo.
+const (
+	AGND CobRTentativaTipo = "AGND"
+	NTAG CobRTentativaTipo = "NTAG"
+	RIFL CobRTentativaTipo = "RIFL"
+)
+
+// Valid indicates whether the value is a known member of the CobRTentativaTipo enum.
+func (e CobRTentativaTipo) Valid() bool {
+	switch e {
+	case AGND:
+		return true
+	case NTAG:
+		return true
+	case RIFL:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for CobRevisadaStatus.
 const (
 	CobRevisadaStatusREMOVIDAPELOUSUARIORECEBEDOR CobRevisadaStatus = "REMOVIDA_PELO_USUARIO_RECEBEDOR"
@@ -132,6 +228,63 @@ func (e ContaSolicitadaAmbiente) Valid() bool {
 	case ContaSolicitadaAmbienteHomologacao:
 		return true
 	case ContaSolicitadaAmbienteProducao:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DevolucaoNatureza.
+const (
+	DevolucaoNaturezaORIGINAL DevolucaoNatureza = "ORIGINAL"
+	DevolucaoNaturezaRETIRADA DevolucaoNatureza = "RETIRADA"
+)
+
+// Valid indicates whether the value is a known member of the DevolucaoNatureza enum.
+func (e DevolucaoNatureza) Valid() bool {
+	switch e {
+	case DevolucaoNaturezaORIGINAL:
+		return true
+	case DevolucaoNaturezaRETIRADA:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DevolucaoStatus.
+const (
+	DEVOLVIDO       DevolucaoStatus = "DEVOLVIDO"
+	EMPROCESSAMENTO DevolucaoStatus = "EM_PROCESSAMENTO"
+	NAOREALIZADO    DevolucaoStatus = "NAO_REALIZADO"
+)
+
+// Valid indicates whether the value is a known member of the DevolucaoStatus enum.
+func (e DevolucaoStatus) Valid() bool {
+	switch e {
+	case DEVOLVIDO:
+		return true
+	case EMPROCESSAMENTO:
+		return true
+	case NAOREALIZADO:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for DevolucaoSolicitadaNatureza.
+const (
+	DevolucaoSolicitadaNaturezaORIGINAL DevolucaoSolicitadaNatureza = "ORIGINAL"
+	DevolucaoSolicitadaNaturezaRETIRADA DevolucaoSolicitadaNatureza = "RETIRADA"
+)
+
+// Valid indicates whether the value is a known member of the DevolucaoSolicitadaNatureza enum.
+func (e DevolucaoSolicitadaNatureza) Valid() bool {
+	switch e {
+	case DevolucaoSolicitadaNaturezaORIGINAL:
+		return true
+	case DevolucaoSolicitadaNaturezaRETIRADA:
 		return true
 	default:
 		return false
@@ -364,6 +517,74 @@ type CobGerada struct {
 	Txid               Txid      `json:"txid"`
 	Valor              CobValor  `json:"valor"`
 }
+
+// CobRGerada defines model for CobRGerada.
+type CobRGerada struct {
+	// AjusteDiaUtil Leva a liquidação para o próximo dia útil se o vencimento cair num dia não útil.
+	AjusteDiaUtil bool `json:"ajusteDiaUtil"`
+	Calendario    struct {
+		// DataDeVencimento Data prevista de liquidação, de 2 a 10 dias corridos à frente (RN-42).
+		DataDeVencimento openapi_types.Date `json:"dataDeVencimento"`
+	} `json:"calendario"`
+
+	// IdRec Identificador da recorrência, gerado pelo PSP (R + R/N + ISPB + AAAAMMDD + 11 caracteres).
+	IdRec         IdRec   `json:"idRec"`
+	InfoAdicional *string `json:"infoAdicional,omitempty"`
+
+	// MotivoEncerramento Código e descrição da rejeição ou do cancelamento.
+	MotivoEncerramento *string          `json:"motivoEncerramento,omitempty"`
+	Status             CobRGeradaStatus `json:"status"`
+	Tentativas         []CobRTentativa  `json:"tentativas"`
+	Txid               Txid             `json:"txid"`
+	Valor              struct {
+		// Original Example: 10.50
+		Original Valor `json:"original"`
+	} `json:"valor"`
+}
+
+// CobRGeradaStatus defines model for CobRGerada.Status.
+type CobRGeradaStatus string
+
+// CobRRevisada defines model for CobRRevisada.
+type CobRRevisada struct {
+	Status CobRRevisadaStatus `json:"status"`
+}
+
+// CobRRevisadaStatus defines model for CobRRevisada.Status.
+type CobRRevisadaStatus string
+
+// CobRSolicitada defines model for CobRSolicitada.
+type CobRSolicitada struct {
+	// AjusteDiaUtil Leva a liquidação para o próximo dia útil se o vencimento cair num dia não útil.
+	AjusteDiaUtil *bool `json:"ajusteDiaUtil,omitempty"`
+	Calendario    struct {
+		// DataDeVencimento Data prevista de liquidação, de 2 a 10 dias corridos à frente (RN-42).
+		DataDeVencimento openapi_types.Date `json:"dataDeVencimento"`
+	} `json:"calendario"`
+
+	// IdRec Identificador da recorrência, gerado pelo PSP (R + R/N + ISPB + AAAAMMDD + 11 caracteres).
+	IdRec         IdRec   `json:"idRec"`
+	InfoAdicional *string `json:"infoAdicional,omitempty"`
+	Valor         struct {
+		// Original Example: 10.50
+		Original Valor `json:"original"`
+	} `json:"valor"`
+}
+
+// CobRTentativa defines model for CobRTentativa.
+type CobRTentativa struct {
+	DataLiquidacao openapi_types.Date  `json:"dataLiquidacao"`
+	EndToEndId     *string             `json:"endToEndId,omitempty"`
+	MotivoRejeicao *string             `json:"motivoRejeicao,omitempty"`
+	Status         CobRTentativaStatus `json:"status"`
+	Tipo           CobRTentativaTipo   `json:"tipo"`
+}
+
+// CobRTentativaStatus defines model for CobRTentativa.Status.
+type CobRTentativaStatus string
+
+// CobRTentativaTipo defines model for CobRTentativa.Tipo.
+type CobRTentativaTipo string
 
 // CobRevisada defines model for CobRevisada.
 type CobRevisada struct {
@@ -634,6 +855,50 @@ type DevedorCompleto struct {
 	Uf         *string `json:"uf,omitempty"`
 }
 
+// Devolucao defines model for Devolucao.
+type Devolucao struct {
+	Descricao *string `json:"descricao,omitempty"`
+	Horario   struct {
+		Liquidacao  *time.Time `json:"liquidacao,omitempty"`
+		Solicitacao time.Time  `json:"solicitacao"`
+	} `json:"horario"`
+	Id string `json:"id"`
+
+	// Motivo Por que a devolução não foi realizada.
+	Motivo   *string           `json:"motivo,omitempty"`
+	Natureza DevolucaoNatureza `json:"natureza"`
+
+	// RtrId Identificador da devolução no SPI, gerado pelo banco.
+	RtrId  *string         `json:"rtrId,omitempty"`
+	Status DevolucaoStatus `json:"status"`
+
+	// Valor Example: 10.50
+	Valor Valor `json:"valor"`
+}
+
+// DevolucaoNatureza defines model for Devolucao.Natureza.
+type DevolucaoNatureza string
+
+// DevolucaoStatus defines model for Devolucao.Status.
+type DevolucaoStatus string
+
+// DevolucaoSolicitada defines model for DevolucaoSolicitada.
+type DevolucaoSolicitada struct {
+	Descricao *string `json:"descricao,omitempty"`
+
+	// Natureza RETIRADA (Pix Saque ou Troco) é recusada; o Lastro não recebe esse tipo de Pix.
+	Natureza *DevolucaoSolicitadaNatureza `json:"natureza,omitempty"`
+
+	// Valor Example: 10.50
+	Valor Valor `json:"valor"`
+}
+
+// DevolucaoSolicitadaNatureza RETIRADA (Pix Saque ou Troco) é recusada; o Lastro não recebe esse tipo de Pix.
+type DevolucaoSolicitadaNatureza string
+
+// E2eid defines model for E2eid.
+type E2eid = string
+
 // Health defines model for Health.
 type Health struct {
 	Status  HealthStatus `json:"status"`
@@ -844,8 +1109,14 @@ type ContaIdWebhook = string
 // CpfFiltro defines model for CpfFiltro.
 type CpfFiltro = Cpf
 
+// E2eidPath defines model for E2eidPath.
+type E2eidPath = E2eid
+
 // Fim defines model for Fim.
 type Fim = time.Time
+
+// IdDevolucaoPath defines model for IdDevolucaoPath.
+type IdDevolucaoPath = string
 
 // IdRecPath Identificador da recorrência, gerado pelo PSP (R + R/N + ISPB + AAAAMMDD + 11 caracteres).
 type IdRecPath = IdRec
@@ -892,6 +1163,9 @@ type NaoSuportado = Problema
 // RequisicaoInvalida Erro no formato da spec do BCB (RFC 7807).
 type RequisicaoInvalida = Problema
 
+// WebhookCobr Callback de cobrança recorrente da spec do BCB. Aceito como objeto livre porque quem interpreta é o adapter do banco.
+type WebhookCobr = map[string]interface{}
+
 // WebhookPix Callback da spec do BCB. Aceito como objeto livre porque quem interpreta é o adapter do banco.
 type WebhookPix = map[string]interface{}
 
@@ -923,6 +1197,18 @@ type ConsultarCobParams struct {
 
 // CriarCobComTxidParams defines parameters for CriarCobComTxid.
 type CriarCobComTxidParams struct {
+	// IdempotencyKey Reenvio com a mesma chave em até 24 h devolve a resposta original (RN-11).
+	IdempotencyKey *IdempotencyKeyOpcional `json:"Idempotency-Key,omitempty"`
+}
+
+// CriarCobrParams defines parameters for CriarCobr.
+type CriarCobrParams struct {
+	// IdempotencyKey Reenvio com a mesma chave em até 24 h devolve a resposta original (RN-11).
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// CriarCobrComTxidParams defines parameters for CriarCobrComTxid.
+type CriarCobrComTxidParams struct {
 	// IdempotencyKey Reenvio com a mesma chave em até 24 h devolve a resposta original (RN-11).
 	IdempotencyKey *IdempotencyKeyOpcional `json:"Idempotency-Key,omitempty"`
 }
@@ -962,6 +1248,12 @@ type CriarSolicRecParams struct {
 	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
 }
 
+// ReceberWebhookCobrJSONBody defines parameters for ReceberWebhookCobr.
+type ReceberWebhookCobrJSONBody = map[string]interface{}
+
+// ReceberWebhookCobrComSufixoJSONBody defines parameters for ReceberWebhookCobrComSufixo.
+type ReceberWebhookCobrComSufixoJSONBody = map[string]interface{}
+
 // ReceberWebhookPixJSONBody defines parameters for ReceberWebhookPix.
 type ReceberWebhookPixJSONBody = map[string]interface{}
 
@@ -983,6 +1275,15 @@ type RevisarCobJSONRequestBody = CobRevisada
 // CriarCobComTxidJSONRequestBody defines body for CriarCobComTxid for application/json ContentType.
 type CriarCobComTxidJSONRequestBody = CobSolicitada
 
+// CriarCobrJSONRequestBody defines body for CriarCobr for application/json ContentType.
+type CriarCobrJSONRequestBody = CobRSolicitada
+
+// CancelarCobrJSONRequestBody defines body for CancelarCobr for application/json ContentType.
+type CancelarCobrJSONRequestBody = CobRRevisada
+
+// CriarCobrComTxidJSONRequestBody defines body for CriarCobrComTxid for application/json ContentType.
+type CriarCobrComTxidJSONRequestBody = CobRSolicitada
+
 // RevisarCobvJSONRequestBody defines body for RevisarCobv for application/json ContentType.
 type RevisarCobvJSONRequestBody = CobVRevisada
 
@@ -992,11 +1293,20 @@ type CriarCobvJSONRequestBody = CobVSolicitada
 // CriarContaJSONRequestBody defines body for CriarConta for application/json ContentType.
 type CriarContaJSONRequestBody = ContaSolicitada
 
+// SolicitarDevolucaoJSONRequestBody defines body for SolicitarDevolucao for application/json ContentType.
+type SolicitarDevolucaoJSONRequestBody = DevolucaoSolicitada
+
 // CriarRecJSONRequestBody defines body for CriarRec for application/json ContentType.
 type CriarRecJSONRequestBody = RecSolicitada
 
 // CriarSolicRecJSONRequestBody defines body for CriarSolicRec for application/json ContentType.
 type CriarSolicRecJSONRequestBody = SolicRecSolicitada
+
+// ReceberWebhookCobrJSONRequestBody defines body for ReceberWebhookCobr for application/json ContentType.
+type ReceberWebhookCobrJSONRequestBody = ReceberWebhookCobrJSONBody
+
+// ReceberWebhookCobrComSufixoJSONRequestBody defines body for ReceberWebhookCobrComSufixo for application/json ContentType.
+type ReceberWebhookCobrComSufixoJSONRequestBody = ReceberWebhookCobrComSufixoJSONBody
 
 // ReceberWebhookPixJSONRequestBody defines body for ReceberWebhookPix for application/json ContentType.
 type ReceberWebhookPixJSONRequestBody = ReceberWebhookPixJSONBody
@@ -1027,6 +1337,21 @@ type ServerInterface interface {
 	// CriarCobComTxid Criar cobrança imediata com txid definido pelo cliente
 	// (PUT /cob/{txid})
 	CriarCobComTxid(w http.ResponseWriter, r *http.Request, txid TxidPath, params CriarCobComTxidParams)
+	// CriarCobr Criar cobrança recorrente com txid gerado pelo Lastro
+	// (POST /cobr)
+	CriarCobr(w http.ResponseWriter, r *http.Request, params CriarCobrParams)
+	// ConsultarCobr Consultar cobrança recorrente
+	// (GET /cobr/{txid})
+	ConsultarCobr(w http.ResponseWriter, r *http.Request, txid TxidPath)
+	// CancelarCobr Cancelar cobrança recorrente
+	// (PATCH /cobr/{txid})
+	CancelarCobr(w http.ResponseWriter, r *http.Request, txid TxidPath)
+	// CriarCobrComTxid Criar cobrança recorrente com txid definido pelo cliente
+	// (PUT /cobr/{txid})
+	CriarCobrComTxid(w http.ResponseWriter, r *http.Request, txid TxidPath, params CriarCobrComTxidParams)
+	// RetentativaCobr Pedir uma nova data de liquidação
+	// (POST /cobr/{txid}/retentativa/{data})
+	RetentativaCobr(w http.ResponseWriter, r *http.Request, txid TxidPath, data openapi_types.Date)
 	// ListarCobvs Listar cobranças com vencimento
 	// (GET /cobv)
 	ListarCobvs(w http.ResponseWriter, r *http.Request, params ListarCobvsParams)
@@ -1054,6 +1379,12 @@ type ServerInterface interface {
 	// DesativarConta Desativar conta
 	// (POST /lastro/v1/contas/{id}/desativar)
 	DesativarConta(w http.ResponseWriter, r *http.Request, id ContaIdPath)
+	// ConsultarDevolucao Consultar devolução
+	// (GET /pix/{e2eid}/devolucao/{id})
+	ConsultarDevolucao(w http.ResponseWriter, r *http.Request, e2eid E2eidPath, id IdDevolucaoPath)
+	// SolicitarDevolucao Solicitar devolução
+	// (PUT /pix/{e2eid}/devolucao/{id})
+	SolicitarDevolucao(w http.ResponseWriter, r *http.Request, e2eid E2eidPath, id IdDevolucaoPath)
 	// CriarRec Criar recorrência de Pix Automático
 	// (POST /rec)
 	CriarRec(w http.ResponseWriter, r *http.Request, params CriarRecParams)
@@ -1063,6 +1394,12 @@ type ServerInterface interface {
 	// CriarSolicRec Pedir a confirmação da recorrência no app do pagador (jornada 1)
 	// (POST /solicrec)
 	CriarSolicRec(w http.ResponseWriter, r *http.Request, params CriarSolicRecParams)
+	// ReceberWebhookCobr Aviso de mudança de cobrança recorrente (Pix Automático), enviado pelo banco
+	// (POST /webhooks/cobr/{contaId}/{token})
+	ReceberWebhookCobr(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook)
+	// ReceberWebhookCobrComSufixo O mesmo aviso, com o /cobr que a spec manda o banco acrescentar
+	// (POST /webhooks/cobr/{contaId}/{token}/cobr)
+	ReceberWebhookCobrComSufixo(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook)
 	// ReceberWebhookPix Aviso de Pix recebido, enviado pelo banco
 	// (POST /webhooks/pix/{contaId}/{token})
 	ReceberWebhookPix(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook)
@@ -1364,6 +1701,188 @@ func (siw *ServerInterfaceWrapper) CriarCobComTxid(w http.ResponseWriter, r *htt
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CriarCobComTxid(w, r, txid, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CriarCobr operation middleware
+func (siw *ServerInterfaceWrapper) CriarCobr(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CriarCobrParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CriarCobr(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConsultarCobr operation middleware
+func (siw *ServerInterfaceWrapper) ConsultarCobr(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "txid" -------------
+	var txid TxidPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "txid", r.PathValue("txid"), &txid, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "txid", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConsultarCobr(w, r, txid)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CancelarCobr operation middleware
+func (siw *ServerInterfaceWrapper) CancelarCobr(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "txid" -------------
+	var txid TxidPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "txid", r.PathValue("txid"), &txid, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "txid", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CancelarCobr(w, r, txid)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CriarCobrComTxid operation middleware
+func (siw *ServerInterfaceWrapper) CriarCobrComTxid(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "txid" -------------
+	var txid TxidPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "txid", r.PathValue("txid"), &txid, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "txid", Err: err})
+		return
+	}
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CriarCobrComTxidParams
+
+	headers := r.Header
+
+	// ------------- Optional header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKeyOpcional
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = &IdempotencyKey
+
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CriarCobrComTxid(w, r, txid, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RetentativaCobr operation middleware
+func (siw *ServerInterfaceWrapper) RetentativaCobr(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "txid" -------------
+	var txid TxidPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "txid", r.PathValue("txid"), &txid, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "txid", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "data" -------------
+	var data openapi_types.Date
+
+	err = runtime.BindStyledParameterWithOptions("simple", "data", r.PathValue("data"), &data, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "date", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "data", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RetentativaCobr(w, r, txid, data)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1709,6 +2228,76 @@ func (siw *ServerInterfaceWrapper) DesativarConta(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// ConsultarDevolucao operation middleware
+func (siw *ServerInterfaceWrapper) ConsultarDevolucao(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "e2eid" -------------
+	var e2eid E2eidPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "e2eid", r.PathValue("e2eid"), &e2eid, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "e2eid", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id IdDevolucaoPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConsultarDevolucao(w, r, e2eid, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SolicitarDevolucao operation middleware
+func (siw *ServerInterfaceWrapper) SolicitarDevolucao(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "e2eid" -------------
+	var e2eid E2eidPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "e2eid", r.PathValue("e2eid"), &e2eid, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "e2eid", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "id" -------------
+	var id IdDevolucaoPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SolicitarDevolucao(w, r, e2eid, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // CriarRec operation middleware
 func (siw *ServerInterfaceWrapper) CriarRec(w http.ResponseWriter, r *http.Request) {
 
@@ -1816,6 +2405,76 @@ func (siw *ServerInterfaceWrapper) CriarSolicRec(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CriarSolicRec(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReceberWebhookCobr operation middleware
+func (siw *ServerInterfaceWrapper) ReceberWebhookCobr(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "contaId" -------------
+	var contaId ContaIdWebhook
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contaId", r.PathValue("contaId"), &contaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "contaId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "token" -------------
+	var token TokenWebhook
+
+	err = runtime.BindStyledParameterWithOptions("simple", "token", r.PathValue("token"), &token, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReceberWebhookCobr(w, r, contaId, token)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReceberWebhookCobrComSufixo operation middleware
+func (siw *ServerInterfaceWrapper) ReceberWebhookCobrComSufixo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "contaId" -------------
+	var contaId ContaIdWebhook
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contaId", r.PathValue("contaId"), &contaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "contaId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "token" -------------
+	var token TokenWebhook
+
+	err = runtime.BindStyledParameterWithOptions("simple", "token", r.PathValue("token"), &token, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReceberWebhookCobrComSufixo(w, r, contaId, token)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2091,6 +2750,11 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/cob/{txid}", wrapper.CriarCobComTxid)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rec", wrapper.CriarRec)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/rec/{idRec}", wrapper.ConsultarRec)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/cobr", wrapper.CriarCobr)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cobr/{txid}", wrapper.ConsultarCobr)
+	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/cobr/{txid}", wrapper.CancelarCobr)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/cobr/{txid}", wrapper.CriarCobrComTxid)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/cobr/{txid}/retentativa/{data}", wrapper.RetentativaCobr)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/solicrec", wrapper.CriarSolicRec)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cob", wrapper.ListarCobs)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/cob", wrapper.CriarCob)
@@ -2098,6 +2762,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/cobv/{txid}", wrapper.RevisarCobv)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/cobv/{txid}", wrapper.CriarCobv)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cobv", wrapper.ListarCobvs)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/pix/{e2eid}/devolucao/{id}", wrapper.ConsultarDevolucao)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/pix/{e2eid}/devolucao/{id}", wrapper.SolicitarDevolucao)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lastro/v1/contas", wrapper.ListarContas)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lastro/v1/contas", wrapper.CriarConta)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/lastro/v1/contas/{id}", wrapper.ConsultarConta)
@@ -2106,6 +2772,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/webhooks/pix/{contaId}/{token}/pix", wrapper.ReceberWebhookPixComSufixo)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/webhooks/rec/{contaId}/{token}", wrapper.ReceberWebhookRec)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/webhooks/rec/{contaId}/{token}/rec", wrapper.ReceberWebhookRecComSufixo)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/webhooks/cobr/{contaId}/{token}", wrapper.ReceberWebhookCobr)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/webhooks/cobr/{contaId}/{token}/cobr", wrapper.ReceberWebhookCobrComSufixo)
 
 	return m
 }
@@ -2649,6 +3317,606 @@ type CriarCobComTxiddefaultApplicationProblemPlusJSONResponse struct {
 }
 
 func (response CriarCobComTxiddefaultApplicationProblemPlusJSONResponse) VisitCriarCobComTxidResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobrRequestObject struct {
+	Params CriarCobrParams
+	Body   *CriarCobrJSONRequestBody
+}
+
+type CriarCobrResponseObject interface {
+	VisitCriarCobrResponse(w http.ResponseWriter) error
+}
+
+type CriarCobr201JSONResponse CobRGerada
+
+func (response CriarCobr201JSONResponse) VisitCriarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobr400ApplicationProblemPlusJSONResponse struct {
+	RequisicaoInvalidaApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobr400ApplicationProblemPlusJSONResponse) VisitCriarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobr401ApplicationProblemPlusJSONResponse struct {
+	NaoAutenticadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobr401ApplicationProblemPlusJSONResponse) VisitCriarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobr403ApplicationProblemPlusJSONResponse struct {
+	AcessoNegadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobr403ApplicationProblemPlusJSONResponse) VisitCriarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobr404ApplicationProblemPlusJSONResponse struct {
+	NaoEncontradoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobr404ApplicationProblemPlusJSONResponse) VisitCriarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobr409ApplicationProblemPlusJSONResponse struct {
+	ConflitoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobr409ApplicationProblemPlusJSONResponse) VisitCriarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobr501ApplicationProblemPlusJSONResponse struct {
+	NaoSuportadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobr501ApplicationProblemPlusJSONResponse) VisitCriarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(501)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobrdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response CriarCobrdefaultApplicationProblemPlusJSONResponse) VisitCriarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarCobrRequestObject struct {
+	Txid TxidPath `json:"txid"`
+}
+
+type ConsultarCobrResponseObject interface {
+	VisitConsultarCobrResponse(w http.ResponseWriter) error
+}
+
+type ConsultarCobr200JSONResponse CobRGerada
+
+func (response ConsultarCobr200JSONResponse) VisitConsultarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarCobr401ApplicationProblemPlusJSONResponse struct {
+	NaoAutenticadoApplicationProblemPlusJSONResponse
+}
+
+func (response ConsultarCobr401ApplicationProblemPlusJSONResponse) VisitConsultarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarCobr403ApplicationProblemPlusJSONResponse struct {
+	AcessoNegadoApplicationProblemPlusJSONResponse
+}
+
+func (response ConsultarCobr403ApplicationProblemPlusJSONResponse) VisitConsultarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarCobr404ApplicationProblemPlusJSONResponse struct {
+	NaoEncontradoApplicationProblemPlusJSONResponse
+}
+
+func (response ConsultarCobr404ApplicationProblemPlusJSONResponse) VisitConsultarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarCobrdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response ConsultarCobrdefaultApplicationProblemPlusJSONResponse) VisitConsultarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelarCobrRequestObject struct {
+	Txid TxidPath `json:"txid"`
+	Body *CancelarCobrJSONRequestBody
+}
+
+type CancelarCobrResponseObject interface {
+	VisitCancelarCobrResponse(w http.ResponseWriter) error
+}
+
+type CancelarCobr200JSONResponse CobRGerada
+
+func (response CancelarCobr200JSONResponse) VisitCancelarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelarCobr400ApplicationProblemPlusJSONResponse struct {
+	RequisicaoInvalidaApplicationProblemPlusJSONResponse
+}
+
+func (response CancelarCobr400ApplicationProblemPlusJSONResponse) VisitCancelarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelarCobr401ApplicationProblemPlusJSONResponse struct {
+	NaoAutenticadoApplicationProblemPlusJSONResponse
+}
+
+func (response CancelarCobr401ApplicationProblemPlusJSONResponse) VisitCancelarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelarCobr403ApplicationProblemPlusJSONResponse struct {
+	AcessoNegadoApplicationProblemPlusJSONResponse
+}
+
+func (response CancelarCobr403ApplicationProblemPlusJSONResponse) VisitCancelarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelarCobr404ApplicationProblemPlusJSONResponse struct {
+	NaoEncontradoApplicationProblemPlusJSONResponse
+}
+
+func (response CancelarCobr404ApplicationProblemPlusJSONResponse) VisitCancelarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelarCobr501ApplicationProblemPlusJSONResponse struct {
+	NaoSuportadoApplicationProblemPlusJSONResponse
+}
+
+func (response CancelarCobr501ApplicationProblemPlusJSONResponse) VisitCancelarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(501)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CancelarCobrdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response CancelarCobrdefaultApplicationProblemPlusJSONResponse) VisitCancelarCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobrComTxidRequestObject struct {
+	Txid   TxidPath `json:"txid"`
+	Params CriarCobrComTxidParams
+	Body   *CriarCobrComTxidJSONRequestBody
+}
+
+type CriarCobrComTxidResponseObject interface {
+	VisitCriarCobrComTxidResponse(w http.ResponseWriter) error
+}
+
+type CriarCobrComTxid201JSONResponse CobRGerada
+
+func (response CriarCobrComTxid201JSONResponse) VisitCriarCobrComTxidResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobrComTxid400ApplicationProblemPlusJSONResponse struct {
+	RequisicaoInvalidaApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobrComTxid400ApplicationProblemPlusJSONResponse) VisitCriarCobrComTxidResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobrComTxid401ApplicationProblemPlusJSONResponse struct {
+	NaoAutenticadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobrComTxid401ApplicationProblemPlusJSONResponse) VisitCriarCobrComTxidResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobrComTxid403ApplicationProblemPlusJSONResponse struct {
+	AcessoNegadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobrComTxid403ApplicationProblemPlusJSONResponse) VisitCriarCobrComTxidResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobrComTxid404ApplicationProblemPlusJSONResponse struct {
+	NaoEncontradoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobrComTxid404ApplicationProblemPlusJSONResponse) VisitCriarCobrComTxidResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobrComTxid409ApplicationProblemPlusJSONResponse struct {
+	ConflitoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobrComTxid409ApplicationProblemPlusJSONResponse) VisitCriarCobrComTxidResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobrComTxid501ApplicationProblemPlusJSONResponse struct {
+	NaoSuportadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarCobrComTxid501ApplicationProblemPlusJSONResponse) VisitCriarCobrComTxidResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(501)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarCobrComTxiddefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response CriarCobrComTxiddefaultApplicationProblemPlusJSONResponse) VisitCriarCobrComTxidResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetentativaCobrRequestObject struct {
+	Txid TxidPath           `json:"txid"`
+	Data openapi_types.Date `json:"data"`
+}
+
+type RetentativaCobrResponseObject interface {
+	VisitRetentativaCobrResponse(w http.ResponseWriter) error
+}
+
+type RetentativaCobr201JSONResponse CobRGerada
+
+func (response RetentativaCobr201JSONResponse) VisitRetentativaCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetentativaCobr400ApplicationProblemPlusJSONResponse struct {
+	RequisicaoInvalidaApplicationProblemPlusJSONResponse
+}
+
+func (response RetentativaCobr400ApplicationProblemPlusJSONResponse) VisitRetentativaCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetentativaCobr401ApplicationProblemPlusJSONResponse struct {
+	NaoAutenticadoApplicationProblemPlusJSONResponse
+}
+
+func (response RetentativaCobr401ApplicationProblemPlusJSONResponse) VisitRetentativaCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetentativaCobr403ApplicationProblemPlusJSONResponse struct {
+	AcessoNegadoApplicationProblemPlusJSONResponse
+}
+
+func (response RetentativaCobr403ApplicationProblemPlusJSONResponse) VisitRetentativaCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetentativaCobr404ApplicationProblemPlusJSONResponse struct {
+	NaoEncontradoApplicationProblemPlusJSONResponse
+}
+
+func (response RetentativaCobr404ApplicationProblemPlusJSONResponse) VisitRetentativaCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetentativaCobr501ApplicationProblemPlusJSONResponse struct {
+	NaoSuportadoApplicationProblemPlusJSONResponse
+}
+
+func (response RetentativaCobr501ApplicationProblemPlusJSONResponse) VisitRetentativaCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(501)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RetentativaCobrdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response RetentativaCobrdefaultApplicationProblemPlusJSONResponse) VisitRetentativaCobrResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -3254,6 +4522,231 @@ func (response DesativarContadefaultApplicationProblemPlusJSONResponse) VisitDes
 	return err
 }
 
+type ConsultarDevolucaoRequestObject struct {
+	E2eid E2eidPath       `json:"e2eid"`
+	Id    IdDevolucaoPath `json:"id"`
+}
+
+type ConsultarDevolucaoResponseObject interface {
+	VisitConsultarDevolucaoResponse(w http.ResponseWriter) error
+}
+
+type ConsultarDevolucao200JSONResponse Devolucao
+
+func (response ConsultarDevolucao200JSONResponse) VisitConsultarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarDevolucao401ApplicationProblemPlusJSONResponse struct {
+	NaoAutenticadoApplicationProblemPlusJSONResponse
+}
+
+func (response ConsultarDevolucao401ApplicationProblemPlusJSONResponse) VisitConsultarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarDevolucao403ApplicationProblemPlusJSONResponse struct {
+	AcessoNegadoApplicationProblemPlusJSONResponse
+}
+
+func (response ConsultarDevolucao403ApplicationProblemPlusJSONResponse) VisitConsultarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarDevolucao404ApplicationProblemPlusJSONResponse struct {
+	NaoEncontradoApplicationProblemPlusJSONResponse
+}
+
+func (response ConsultarDevolucao404ApplicationProblemPlusJSONResponse) VisitConsultarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarDevolucaodefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response ConsultarDevolucaodefaultApplicationProblemPlusJSONResponse) VisitConsultarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SolicitarDevolucaoRequestObject struct {
+	E2eid E2eidPath       `json:"e2eid"`
+	Id    IdDevolucaoPath `json:"id"`
+	Body  *SolicitarDevolucaoJSONRequestBody
+}
+
+type SolicitarDevolucaoResponseObject interface {
+	VisitSolicitarDevolucaoResponse(w http.ResponseWriter) error
+}
+
+type SolicitarDevolucao201JSONResponse Devolucao
+
+func (response SolicitarDevolucao201JSONResponse) VisitSolicitarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SolicitarDevolucao400ApplicationProblemPlusJSONResponse struct {
+	RequisicaoInvalidaApplicationProblemPlusJSONResponse
+}
+
+func (response SolicitarDevolucao400ApplicationProblemPlusJSONResponse) VisitSolicitarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SolicitarDevolucao401ApplicationProblemPlusJSONResponse struct {
+	NaoAutenticadoApplicationProblemPlusJSONResponse
+}
+
+func (response SolicitarDevolucao401ApplicationProblemPlusJSONResponse) VisitSolicitarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SolicitarDevolucao403ApplicationProblemPlusJSONResponse struct {
+	AcessoNegadoApplicationProblemPlusJSONResponse
+}
+
+func (response SolicitarDevolucao403ApplicationProblemPlusJSONResponse) VisitSolicitarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SolicitarDevolucao404ApplicationProblemPlusJSONResponse struct {
+	NaoEncontradoApplicationProblemPlusJSONResponse
+}
+
+func (response SolicitarDevolucao404ApplicationProblemPlusJSONResponse) VisitSolicitarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SolicitarDevolucao409ApplicationProblemPlusJSONResponse struct {
+	ConflitoApplicationProblemPlusJSONResponse
+}
+
+func (response SolicitarDevolucao409ApplicationProblemPlusJSONResponse) VisitSolicitarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(409)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SolicitarDevolucao501ApplicationProblemPlusJSONResponse struct {
+	NaoSuportadoApplicationProblemPlusJSONResponse
+}
+
+func (response SolicitarDevolucao501ApplicationProblemPlusJSONResponse) VisitSolicitarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(501)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type SolicitarDevolucaodefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response SolicitarDevolucaodefaultApplicationProblemPlusJSONResponse) VisitSolicitarDevolucaoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type CriarRecRequestObject struct {
 	Params CriarRecParams
 	Body   *CriarRecJSONRequestBody
@@ -3565,6 +5058,76 @@ func (response CriarSolicRecdefaultApplicationProblemPlusJSONResponse) VisitCria
 	return err
 }
 
+type ReceberWebhookCobrRequestObject struct {
+	ContaId ContaIdWebhook `json:"contaId"`
+	Token   TokenWebhook   `json:"token"`
+	Body    *ReceberWebhookCobrJSONRequestBody
+}
+
+type ReceberWebhookCobrResponseObject interface {
+	VisitReceberWebhookCobrResponse(w http.ResponseWriter) error
+}
+
+type ReceberWebhookCobr200Response struct {
+}
+
+func (response ReceberWebhookCobr200Response) VisitReceberWebhookCobrResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type ReceberWebhookCobrdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response ReceberWebhookCobrdefaultApplicationProblemPlusJSONResponse) VisitReceberWebhookCobrResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReceberWebhookCobrComSufixoRequestObject struct {
+	ContaId ContaIdWebhook `json:"contaId"`
+	Token   TokenWebhook   `json:"token"`
+	Body    *ReceberWebhookCobrComSufixoJSONRequestBody
+}
+
+type ReceberWebhookCobrComSufixoResponseObject interface {
+	VisitReceberWebhookCobrComSufixoResponse(w http.ResponseWriter) error
+}
+
+type ReceberWebhookCobrComSufixo200Response struct {
+}
+
+func (response ReceberWebhookCobrComSufixo200Response) VisitReceberWebhookCobrComSufixoResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type ReceberWebhookCobrComSufixodefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response ReceberWebhookCobrComSufixodefaultApplicationProblemPlusJSONResponse) VisitReceberWebhookCobrComSufixoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ReceberWebhookPixRequestObject struct {
 	ContaId ContaIdWebhook `json:"contaId"`
 	Token   TokenWebhook   `json:"token"`
@@ -3722,6 +5285,21 @@ type StrictServerInterface interface {
 	// CriarCobComTxid Criar cobrança imediata com txid definido pelo cliente
 	// (PUT /cob/{txid})
 	CriarCobComTxid(ctx context.Context, request CriarCobComTxidRequestObject) (CriarCobComTxidResponseObject, error)
+	// CriarCobr Criar cobrança recorrente com txid gerado pelo Lastro
+	// (POST /cobr)
+	CriarCobr(ctx context.Context, request CriarCobrRequestObject) (CriarCobrResponseObject, error)
+	// ConsultarCobr Consultar cobrança recorrente
+	// (GET /cobr/{txid})
+	ConsultarCobr(ctx context.Context, request ConsultarCobrRequestObject) (ConsultarCobrResponseObject, error)
+	// CancelarCobr Cancelar cobrança recorrente
+	// (PATCH /cobr/{txid})
+	CancelarCobr(ctx context.Context, request CancelarCobrRequestObject) (CancelarCobrResponseObject, error)
+	// CriarCobrComTxid Criar cobrança recorrente com txid definido pelo cliente
+	// (PUT /cobr/{txid})
+	CriarCobrComTxid(ctx context.Context, request CriarCobrComTxidRequestObject) (CriarCobrComTxidResponseObject, error)
+	// RetentativaCobr Pedir uma nova data de liquidação
+	// (POST /cobr/{txid}/retentativa/{data})
+	RetentativaCobr(ctx context.Context, request RetentativaCobrRequestObject) (RetentativaCobrResponseObject, error)
 	// ListarCobvs Listar cobranças com vencimento
 	// (GET /cobv)
 	ListarCobvs(ctx context.Context, request ListarCobvsRequestObject) (ListarCobvsResponseObject, error)
@@ -3749,6 +5327,12 @@ type StrictServerInterface interface {
 	// DesativarConta Desativar conta
 	// (POST /lastro/v1/contas/{id}/desativar)
 	DesativarConta(ctx context.Context, request DesativarContaRequestObject) (DesativarContaResponseObject, error)
+	// ConsultarDevolucao Consultar devolução
+	// (GET /pix/{e2eid}/devolucao/{id})
+	ConsultarDevolucao(ctx context.Context, request ConsultarDevolucaoRequestObject) (ConsultarDevolucaoResponseObject, error)
+	// SolicitarDevolucao Solicitar devolução
+	// (PUT /pix/{e2eid}/devolucao/{id})
+	SolicitarDevolucao(ctx context.Context, request SolicitarDevolucaoRequestObject) (SolicitarDevolucaoResponseObject, error)
 	// CriarRec Criar recorrência de Pix Automático
 	// (POST /rec)
 	CriarRec(ctx context.Context, request CriarRecRequestObject) (CriarRecResponseObject, error)
@@ -3758,6 +5342,12 @@ type StrictServerInterface interface {
 	// CriarSolicRec Pedir a confirmação da recorrência no app do pagador (jornada 1)
 	// (POST /solicrec)
 	CriarSolicRec(ctx context.Context, request CriarSolicRecRequestObject) (CriarSolicRecResponseObject, error)
+	// ReceberWebhookCobr Aviso de mudança de cobrança recorrente (Pix Automático), enviado pelo banco
+	// (POST /webhooks/cobr/{contaId}/{token})
+	ReceberWebhookCobr(ctx context.Context, request ReceberWebhookCobrRequestObject) (ReceberWebhookCobrResponseObject, error)
+	// ReceberWebhookCobrComSufixo O mesmo aviso, com o /cobr que a spec manda o banco acrescentar
+	// (POST /webhooks/cobr/{contaId}/{token}/cobr)
+	ReceberWebhookCobrComSufixo(ctx context.Context, request ReceberWebhookCobrComSufixoRequestObject) (ReceberWebhookCobrComSufixoResponseObject, error)
 	// ReceberWebhookPix Aviso de Pix recebido, enviado pelo banco
 	// (POST /webhooks/pix/{contaId}/{token})
 	ReceberWebhookPix(ctx context.Context, request ReceberWebhookPixRequestObject) (ReceberWebhookPixResponseObject, error)
@@ -3957,6 +5547,159 @@ func (sh *strictHandler) CriarCobComTxid(w http.ResponseWriter, r *http.Request,
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CriarCobComTxidResponseObject); ok {
 		if err := validResponse.VisitCriarCobComTxidResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CriarCobr operation middleware
+func (sh *strictHandler) CriarCobr(w http.ResponseWriter, r *http.Request, params CriarCobrParams) {
+	var request CriarCobrRequestObject
+
+	request.Params = params
+
+	var body CriarCobrJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CriarCobr(ctx, request.(CriarCobrRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CriarCobr")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CriarCobrResponseObject); ok {
+		if err := validResponse.VisitCriarCobrResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConsultarCobr operation middleware
+func (sh *strictHandler) ConsultarCobr(w http.ResponseWriter, r *http.Request, txid TxidPath) {
+	var request ConsultarCobrRequestObject
+
+	request.Txid = txid
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConsultarCobr(ctx, request.(ConsultarCobrRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConsultarCobr")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConsultarCobrResponseObject); ok {
+		if err := validResponse.VisitConsultarCobrResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CancelarCobr operation middleware
+func (sh *strictHandler) CancelarCobr(w http.ResponseWriter, r *http.Request, txid TxidPath) {
+	var request CancelarCobrRequestObject
+
+	request.Txid = txid
+
+	var body CancelarCobrJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CancelarCobr(ctx, request.(CancelarCobrRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CancelarCobr")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CancelarCobrResponseObject); ok {
+		if err := validResponse.VisitCancelarCobrResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CriarCobrComTxid operation middleware
+func (sh *strictHandler) CriarCobrComTxid(w http.ResponseWriter, r *http.Request, txid TxidPath, params CriarCobrComTxidParams) {
+	var request CriarCobrComTxidRequestObject
+
+	request.Txid = txid
+	request.Params = params
+
+	var body CriarCobrComTxidJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CriarCobrComTxid(ctx, request.(CriarCobrComTxidRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CriarCobrComTxid")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CriarCobrComTxidResponseObject); ok {
+		if err := validResponse.VisitCriarCobrComTxidResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RetentativaCobr operation middleware
+func (sh *strictHandler) RetentativaCobr(w http.ResponseWriter, r *http.Request, txid TxidPath, data openapi_types.Date) {
+	var request RetentativaCobrRequestObject
+
+	request.Txid = txid
+	request.Data = data
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RetentativaCobr(ctx, request.(RetentativaCobrRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RetentativaCobr")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RetentativaCobrResponseObject); ok {
+		if err := validResponse.VisitRetentativaCobrResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4215,6 +5958,67 @@ func (sh *strictHandler) DesativarConta(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
+// ConsultarDevolucao operation middleware
+func (sh *strictHandler) ConsultarDevolucao(w http.ResponseWriter, r *http.Request, e2eid E2eidPath, id IdDevolucaoPath) {
+	var request ConsultarDevolucaoRequestObject
+
+	request.E2eid = e2eid
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConsultarDevolucao(ctx, request.(ConsultarDevolucaoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConsultarDevolucao")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConsultarDevolucaoResponseObject); ok {
+		if err := validResponse.VisitConsultarDevolucaoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SolicitarDevolucao operation middleware
+func (sh *strictHandler) SolicitarDevolucao(w http.ResponseWriter, r *http.Request, e2eid E2eidPath, id IdDevolucaoPath) {
+	var request SolicitarDevolucaoRequestObject
+
+	request.E2eid = e2eid
+	request.Id = id
+
+	var body SolicitarDevolucaoJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SolicitarDevolucao(ctx, request.(SolicitarDevolucaoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SolicitarDevolucao")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SolicitarDevolucaoResponseObject); ok {
+		if err := validResponse.VisitSolicitarDevolucaoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // CriarRec operation middleware
 func (sh *strictHandler) CriarRec(w http.ResponseWriter, r *http.Request, params CriarRecParams) {
 	var request CriarRecRequestObject
@@ -4300,6 +6104,74 @@ func (sh *strictHandler) CriarSolicRec(w http.ResponseWriter, r *http.Request, p
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(CriarSolicRecResponseObject); ok {
 		if err := validResponse.VisitCriarSolicRecResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReceberWebhookCobr operation middleware
+func (sh *strictHandler) ReceberWebhookCobr(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook) {
+	var request ReceberWebhookCobrRequestObject
+
+	request.ContaId = contaId
+	request.Token = token
+
+	var body ReceberWebhookCobrJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReceberWebhookCobr(ctx, request.(ReceberWebhookCobrRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReceberWebhookCobr")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReceberWebhookCobrResponseObject); ok {
+		if err := validResponse.VisitReceberWebhookCobrResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReceberWebhookCobrComSufixo operation middleware
+func (sh *strictHandler) ReceberWebhookCobrComSufixo(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook) {
+	var request ReceberWebhookCobrComSufixoRequestObject
+
+	request.ContaId = contaId
+	request.Token = token
+
+	var body ReceberWebhookCobrComSufixoJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReceberWebhookCobrComSufixo(ctx, request.(ReceberWebhookCobrComSufixoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReceberWebhookCobrComSufixo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReceberWebhookCobrComSufixoResponseObject); ok {
+		if err := validResponse.VisitReceberWebhookCobrComSufixoResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4448,107 +6320,129 @@ func (sh *strictHandler) ReceberWebhookRecComSufixo(w http.ResponseWriter, r *ht
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"7D1Ncxs5dn8F1dmDpGnxQ5I9Xk7tgaborDayxKVkJbWWYoLdjxI03UAbQHPkUbEq19zzA+LksDWp2tPc",
-	"9sp/kl+SAtCfbJBsyZJsT3wSKeLz4b2H941bx2NhxChQKZzOrRNhjkOQwPW3Ho2uX5FAcqa+Eep0nPcx",
-	"8A+O61AcgtNxPBpdO64jvCsIsWr0Ow4Tp+P8QzMft2l+FU01nDObuU6PUYkP/AGWV9nAkfqSjUt8x3U4",
-	"vI8JB9/pSB5DcZYISwlcdfvXt3j759b27y+Sv9sXty33+c7sd47ryA+RGktITuhlceJ/hvEVYz8umdsz",
-	"jR5nAdFkDUCjSX14RhM96CsSLhtuQsKV+5gwHmLpdBwfS9iWJATrsg/8IXgrj2sI3sqJVu1Dj57MA2HE",
-	"JFDvwz/BB9XPB+FxEknC1KxDADolDHksRBiFIEKMvCs8BQQhwnL+C9rZQ1fIhykLpoAw4iAiJiRGjJNL",
-	"QnGANoZH2+32ZsNxzUauAPvA860UlrCt1rBqUyG+OQR6qcCy8+yZ64SEpt/bFTC6zs12gIU+ezVQZbvH",
-	"kUcYxcEXsu0H3CYlHlmK8cT8+hBYKoGKAeMDrPa8bL5I/+ph1iDl9sUZfZjgOJBOp91qufn8hMrdHcdV",
-	"ECFhHOqfWxogyddsWYRKuASu12XG78oYB+sXFRUaW1dkXU+6gJZ1AafsR6CrmZ5UTWqzvNb27/H25OJ2",
-	"78USPnd6Q1axd3lD/HuzCzW2M5vNTH8Q8iXzCegLK9njgNyob4qRA5XqI46igHhY0VPzWiiiui3Btkht",
-	"PRwEY+z9iHyMRAQe8hl62XvZQF0PiNRUyBAbX4NkKCBTDihi/H0M6H0MIVJw5xEHidH8F8QQ9nEkgatB",
-	"xph6rJHDS43hyXwrOShmbroVxRkfYiuAOHiM8/n/UI/gz7k1/R8RMSrMmXU9EIIdwSX22YqtRpyNAwi/",
-	"q255Fa4MTC9sVlIGThd1BwfoR/iA6Py/GZIQIoZAeCxiiIJa1fwjJ6zhGMFhEhD5tAtUVIKu5x8R3BAh",
-	"wUUcpkSotfogsOIQ5GfsYxexGC3wb8QhlsT8rq8NFkvOUIQ/BAz7ekt9zp92O3+OcaDYXrIW4Jy5SEAY",
-	"cTCIN0p7jxroWKAQE6F+iKnooNGz1s4IvY8x9Rli51QjnMLpWGC1/wkOrjDaGA1OBgfUJwq/yBSC0SYC",
-	"1bc1QhHmWE9q8JiyxjlVcDjCrBsrCBDvyTEwwT8cC6AS1D4Inc4/BsTHjWRtfaqWw596aUPwYi6YIQ3I",
-	"1pCu6iSOGJdPvahjNDgZII3RVGKzNjYBDh4gEAIjD0fYIz72QQs8z1qbesFDxYEE8TA7oFOsoPvEsNTT",
-	"z/+q1jthHCuOae5wps58Slig8ToOleh2qRoAonA5/9XT/GeWXo1GK8MBUB9zws6AeiQEavhSxFkEXCZX",
-	"oY8l3odyi5Ic5VhENwMcH7oRE+Wumfix21rc3j7Bik45Jz4TCEfzXwViaJp1V0KqukMwoT5GEfMBCeAo",
-	"wpdY3Rh3FWby6+RtdZMXlRvIdXpKUrbcjerfaEBu1GkoFBqDzzjakBDAhFFwEWyHmAQu6g1eNXtHgz+p",
-	"s+qfDbQQXZCJv//eAkmt61bm1NcsRgzp4XAwwTQO579wYi7PBRGru/2Xi9v2nk3EUjfSuMfCKACpcRMH",
-	"wfHE6bxdozGy8T8Cxz52Zu4iwkRGaCISQrEW28mNM8sWhTnHH5xZ/o8U9hdmncmUFRT1MkS2/MYJ9jCr",
-	"K/27DtxEhFe6pDi1Bo/S2YrD2FDJS1FpJZB1I80Fpgql1rXfT5plm/Atklz/RgI1dz9Dh1q/aqCjRIpT",
-	"DHGsmSKhMUbd04OzLvIhYkQoTmJG5T8gEBKQh8OIoYjFkUJEb/4x8OKAGQVxd7Mgw40ZCwBTx6LRETph",
-	"XZ9ofZWI2mhzUOgWVBHIdQLmrRvjkHlJS2xAc1vFhYjc9FhEcL/HgkUN9ll7x4I9WrLCzMIlWAjzv2LF",
-	"w1oIkMdBeKCA2lb/aivQKxELBxI41hz+zjzNdQQLiEekQrsBvsQJzlQWKSSW8Vog99j4xDRUAFa6Ui19",
-	"SjP/9cjaY+Mz3a5CQjkxu7l+Z6CaLT2dJKUkK7tm46Hud1eWsZoDrNHRn5zUH4qEQnxzYDo+ay0lqDKg",
-	"iL8Ioed7Tj2o2DG1QF7tvZa7CnOBqjN46wz7r4/PDva77wb9w+N3b07edIcHx++G/V7/ZX//eOhcWEa5",
-	"O4LakOsk2cInoVcmDr14vteqSERniRilWISAy5hqwUhpIJJwLb9yYphFke1+Q9kvCWUfkBvW4nknFRLR",
-	"17jjOr3jo97hm4N99Xkd2Sy2GJwMrKSkFn4v8fHsM8iPZ/UEyJp7sGlP1d3cUf5cIk9eWLf0mHSaHCpz",
-	"vggp7T6CWKKIrZthmDUsi2+fWfQ6e2TZ6z7CV4pBdxXDzurKYfegt6+OCL7JWauQ0Yo+9SWtbwj0tUk9",
-	"NfhQznbqcZunl4DO0t2WwY7HWC4zq4bMT4R7+2WTOoZ3VovvCUwGwNdepXZIF9ZRHMsGW6WbsMyMW9RT",
-	"3ghA6a/7WOJX5AajjXxooawcaGdTG6nTOdDGLsLo+aaLaEw9jJhAPiNC2y/LFuiFkUukUzVW1zVQfwrU",
-	"9Dzr4JUT6q4+xORLu0q0dZHh+dMhg21D1zFn4v6o/OLLQeUwDiRet5MyjrcN5qIJuWEu2kERcA+ocp7a",
-	"de4vkIDTIJ77TZT1XsZ37UwwX19X2zYXDR8Vo0dbgTYkEhBm2rmjvCnGLsqVP0hNsxrk7XXC+iMDQvQY",
-	"FQrDfGwhF4+N69/+Jf3aokIlcZacrR1pkLVMV1fZWGEw1yxzyQ4fdoNf3P6ojTfgcEyASijKFVcsZAG7",
-	"TFw+EWd+XNbW8wsHSzLFBZUwdYooAVRNMsmiBlZDi0rcK7S/s/xK/MIi8uVRFoL1h0hElv8vAFbriXoI",
-	"0yFdlJtDLYXAUoj3ylBYcA1jZfmM5n8fB8TTggIqQE19DU8PT1zlupqA8h8jyrRDRUhubKPPdzYb6LjU",
-	"SwU46nWiiJOp8r4YQURgCIvesW4SVSF0hzxiQJIp8OKIVdGFhBEHITDbJ5dE2kIyT/7Y3d559nxxRxv7",
-	"/eGmq+y+V3CDffBIiAMUEjr/u1BuNouXVwfSPV/i5RXxNSRhR3CDFb05Had39IeAXeNG8p+Gx0L3+A+H",
-	"7Bqv8ulX9/CKhMoYnTZAG0dMdicSuNnBm9NeiV/XN3+lq3argCysZylKrdIbP5Gc70Z0Hgdf6ZyJ3rfA",
-	"Llchfq+K5QqkYyzg+V4HNaL2DtpQcVkC6FWRhrSsPei/1kFbZaw3OE+ZDgBmCPP3MZmyBpr/u51+OmkT",
-	"RAK4nP9tCoFr5kPAuQ4cM0Oq4AxNGR7jJjTP17FIxel1OIcOlDC/h2iv1Sqhx/iDXWT3AnVgB3b+ZX48",
-	"AY+DtDZYhI+dqVXwyLDLe0Xp50x1TZxzwmJXtro7w7VSRTRZ2M75uX/bbtuXv5+bOspIOQAhGEaT+d8E",
-	"8TDa8KKJRrfrmM//5pt/0eh6s4GU8YKHgGLFUJfpd14S4rI+5cPVaQ11shkKwC8Enbda6wCre9lAt2jQ",
-	"qe0nyP1eVcKPFhb4wob2GdNdsxPXARVmZMX+gF1y7LOYs1oDxZPFZu56YlEeiT8CDkywdnmrVXsi+9Fu",
-	"MgQu7NEYi1dDZoFOetgOzSSEVPD3wAea8gHtRi2GNLvoEhSsUAQB03GCG0P0HRo2j9B36OBk8BJ9h7rd",
-	"bvf16/199B1qt5GHOfYkcBCbC9fy8O3w6CKLwHoxUx/1X7z9c3f7L/rbMuor2/0qELWg97OVhrh70EHa",
-	"2wbaQ5ud8c7BVjUNk2vCdCSJWI+Ni+jlsbGR8afOxbq9Et+6w0GaSlHdJ6kkiKxW8aNy4sZq5VTFJktN",
-	"9PtgJhDrZ8g7nTKJg33QOSzrJqvoR8WUkUpWi21hS2e2Q7SiolVR6FEugwkJS4i2GimzNKN67VPcHHAQ",
-	"qUhZ1fKiIjqtVmTThiVHzBocTpOfTKJePpn1HMiNBfB3kmiB+qesT/0Dm3yUsrbdJXLRFeOY3wXCynVy",
-	"F+9D6jG9n1vCbvUp7Dh3RKQ7sUI5jeSuxmByrgXsNHS7nESDNoaveuj7F63vNy2yEuMcAo1uSyRhH+Qy",
-	"KaCCTAUGIokM7BYA84/CUcWcWPVDFX3uMahv+znTPQyiV0I4irDXP6ZrzPZhA/oQvN6K2CtfuxCSC3Wt",
-	"k0C11jmHNdtHwAlTV3YqsaW30Un/dfeoe+i4zuv+0Yn+cDo8eN0/OR3qLyf9/HP36E33cP2lVVzb4sxL",
-	"AJNHv9STXIfgFTToqvxKUumqRk6u64RMkikbwjWQhAnW8Dr3hgdd7a3rDobHZ93Ecfen/sGp+dz/l8HB",
-	"0HzsdY96/UP1ucaFb7KMl+LRhQHYw/idyyip0IQFRBIPD0EClZlhMN3zUff43aA/fH1w2ndcJ/n0bnf4",
-	"7vv9+3vZh+AlbE0RKlUmpDpdkpaLAExHcMuOWtvGluBi5iwoc0a9lyF4ysuCU2O/ipKWTGfrjDmm87/i",
-	"BjqBEEEAbtZmirmS3QHlPgMfJoRq3TOcf7whIUMUIxxLxsnPJmryB9P5tRKRWBYIZJISIyJ0fpyAtLtO",
-	"JlMqLNLx83DjBbHSJEBoC+Ney8KvbePXvH/cDBr1LywrqPPjXrxLqORYLqqEu+szs+8e8mlyQS0zrYl/",
-	"S5eYz7kEoXLQWpXsFWp19adHEUHLKnh9A7z64RWmEguCrQ3iieXfNlzQ7Owe90Dab81lkDa7K2vvH50d",
-	"pJy9139pojO6PcXjH4jbZytbw/ItG71TZLe6k/tpdPdJHjhT5XNHDE1iGXOG8tILuy3kE5zwkvbmPU3m",
-	"S9ewJKJDEoqlfTv4UtusF4h2z2ajSl1mJSPDWjZCRDQeYC6JRyKcKE621LVlxQEWOQV2LGNeWK269SWX",
-	"JbLDQoRSAY62CU9vyCpFaee5u/vMritlF2Xutmm3Gs9ajlsx47rt1uz8vKE+L1G8MoG7ctbqGyewlCdy",
-	"/PMSoS0TP9ZyIG2F92JO5IcTBeMEyyJiLdGS5jRnjjhXuzJMXr2hkuetzQbq0ykBNOrG8kpf7Kp7B70E",
-	"zIGjQMh3jUZjlFbA0Dq5/ikHz5WUkcm2VWqmfSGFRTB0iSX8hD/olE8BwWT7igkJfuOcntOuQJxJLPSP",
-	"G6Omx8YjF+m/01Gj0dg0ssPWlkI4LJUzxSSnI6yrCCRppC8x9dg57QGVHAdbW2hDK4jTnUa71WhtdhLX",
-	"jYdDQq+Ya74KpFPyRPI1Vy/hnAJXnsw/q+oLqhCAhBAZlwkgvVlds0FNhhJdVHLmqS9vhofa26S8pecU",
-	"pwnuJkMN9YWEzDs0/yUbS9tODcTQ//7bfxiv0PwX5M1/japVIxTgjrX3KOu0tYVNihyVeGsLzf/TdJhC",
-	"iELMtSdJAW2UZhR2kOQxjDrnlCFTkgaNFkoZjLRwaLIWR2mC5MhFEeMIbiCMAqZXMtTnl/myTM2EUMmO",
-	"egkbmtMINy36IFyEfWVkEzJJ3NtEU6IWCuE5HTXN+prTdlMhItro7g+3W63dTT3XPqFXQDhDkuMJXGJT",
-	"v8CQEEq9vhrtb7DEoT4vP8bqpIW6KkbnhhucOyM1oOM6AfGACk3ESY2UboS9K9jeaSieEfMgQXnRaTZ/",
-	"+umnBtY/Nxi/bCZ9RfPwoNc/OunrPrltwDFnU7C5d5xWo23asAgojojTcXYbrcauYU9XmsIV8qu/l8Y1",
-	"p9hOZsBwDomQmKuYEsctVQ1bIpTkTZpJOaCZu7alKmxVo1leVKtO47ym2cxNitMsFOOpGAaLlWkWLYTL",
-	"BskcHTVreeVZmzU2UawoVKP5QmGk2cVCCZadVutORWbWbKQUZmSphzCYf1TrUPphphoKXahhr9VaNn62",
-	"4KalmoPu2l7fdaHWh+62u75bqUSN3k4SBLeuo66xoi/QOAwx/5ARTmHjiITgEyy1VV7iS6GlbDZ2LrTN",
-	"QViIr8eJpr27k165vtrsolhD6cND4kBR6bDWN1pAwPZDTp7mqFVRr5eCXadg+vhrwrq91u/Xd8oKFc1c",
-	"51nNxeXFXD4RtzVe5qidYba+CnU1o6KPNruWykg/c/XN07xVHWZLL6CUx9jpwMaRC9no1cpytYqPPDLf",
-	"zAMqVyFuVownRd6nxMC9WnMVahZ9Kkalp2zBKhu7vBM3zIrUqYONsPSuqmhmUuASJHskXpml2dXilK2n",
-	"5pQ8Wd7XxSvvg6l35rCfgtoJZtVE7FhWNdxjlFWII1loDCpUF3ARUKmUoapOpWzlSb1RhN/HpFgg1C5s",
-	"9Fh4ajJLP0XmyIqcfpM9vskeTyt7aL8SSaWPxIyyTPyYrtd8p99U34dSfc9+M7rv2Tfl907Kr6LOvFRg",
-	"mRrPCuR4F3Vg+hvRB86+KQS1FIJ1OPS4esH08RSDs8+oGZx9Uw2+INWgBorHKwyF069Aaj/7rGL72Te5",
-	"/cuQ2+sIBFdZuopVFkiyWR6RPyYzWIvKEyrk/L90lX0Qcv5RRQxj3ij50Z3O24siEE7w/O8+KP9q3ruw",
-	"9cRSajafOyaNR3OtokKNa+GTgFGNQMN3yRWntixxWySILcTHRpGqaRlcjQeTTWnZFZMBP/fGLJbmJZeQ",
-	"Px0w0iN0tHN51EBdgQpppCaMwCMTxWwEwjoK0Qd0yfEU83OqwyPaqmj91pbOat7aQlMWSKzc0vmzLhTo",
-	"VRziBlIVXMT8VyTYmAM6PTwx3mTrLWACbR6He5ezdp+cfdNlMjKVJa79SYzKpNWmKJKXDK9Nqc3bmhpM",
-	"elKPJt2thNeCPvFQ0jqVeAlV3UkwKb4dNrtYCuamfiKDTDFffNbsrlMsI/sjNsUiv7gEirAQWAUECeDJ",
-	"yxQ+Fj8gLJJgFE3saZXuUMUwAzXVB8qYsJ8u/XNjQgrDB8CEbE/LMUGdJTfxfXaIHyMdxads14u5numb",
-	"EA1kuHEahcZBSE6ksorHYdZmmCa5P2u1kVC82zwnYn9ZQsV2dWPJwvlHSTzLeWn+asILv0h3/EIM8NMy",
-	"5zxw2f7KSP4mkeHTJlzQmBCRCTb+mgTuzyQ/lx93quBsgdwUnma0pljlELwal9L90Dt9NfBRLWW1Mez/",
-	"lXmsiBHW49cVIhf4rYWvFYLwv0jmZstyeFoOt5CfYUHCdG2m5PvXaEW4Dx4/OSscgE+4qfU0ITxMwL1Q",
-	"J0Kr41GE/DzhbOOacYp9jNqbVkr5yTzFJ5oRuWneJs/Dzpq3+s3E2b3ly/RBxhpOrNIDjstF0t4VDtU+",
-	"tFi0taWFmq0t14gzEQQYiRgjrBE9iQTv6khxXYqIIb2hTTT/5ZxqAQvrIOuREbAT0SgBhorK5nCpo6d9",
-	"DdTByUBX6mI8YvrVA1DvtHn2xxTRxuj2XJUHP3c66G2j0biYjTZ/MGKYCeL2QUwJDrXCfK6QSppaYhAU",
-	"Hh6sSnQ7rZZWiPPXb4xqreMbdlubNv3YpKHxwuORFVZlx8XC65PNQu8llvkFPyC5MUtTu9pgAnGIQOon",
-	"tLSNgFxSpihJbN5X9l5ia+pOTYaklhG0Ekt8HSkyJZlIrc+hQAvJ5kQtgmgmLwF8NqJYc7o9Fp7Eqhzo",
-	"b/qYj9MyYeq4jVDNkDoaTV0JMYaY+jhTf/LUDV7j7LX4+NUxw5Tj6WcjExDppSM/gVVKGqD5YIHHreCF",
-	"6buUCSAn+OeK1nhOF3gjWskaOXiiyBsbSNPtOU3xRz96ycxTgYyrgmyay4ex4sbYxz8s6gTCY/QKVP6s",
-	"3liCeDjLgV7LGPMnvu9DMUk5gfUUo/cpklvKZ+Kx2J+ClPY4LL6Nu7FwdJv3ZI5WAsksHF8ic1QlDx6A",
-	"OX4pR21ngRy8T2GB5fnyPMi3FwrKAvg0PdM8Z6vTbKrAquCKCdl50XrR0ieSjH671N2YhrA18pgVFaM2",
-	"c5d3KXvPyh3PLD0XUL1TpgRAoqS5+LAgWxve4aIk9RnlTypHHDwiUlto1QjXQUocLYStFt7gdE06Hc4d",
-	"JwHys4g9REvssrBHg3eVx/N1XmAhE9RwzWWDmFZLx/HMrWIEUZEIrIXuGarMLmb/NwA=",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

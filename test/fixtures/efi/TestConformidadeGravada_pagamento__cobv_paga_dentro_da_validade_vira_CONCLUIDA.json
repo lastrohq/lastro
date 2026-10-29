@@ -1,0 +1,617 @@
+{
+  "agora": "2026-10-29T21:50:44Z",
+  "rodada": "10292150",
+  "dados": {
+    "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+    "pago:conformidade10292150cobv02": "32",
+    "webhook": ""
+  },
+  "interacoes": [
+    {
+      "metodo": "POST",
+      "url": "/oauth/token",
+      "corpo": {
+        "grant_type": "client_credentials"
+      },
+      "status": 200,
+      "resposta": {
+        "access_token": "gravado",
+        "expires_in": 3600,
+        "scope": "cob.read cob.write cobv.read cobv.write pix.read pix.write webhook.write",
+        "token_type": "Bearer"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 404,
+      "resposta": {
+        "detail": "Cobrança com vencimento não encontrada para o txid informado",
+        "status": 404,
+        "title": "Não Encontrado",
+        "type": "https://pix.bcb.gov.br/api/v2/error/CobvNaoEncontrado"
+      }
+    },
+    {
+      "metodo": "PUT",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "corpo": {
+        "calendario": {
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "valor": {
+          "original": "5.00",
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          }
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d"
+      },
+      "status": 201,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.930Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.947Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "ATIVA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292150cobv02",
+      "status": 400,
+      "resposta": {
+        "mensagem": "Nenhuma cobrança encontrada para o txid informado",
+        "nome": "cobranca_nao_encontrada"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "ATIVA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292150cobv02",
+      "status": 400,
+      "resposta": {
+        "mensagem": "Nenhuma cobrança encontrada para o txid informado",
+        "nome": "cobranca_nao_encontrada"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "ATIVA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292150cobv02",
+      "status": 400,
+      "resposta": {
+        "mensagem": "Nenhuma cobrança encontrada para o txid informado",
+        "nome": "cobranca_nao_encontrada"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "ATIVA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292150cobv02",
+      "status": 400,
+      "resposta": {
+        "mensagem": "Nenhuma cobrança encontrada para o txid informado",
+        "nome": "cobranca_nao_encontrada"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "ATIVA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292150cobv02",
+      "status": 400,
+      "resposta": {
+        "mensagem": "Nenhuma cobrança encontrada para o txid informado",
+        "nome": "cobranca_nao_encontrada"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "ATIVA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292150cobv02",
+      "status": 400,
+      "resposta": {
+        "mensagem": "Nenhuma cobrança encontrada para o txid informado",
+        "nome": "cobranca_nao_encontrada"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "ATIVA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292150cobv02",
+      "status": 400,
+      "resposta": {
+        "mensagem": "Nenhuma cobrança encontrada para o txid informado",
+        "nome": "cobranca_nao_encontrada"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "ATIVA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292150cobv02",
+      "status": 400,
+      "resposta": {
+        "mensagem": "Nenhuma cobrança encontrada para o txid informado",
+        "nome": "cobranca_nao_encontrada"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "ATIVA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidade10292150cobv02",
+      "status": 400,
+      "resposta": {
+        "mensagem": "Nenhuma cobrança encontrada para o txid informado",
+        "nome": "cobranca_nao_encontrada"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pix": [
+          {
+            "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+            "endToEndId": "E09089356202610292150APIec5107af",
+            "horario": "2026-10-29T21:50:44.000Z",
+            "infoPagador": "Teste de pagamento em ambiente sandbox",
+            "txid": "conformidade10292150cobv02",
+            "valor": "5.00"
+          }
+        ],
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "CONCLUIDA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cobv/conformidade10292150cobv02",
+      "status": 200,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "dataDeVencimento": "2026-11-08",
+          "validadeAposVencimento": 30
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "devedor": {
+          "cnpj": "11222333000181",
+          "nome": "Empresa de Teste"
+        },
+        "loc": {
+          "criacao": "2026-10-29T21:50:44.000Z",
+          "id": 31,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba",
+          "tipoCob": "cobv"
+        },
+        "pix": [
+          {
+            "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+            "endToEndId": "E09089356202610292150APIec5107af",
+            "horario": "2026-10-29T21:50:44.000Z",
+            "infoPagador": "Teste de pagamento em ambiente sandbox",
+            "txid": "conformidade10292150cobv02",
+            "valor": "5.00"
+          }
+        ],
+        "pixCopiaECola": "00020101021226900014BR.GOV.BCB.PIX2568qrcodespix-h.sejaefi.com.br/v2/cobv/adf42bf8acb74bdc9841e396de8d06ba5204000053039865802BR5905EFISA6008SAOPAULO62070503***6304C823",
+        "recebedor": {
+          "cep": "01000000",
+          "cidade": "Sao Paulo",
+          "cpf": "00000000000",
+          "logradouro": "Rua de Teste, 1",
+          "nome": "Recebedor de Teste",
+          "uf": "SP"
+        },
+        "revisao": 0,
+        "status": "CONCLUIDA",
+        "txid": "conformidade10292150cobv02",
+        "valor": {
+          "multa": {
+            "modalidade": 2,
+            "valorPerc": "2.00"
+          },
+          "original": "5.00"
+        }
+      }
+    }
+  ]
+}

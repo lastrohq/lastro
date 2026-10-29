@@ -12,7 +12,18 @@ handles the mTLS certificates and normalizes webhooks.
 
 </div>
 
-> 🚧 **Pre-alpha.** Nothing here works yet. Watch the repo or follow the board.
+> 🚧 **Alpha.** The sandbox and the Efí adapter work; the API may still change. Watch the repo or follow the board.
+
+## Try it in 10 seconds
+
+```bash
+docker run --rm -p 8080:8080 ghcr.io/lastrohq/lastro sandbox
+```
+
+It prints a test API key and a `curl` that creates a Pix charge. Paste it: five
+seconds later the fake payer pays and the charge turns `CONCLUIDA`. No bank
+account, no config. Without Docker: `go run ./cmd/lastro sandbox`.
+See [the sandbox guide (pt-BR)](./docs/SANDBOX.md) for magic values.
 
 ## Why
 

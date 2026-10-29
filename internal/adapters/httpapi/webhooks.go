@@ -57,3 +57,28 @@ func (s *Server) receberWebhookRec(ctx context.Context, conta, token string, cor
 	_, err = s.webhooks.ReceberRec(ctx, conta, token, b)
 	return err
 }
+
+// ReceberWebhookCobr recebe o aviso de cobrança recorrente enviado pelo banco.
+func (s *Server) ReceberWebhookCobr(ctx context.Context, r gen.ReceberWebhookCobrRequestObject) (gen.ReceberWebhookCobrResponseObject, error) {
+	if err := s.receberWebhookCobr(ctx, r.ContaId, r.Token, r.Body); err != nil {
+		return nil, err
+	}
+	return gen.ReceberWebhookCobr200Response{}, nil
+}
+
+// ReceberWebhookCobrComSufixo é o mesmo aviso no caminho com /cobr no fim.
+func (s *Server) ReceberWebhookCobrComSufixo(ctx context.Context, r gen.ReceberWebhookCobrComSufixoRequestObject) (gen.ReceberWebhookCobrComSufixoResponseObject, error) {
+	if err := s.receberWebhookCobr(ctx, r.ContaId, r.Token, r.Body); err != nil {
+		return nil, err
+	}
+	return gen.ReceberWebhookCobrComSufixo200Response{}, nil
+}
+
+func (s *Server) receberWebhookCobr(ctx context.Context, conta, token string, corpo *gen.ReceberWebhookCobrJSONBody) error {
+	b, err := json.Marshal(corpo)
+	if err != nil {
+		return err
+	}
+	_, err = s.webhooks.ReceberCobr(ctx, conta, token, b)
+	return err
+}

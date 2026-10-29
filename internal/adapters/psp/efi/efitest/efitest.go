@@ -310,19 +310,25 @@ func (s *Servidor) cobv(w http.ResponseWriter, r *http.Request, txid string) {
 	atual := s.cobvs[txid]
 	switch r.Method {
 	case http.MethodPut:
-		if atual != nil {
-			// O Efí não documenta o erro de txid repetido na cobv; a doc só mostra este 400.
-			problema(w, http.StatusBadRequest, "Cobrança inválida.", "O campo txid informado já foi utilizado.")
-			return
-		}
 		var corpo map[string]any
 		if b, _ := io.ReadAll(r.Body); json.Unmarshal(b, &corpo) != nil {
 			problema(w, http.StatusBadRequest, "Cobrança inválida.", "corpo não é JSON")
 			return
 		}
+		if atual != nil {
+			// Como na homologação (29/10/2026): PUT num txid existente não dá
+			// erro, sobrescreve a cobv e soma uma revisão.
+			for k, v := range corpo {
+				atual[k] = v
+			}
+			atual["revisao"] = atual["revisao"].(int) + 1
+			responder(w, http.StatusCreated, atual)
+			return
+		}
 		s.seq++
 		location := fmt.Sprintf("pix-h.example.efipay.com.br/v2/cobv/%d", s.seq)
-		corpo["txid"], corpo["status"], corpo["revisao"], corpo["location"] = txid, "ATIVA", 0, location
+		// Como o Efí de verdade: a cobv só traz a location dentro de loc.
+		corpo["txid"], corpo["status"], corpo["revisao"] = txid, "ATIVA", 0
 		corpo["loc"] = map[string]any{"id": s.seq, "location": location, "tipoCob": "cobv"}
 		corpo["recebedor"] = map[string]any{"cnpj": "12682781000116", "nome": "Loja Teste"}
 		cal, _ := corpo["calendario"].(map[string]any)
@@ -399,7 +405,8 @@ func (s *Servidor) devolucao(w http.ResponseWriter, r *http.Request, e2e, id str
 	if r.Method == http.MethodGet {
 		d := s.devolucoes[chave]
 		if d == nil {
-			erro(w, http.StatusNotFound, "devolucao_nao_encontrada", "Nenhuma devolução encontrada para o identificador informado")
+			// Como na homologação (29/10/2026): 400, não 404.
+			erro(w, http.StatusBadRequest, "devolucao_nao_encontrada", "Nenhuma devolução encontrada para o identificador informado")
 			return
 		}
 		responder(w, http.StatusOK, d)
@@ -451,6 +458,16 @@ func (s *Servidor) devolucao(w http.ResponseWriter, r *http.Request, e2e, id str
 	}
 	s.devolucoes[chave] = d
 	responder(w, http.StatusCreated, d)
+}
+
+// LiquidarDevolucao leva a devolução a DEVOLVIDO, com horário de liquidação,
+// como o banco faz depois de responder EM_PROCESSAMENTO.
+func (s *Servidor) LiquidarDevolucao(e2e, id string, horario time.Time) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	d := s.devolucoes[e2e+"/"+id]
+	d["status"] = "DEVOLVIDO"
+	d["horario"].(map[string]any)["liquidacao"] = horario.Format(time.RFC3339)
 }
 
 // Webhook devolve a URL cadastrada para a chave Pix, ou "" se não houver.

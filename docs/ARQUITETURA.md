@@ -91,6 +91,7 @@ Definidos em `internal/ports` (#11):
 |---|---|
 | `PSP` | Adapter do banco: `CriarCob`, `ConsultarCob`, `ListarPix`, `Devolver`, `ConfigurarWebhook`, mais `Capabilities()` (RN-50) |
 | `PSPRecorrencia` | Parte **opcional** do PSP para Pix Automático: `CriarRecorrencia`, `ConsultarRecorrencia`, `SolicitarConfirmacao`. Só o adapter que declara `CapRec` a implementa; o caso de uso confere as duas coisas e responde `ErrNaoSuportado` se faltar uma |
+| `PSPCobrancaRecorrente` | Parte **opcional** do PSP para a cobrança recorrente: `CriarCobr`, `ConsultarCobr`, `CancelarCobr`, `SolicitarRetentativa`. Mesma regra, com `CapCobr` |
 | `Store` | `Contas()`, `Cobrancas()`, `Outbox()` e `WithTx`. Atualização com **revisão otimista**: escrita sobre revisão velha falha com `ErrConflito` |
 | `OutboxRepo` | É o lado "publicar" do Notifier: o evento entra na mesma transação da mudança de estado (ADR-005). A entrega fica no adapter `notifier` |
 | `Clock` | Fonte de tempo injetável |
@@ -109,7 +110,7 @@ mesmos testes.
 | Domínio | Table-driven, 100% das transições de estado | `internal/domain` |
 | BR Code | Vetores *golden* de bancos reais, `go test -fuzz` no parser, round-trip gerar→ler | `pkg/brcode` |
 | Casos de uso | Fakes dos ports + clock fixo | `internal/app` |
-| PSP | **Suíte de conformidade**: mesmos cenários para todo adapter — contra o sandbox sempre, contra fixtures gravadas (go-vcr) no CI, contra a homologação do banco manualmente | `test/conformance` |
+| PSP | **Suíte de conformidade**: mesmos cenários para todo adapter — contra o sandbox sempre, contra fitas gravadas da homologação (`test/conformance/fita`) no CI, contra a homologação do banco manualmente | `test/conformance` |
 | Store | Integração em SQLite real (arquivo temporário); Postgres via testcontainers quando entrar | `internal/adapters/store` |
 | HTTP | `httptest` contra o roteador real, com **toda resposta validada contra o `openapi.yaml`** (kin-openapi). Novo handler ganha teste via `conferirResposta` | `internal/adapters/httpapi` |
 | E2E | Binário em modo sandbox: cria cobrança → paga → webhook chega num servidor de teste com assinatura válida | `test/e2e` |

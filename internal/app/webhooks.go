@@ -23,6 +23,8 @@ type Webhooks struct {
 	Recebimentos Recebimentos
 	// Recorrencias aplica os avisos de Pix Automático (webhookrec).
 	Recorrencias Recorrencias
+	// CobrancasRecorrentes aplica os avisos de cobrança recorrente (webhookcobr).
+	CobrancasRecorrentes CobrancasRecorrentes
 }
 
 // Configurar gera um token novo, registra a URL no PSP e só então grava o
@@ -58,6 +60,12 @@ func (s Webhooks) Configurar(ctx context.Context, contaID, urlPublica string) (s
 	if rec, err := pspRecorrencia(s.PSPs, conta); err == nil {
 		if err := rec.ConfigurarWebhookRec(ctx, conta, base.String()+"/webhooks/rec/"+conta.ID+"/"+token); err != nil {
 			return endereco, fmt.Errorf("o aviso de Pix foi configurado, mas o de recorrência não; configure de novo: %w", erroDoPSP(err))
+		}
+	}
+	// O aviso de cobrança recorrente tem URL própria (webhookcobr), com o mesmo token.
+	if cobr, err := pspCobr(s.PSPs, conta); err == nil {
+		if err := cobr.ConfigurarWebhookCobr(ctx, conta, base.String()+"/webhooks/cobr/"+conta.ID+"/"+token); err != nil {
+			return endereco, fmt.Errorf("o aviso de Pix foi configurado, mas o de cobrança recorrente não; configure de novo: %w", erroDoPSP(err))
 		}
 	}
 	return endereco, nil
@@ -102,6 +110,40 @@ func (s Webhooks) ReceberRec(ctx context.Context, contaID, token string, corpo [
 			// Recorrência criada fora do Lastro, ou de outra conta: responder erro
 			// faria o banco reenviar para sempre.
 			slog.WarnContext(ctx, "aviso de recorrência desconhecida ignorado", "conta", conta.ID, "idRec", a.IDRec)
+			continue
+		}
+		if err != nil {
+			return mudaram, err
+		}
+		if mudou {
+			mudaram++
+		}
+	}
+	return mudaram, nil
+}
+
+// ReceberCobr confere o token, interpreta o aviso de cobrança recorrente pelo
+// adapter da conta e aplica cada mudança. Devolve quantas cobranças mudaram.
+func (s Webhooks) ReceberCobr(ctx context.Context, contaID, token string, corpo []byte) (int, error) {
+	conta, err := s.contaDoToken(ctx, contaID, token)
+	if err != nil {
+		return 0, err
+	}
+	psp, err := pspCobr(s.PSPs, conta)
+	if err != nil {
+		return 0, err
+	}
+	ats, err := psp.InterpretarWebhookCobr(conta, corpo)
+	if err != nil {
+		return 0, err
+	}
+	mudaram := 0
+	for _, a := range ats {
+		mudou, err := s.CobrancasRecorrentes.RegistrarAtualizacao(ctx, conta.ID, a)
+		if errors.Is(err, ports.ErrNaoEncontrado) {
+			// Cobrança criada fora do Lastro, ou de outra conta: responder erro
+			// faria o banco reenviar para sempre.
+			slog.WarnContext(ctx, "aviso de cobrança recorrente desconhecida ignorado", "conta", conta.ID, "txid", a.Txid)
 			continue
 		}
 		if err != nil {

@@ -50,6 +50,7 @@ type Ambiente struct {
 const uso = `uso: lastro <comando>
 
   serve                          sobe a API (padrão)
+  sandbox                        sobe a API pronta para testar, sem banco nem configuração
   version                        imprime a versão
   chave gerar                    gera uma LASTRO_MASTER_KEY nova
   conta criar  [flags]           cadastra uma conta recebedora
@@ -70,7 +71,7 @@ const uso = `uso: lastro <comando>
   apikey revogar <id>            revoga uma API key na hora
 
 escopos: cob:read cob:write cobv:read cobv:write pix:read devolucao:write
-         rec:read rec:write webhook:admin conta:admin
+         rec:read rec:write cobr:read cobr:write webhook:admin conta:admin
 
 variáveis: LASTRO_DB (padrão lastro.db), LASTRO_MASTER_KEY, LASTRO_ADDR (padrão :8080),
            LASTRO_CONCILIACAO_INTERVALO (padrão 5m; 0 desliga), LASTRO_CONCILIACAO_JANELA (padrão 2h),
@@ -88,6 +89,8 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 		return err
 	case "serve":
 		return serve(ctx, amb)
+	case "sandbox":
+		return sandboxCmd(ctx, amb)
 	case "chave":
 		if len(args) < 2 || args[1] != "gerar" {
 			return errors.New("use: lastro chave gerar")
@@ -180,7 +183,8 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 			return err
 		}
 		wh := app.Webhooks{Store: contas.Store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock},
-			Recorrencias: app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}}
+			Recorrencias:         app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock},
+			CobrancasRecorrentes: app.CobrancasRecorrentes{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}}
 		endereco, err := wh.Configurar(ctx, args[1], *urlPublica)
 		if err != nil {
 			return err
@@ -308,6 +312,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 	store := contas.Store
 	conc.Store, conc.Recebimentos.Store, conc.PSPs = store, store, contas.PSPs
 	conc.Recorrencias = app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}
+	conc.CobrancasRecorrentes = app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}
 	if intervalo > 0 {
 		rodando.Go(func() {
 			jobs.Periodico(ctxJobs, "conciliação", intervalo, func(ctx context.Context) error {
@@ -354,11 +359,14 @@ func serve(ctx context.Context, amb Ambiente) error {
 			CobrancasV: app.CobrancasV{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			Contas:     contas,
 			Webhooks: app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock},
-				Recorrencias: app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}},
-			Recorrencias: app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			APIKeys:      app.APIKeys{Store: store, Clock: amb.Clock},
-			Idempotencia: app.Idempotencia{Store: store, Clock: amb.Clock},
-			Clock:        amb.Clock,
+				Recorrencias:         app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+				CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}},
+			Recorrencias:         app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			Devolucoes:           app.Devolucoes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			APIKeys:              app.APIKeys{Store: store, Clock: amb.Clock},
+			Idempotencia:         app.Idempotencia{Store: store, Clock: amb.Clock},
+			Clock:                amb.Clock,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		BaseContext:       func(net.Listener) context.Context { return ctx },
@@ -483,11 +491,12 @@ func conciliar(ctx context.Context, amb Ambiente) error {
 	defer fechar()
 	conc.Store, conc.Recebimentos.Store, conc.PSPs = contas.Store, contas.Store, contas.PSPs
 	conc.Recorrencias = app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}
+	conc.CobrancasRecorrentes = app.CobrancasRecorrentes{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}
 	r, err := conc.Rodar(ctx)
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d recorrências atualizadas, %d falhas\n", r.Contas, r.Novos, r.Recorrencias, r.Falhas)
+	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d recorrências atualizadas, %d cobranças recorrentes atualizadas, %d devoluções atualizadas, %d falhas\n", r.Contas, r.Novos, r.Recorrencias, r.CobrancasRecorrentes, r.Devolucoes, r.Falhas)
 	if err == nil && r.Falhas > 0 {
 		err = fmt.Errorf("%d contas falharam (detalhes no log)", r.Falhas)
 	}

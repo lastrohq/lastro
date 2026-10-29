@@ -37,6 +37,14 @@ tags:
       Pix Automático: recorrência e solicitação de confirmação (RN-40, RN-41). A API
       key precisa ser restrita a uma conta: ela identifica o recebedor, como a
       credencial do cliente na spec do BCB.
+  - name: CobR
+    description: >-
+      Pix Automático: cobrança recorrente de uma recorrência aprovada (RN-42). O
+      recebedor é a conta da recorrência, então o corpo não traz recebedor.
+  - name: Pix
+    description: >-
+      Devolução de Pix recebidos (RN-20, RN-21). O Pix precisa estar gravado no
+      Lastro, pelo webhook ou pela conciliação.
   - name: Lastro
     description: Rotas do Lastro, fora da spec do BCB.
   - name: Webhooks
@@ -205,6 +213,168 @@ paths:
           $ref: "#/components/responses/AcessoNegado"
         "404":
           $ref: "#/components/responses/NaoEncontrado"
+
+  /cobr:
+    post:
+      tags: [CobR]
+      operationId: criarCobr
+      summary: Criar cobrança recorrente com txid gerado pelo Lastro
+      description: >-
+        A recorrência precisa estar APROVADA e o vencimento, de 2 a 10 dias corridos
+        à frente (RN-42). Um ciclo tem uma cobrança só.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobRSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Cobrança recorrente criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobRGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+
+  /cobr/{txid}:
+    parameters:
+      - $ref: "#/components/parameters/TxidPath"
+    put:
+      tags: [CobR]
+      operationId: criarCobrComTxid
+      summary: Criar cobrança recorrente com txid definido pelo cliente
+      description: O txid já identifica a criação, então `Idempotency-Key` é opcional aqui (RN-11).
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyOpcional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobRSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Cobrança recorrente criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobRGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+    get:
+      tags: [CobR]
+      operationId: consultarCobr
+      summary: Consultar cobrança recorrente
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Cobrança recorrente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobRGerada"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+    patch:
+      tags: [CobR]
+      operationId: cancelarCobr
+      summary: Cancelar cobrança recorrente
+      description: O recebedor só cancela (RN-42).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobRRevisada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Cobrança recorrente cancelada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobRGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+
+  /cobr/{txid}/retentativa/{data}:
+    parameters:
+      - $ref: "#/components/parameters/TxidPath"
+      - name: data
+        in: path
+        required: true
+        description: Nova data prevista de liquidação.
+        schema:
+          type: string
+          format: date
+    post:
+      tags: [CobR]
+      operationId: retentativaCobr
+      summary: Pedir uma nova data de liquidação
+      description: >-
+        Só com a política PERMITE_3R_7D: até 3 datas, em até 7 dias corridos do
+        vencimento, antes do ciclo seguinte, pedida até o dia anterior (RN-42).
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Cobrança recorrente com a tentativa nova.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobRGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
 
   /solicrec:
     post:
@@ -433,6 +603,65 @@ paths:
         "403":
           $ref: "#/components/responses/AcessoNegado"
 
+  /pix/{e2eid}/devolucao/{id}:
+    parameters:
+      - $ref: "#/components/parameters/E2eidPath"
+      - $ref: "#/components/parameters/IdDevolucaoPath"
+    put:
+      tags: [Pix]
+      operationId: solicitarDevolucao
+      summary: Solicitar devolução
+      description: >-
+        Devolve o Pix total ou parcialmente. O par `e2eid` + `id` é idempotente:
+        repetir com o mesmo valor devolve a devolução existente, com outro valor
+        responde 409. Saldo, prazo de 90 dias e natureza são conferidos antes de
+        chamar o banco (RN-21).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevolucaoSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Devolução solicitada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Devolucao"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+    get:
+      tags: [Pix]
+      operationId: consultarDevolucao
+      summary: Consultar devolução
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Devolução.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Devolucao"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
   /lastro/v1/contas:
     post:
       tags: [Lastro]
@@ -590,6 +819,46 @@ paths:
         "200":
           description: Avisos aplicados.
 
+  /webhooks/cobr/{contaId}/{token}:
+    parameters:
+      - $ref: "#/components/parameters/ContaIdWebhook"
+      - $ref: "#/components/parameters/TokenWebhook"
+    post:
+      tags: [Webhooks]
+      operationId: receberWebhookCobr
+      summary: Aviso de mudança de cobrança recorrente (Pix Automático), enviado pelo banco
+      description: |
+        Chamada pelo **banco**. A URL usa o mesmo token do aviso de Pix e é
+        registrada por `lastro conta webhook` quando o banco faz cobrança
+        recorrente. O corpo segue o callback da spec do BCB (`{"cobsr": [...]}`).
+        Aviso repetido ou fora de ordem não muda nada; cobrança desconhecida é
+        ignorada (RN-42).
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/WebhookCobr"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Avisos aplicados.
+
+  /webhooks/cobr/{contaId}/{token}/cobr:
+    parameters:
+      - $ref: "#/components/parameters/ContaIdWebhook"
+      - $ref: "#/components/parameters/TokenWebhook"
+    post:
+      tags: [Webhooks]
+      operationId: receberWebhookCobrComSufixo
+      summary: O mesmo aviso, com o /cobr que a spec manda o banco acrescentar
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/WebhookCobr"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Avisos aplicados.
+
 components:
   securitySchemes:
     apiKey:
@@ -613,6 +882,14 @@ components:
           schema:
             type: object
             description: Callback de recorrência da spec do BCB. Aceito como objeto livre porque quem interpreta é o adapter do banco.
+
+    WebhookCobr:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: Callback de cobrança recorrente da spec do BCB. Aceito como objeto livre porque quem interpreta é o adapter do banco.
 
   parameters:
     ContaIdWebhook:
@@ -642,6 +919,20 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/IdRec"
+    E2eidPath:
+      name: e2eid
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/E2eid"
+    IdDevolucaoPath:
+      name: id
+      in: path
+      required: true
+      description: Escolhido pelo cliente; identifica a devolução junto com o e2eid.
+      schema:
+        type: string
+        pattern: "^[a-zA-Z0-9]{1,35}$"
     TxidPath:
       name: txid
       in: path
@@ -946,6 +1237,124 @@ components:
             status:
               type: string
               enum: [CRIADA, ENVIADA, RECEBIDA, ACEITA, REJEITADA, EXPIRADA, CANCELADA]
+    CobRSolicitada:
+      type: object
+      required: [idRec, calendario, valor]
+      properties:
+        idRec:
+          $ref: "#/components/schemas/IdRec"
+        calendario:
+          type: object
+          required: [dataDeVencimento]
+          properties:
+            dataDeVencimento:
+              type: string
+              format: date
+              description: Data prevista de liquidação, de 2 a 10 dias corridos à frente (RN-42).
+        valor:
+          type: object
+          required: [original]
+          properties:
+            original:
+              $ref: "#/components/schemas/Valor"
+        ajusteDiaUtil:
+          type: boolean
+          default: true
+          description: Leva a liquidação para o próximo dia útil se o vencimento cair num dia não útil.
+        infoAdicional:
+          type: string
+          maxLength: 140
+    CobRTentativa:
+      type: object
+      required: [dataLiquidacao, tipo, status]
+      properties:
+        dataLiquidacao:
+          type: string
+          format: date
+        tipo:
+          type: string
+          enum: [AGND, NTAG, RIFL]
+        status:
+          type: string
+          enum: [SOLICITADA, AGENDADA, PAGA, CANCELADA, REJEITADA, EXPIRADA]
+        endToEndId:
+          type: string
+        motivoRejeicao:
+          type: string
+    CobRGerada:
+      allOf:
+        - $ref: "#/components/schemas/CobRSolicitada"
+        - type: object
+          required: [txid, status, ajusteDiaUtil, tentativas]
+          properties:
+            txid:
+              $ref: "#/components/schemas/Txid"
+            status:
+              type: string
+              enum: [CRIADA, ATIVA, CONCLUIDA, EXPIRADA, REJEITADA, CANCELADA]
+            tentativas:
+              type: array
+              items:
+                $ref: "#/components/schemas/CobRTentativa"
+            motivoEncerramento:
+              type: string
+              description: Código e descrição da rejeição ou do cancelamento.
+    CobRRevisada:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [CANCELADA]
+    E2eid:
+      type: string
+      pattern: "^[a-zA-Z0-9]{32}$"
+    DevolucaoSolicitada:
+      type: object
+      required: [valor]
+      properties:
+        valor:
+          $ref: "#/components/schemas/Valor"
+        natureza:
+          type: string
+          enum: [ORIGINAL, RETIRADA]
+          default: ORIGINAL
+          description: RETIRADA (Pix Saque ou Troco) é recusada; o Lastro não recebe esse tipo de Pix.
+        descricao:
+          type: string
+          maxLength: 140
+    Devolucao:
+      type: object
+      required: [id, valor, natureza, horario, status]
+      properties:
+        id:
+          type: string
+        rtrId:
+          type: string
+          description: Identificador da devolução no SPI, gerado pelo banco.
+        valor:
+          $ref: "#/components/schemas/Valor"
+        natureza:
+          type: string
+          enum: [ORIGINAL, RETIRADA]
+        descricao:
+          type: string
+        horario:
+          type: object
+          required: [solicitacao]
+          properties:
+            solicitacao:
+              type: string
+              format: date-time
+            liquidacao:
+              type: string
+              format: date-time
+        status:
+          type: string
+          enum: [EM_PROCESSAMENTO, DEVOLVIDO, NAO_REALIZADO]
+        motivo:
+          type: string
+          description: Por que a devolução não foi realizada.
     Txid:
       type: string
       pattern: "^[a-zA-Z0-9]{26,35}$"

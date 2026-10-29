@@ -29,6 +29,8 @@ type Store interface {
 	Entregas() EntregaRepo
 	Recorrencias() RecorrenciaRepo
 	Solicitacoes() SolicitacaoRepo
+	CobrancasRecorrentes() CobrancaRecorrenteRepo
+	Devolucoes() DevolucaoRepo
 	// WithTx executa fn numa transação: erro em fn desfaz tudo.
 	WithTx(ctx context.Context, fn func(Store) error) error
 }
@@ -57,6 +59,23 @@ type SolicitacaoRepo interface {
 	AtualizarStatus(ctx context.Context, id string, status domain.StatusSolicitacao) error
 	// DaRecorrencia devolve as solicitações da recorrência, em ordem de criação.
 	DaRecorrencia(ctx context.Context, idRec string) ([]domain.SolicitacaoRecorrencia, error)
+}
+
+// CobrancaRecorrenteRepo guarda as cobranças recorrentes (RN-42). O txid é
+// único na instância, compartilhado com cob e cobv (RN-10).
+type CobrancaRecorrenteRepo interface {
+	// Criar falha com ErrJaExiste se o txid já existir, e com
+	// ErrNaoEncontrado se a recorrência não existir.
+	Criar(ctx context.Context, c domain.CobrancaRecorrente) error
+	BuscarPorTxid(ctx context.Context, txid domain.Txid) (domain.CobrancaRecorrente, error)
+	// Atualizar grava status, tentativas e motivo de encerramento se
+	// c.Revisao for a revisão atual, e a incrementa; senão falha com ErrConflito.
+	Atualizar(ctx context.Context, c *domain.CobrancaRecorrente) error
+	// DaRecorrencia devolve as cobranças da recorrência em ordem de vencimento.
+	DaRecorrencia(ctx context.Context, idRec string) ([]domain.CobrancaRecorrente, error)
+	// Abertas devolve as cobranças da conta que ainda podem mudar (CRIADA e
+	// ATIVA), em ordem de criação, para a conciliação.
+	Abertas(ctx context.Context, contaID string) ([]domain.CobrancaRecorrente, error)
 }
 
 // ContaRepo guarda as contas recebedoras e as credenciais delas, já cifradas.
@@ -174,6 +193,23 @@ type PixRepo interface {
 	BuscarPorE2E(ctx context.Context, e2e string) (domain.PixRecebido, error)
 	// ListarPorTxid devolve os Pix de uma cobrança, em ordem de horário.
 	ListarPorTxid(ctx context.Context, txid domain.Txid) ([]domain.PixRecebido, error)
+}
+
+// DevolucaoRepo guarda as devoluções de Pix recebidos (RN-20, RN-21). O par
+// endToEndId + id é único.
+type DevolucaoRepo interface {
+	// Criar falha com ErrJaExiste se o par já existir e com ErrNaoEncontrado
+	// se o Pix não estiver gravado.
+	Criar(ctx context.Context, d domain.Devolucao) error
+	Buscar(ctx context.Context, e2e, id string) (domain.Devolucao, error)
+	// DoPix devolve as devoluções do Pix em ordem de criação.
+	DoPix(ctx context.Context, e2e string) ([]domain.Devolucao, error)
+	// Atualizar grava status, motivo, rtrId e liquidação se a revisão bater;
+	// senão, ErrConflito. Em sucesso, incrementa d.Revisao.
+	Atualizar(ctx context.Context, d *domain.Devolucao) error
+	// EmProcessamento devolve as devoluções da conta ainda sem resultado, em
+	// ordem de criação.
+	EmProcessamento(ctx context.Context, contaID string) ([]domain.Devolucao, error)
 }
 
 // DestinoRepo guarda os destinos de webhook de saída.

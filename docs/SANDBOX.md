@@ -3,12 +3,43 @@
 O adapter `sandbox` é um PSP de mentira: implementa as capacidades do Lastro
 sem banco nenhum, para você testar o fluxo inteiro **sem conta PJ** (RN-52).
 
+## Um comando
+
 ```bash
-export LASTRO_MASTER_KEY=$(lastro chave gerar)
-lastro conta criar --id teste --nome "Minha Loja" --psp sandbox --chave teste@example.com
+lastro sandbox
+# ou
+docker run --rm -p 8080:8080 ghcr.io/lastrohq/lastro sandbox
 ```
 
-## Do zero a um Pix pago
+O `lastro sandbox` cria um banco separado (`lastro-sandbox.db`), guarda a chave
+mestra ao lado dele (`lastro-sandbox.key`), cadastra a conta `sandbox` com a
+chave Pix `sandbox@lastro.dev`, gera uma API key com todos os escopos e imprime
+um `curl` que já funciona:
+
+```bash
+export LASTRO_TOKEN=lst_...   # o que o terminal mostrou
+curl -s -X POST localhost:8080/cob \
+  -H "Authorization: Bearer $LASTRO_TOKEN" -H "Idempotency-Key: pedido-$RANDOM" \
+  -H 'Content-Type: application/json' \
+  -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"sandbox@lastro.dev"}'
+# → 201, status ATIVA, com txid e pixCopiaECola
+
+sleep 10
+curl -s -H "Authorization: Bearer $LASTRO_TOKEN" localhost:8080/cob/{txid}
+# → status CONCLUIDA
+```
+
+No modo sandbox a conciliação roda a cada 10 s (mude com
+`LASTRO_CONCILIACAO_INTERVALO`), então o pagamento aparece sozinho. A cada
+subida sai uma API key nova; as anteriores continuam valendo. Os dados
+sobrevivem ao restart; no Docker, monte um volume em `/home/nonroot` para
+guardá-los. Por segurança, o comando se recusa a rodar num banco que já tenha
+conta de um PSP real.
+
+## Passo a passo, sem atalho
+
+Para ver o que o `lastro sandbox` faz por baixo, ou montar o sandbox num banco
+seu:
 
 ```bash
 export LASTRO_MASTER_KEY=$(lastro chave gerar)
@@ -21,7 +52,6 @@ curl -X PUT localhost:8080/cob/pedido00000000000000000000001 \
   -H "Authorization: Bearer $LASTRO_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"loja@example.com"}'
-# → 201, status ATIVA, com o pixCopiaECola
 
 sleep 5
 curl -H "Authorization: Bearer $LASTRO_TOKEN" localhost:8080/cob/pedido00000000000000000000001
@@ -73,8 +103,35 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
 - **Estado:** o sandbox lembra das cobranças depois de reiniciar o Lastro. Ele
   reconstrói a partir das cobranças que o próprio Lastro gravou no SQLite: uma
   cobrança criada antes do restart é paga no horário de sempre, e os valores
-  mágicos continuam valendo. As **devoluções** do sandbox ainda ficam só em
-  memória, até o Lastro gravar devoluções (F7).
+  mágicos continuam valendo. As **devoluções** também: as que o Lastro gravou
+  contam no saldo do Pix e respondem pelo id depois do restart.
+- **Devolução:** `PUT /pix/{e2eid}/devolucao/{id}` devolve um Pix que o Lastro
+  já gravou (pelo webhook ou pela conciliação). O sandbox responde `DEVOLVIDO`
+  na hora, com `rtrId` e horário de liquidação. Por isso o evento
+  `devolucao.atualizada`, que sai quando o banco informa o resultado depois,
+  não aparece no sandbox.
 - **Valor da cobv:** o sandbox paga o valor **original**. Multa, juros e desconto
   são calculados pelo banco de verdade.
-- **Pix Automático:** entra com a fase dele.
+- **Cobrança recorrente:** `PUT /cobr/{txid}` (ou `POST /cobr`) cobra um ciclo
+  de uma recorrência aprovada. O sandbox comprime o calendário: em vez de esperar
+  o dia da liquidação, a cobrança anda um passo a cada atraso (5 s). Depois de um
+  atraso o PSP do pagador aceita a instrução (`ATIVA`); depois de dois, a
+  tentativa do vencimento é liquidada. Como a cobrança tem o valor fixo da
+  recorrência, quem escolhe o comportamento é a **recorrência**:
+
+  | Valor fixo | A cobrança |
+  |---|---|
+  | R$ 0,44 | o PSP do pagador rejeita a instrução: `REJEITADA` |
+  | R$ 0,55 | a tentativa do vencimento falha por falta de saldo (`AM04`) e a cobrança segue `ATIVA`; a retentativa (`POST /cobr/{txid}/retentativa/{data}`) é paga um atraso depois de pedida |
+  | R$ 0,66 | o sandbox recusa criar |
+  | outros | é paga no vencimento: `CONCLUIDA` |
+
+  Cancelar (`PATCH /cobr/{txid}` com `CANCELADA`) congela a cobrança: nada é
+  liquidado depois. A cada passo, o sandbox avisa pelo webhook de cobrança
+  recorrente (`/webhooks/cobr/{conta}/{token}`), que `lastro conta webhook`
+  registra junto com os outros. O `GET /cobr/{txid}` também pergunta ao sandbox
+  enquanto a cobrança está aberta, e a conciliação confere as abertas.
+
+  ⚠️ Como na recorrência, a URL do webhook de cobrança recorrente fica **em
+  memória**: entre processos o aviso não chega, e a mudança aparece na consulta
+  ou na próxima conciliação.

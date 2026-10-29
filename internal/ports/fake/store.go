@@ -32,6 +32,8 @@ type dados struct {
 	idem      map[[2]string]domain.RegistroIdempotencia
 	recs      map[string]domain.Recorrencia
 	solics    map[string]domain.SolicitacaoRecorrencia
+	cobrs     map[domain.Txid]domain.CobrancaRecorrente
+	devs      map[[2]string]domain.Devolucao // chave: e2e, id
 }
 
 func (d *dados) clonar() *dados {
@@ -52,6 +54,8 @@ func (d *dados) clonar() *dados {
 		idem:      maps.Clone(d.idem),
 		recs:      maps.Clone(d.recs),
 		solics:    maps.Clone(d.solics),
+		cobrs:     maps.Clone(d.cobrs),
+		devs:      maps.Clone(d.devs),
 	}
 }
 
@@ -67,7 +71,7 @@ var _ ports.Store = (*Store)(nil)
 
 // NewStore cria um Store vazio.
 func NewStore() *Store {
-	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, tokens: map[string][]byte{}, pix: map[string]domain.PixRecebido{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, cobvs: map[domain.Txid]domain.CobrancaVencimento{}, idem: map[[2]string]domain.RegistroIdempotencia{}, distrib: map[string]bool{}, destinos: map[string]domain.Destino{}, entregas: map[[2]string]domain.Entrega{}, recs: map[string]domain.Recorrencia{}, solics: map[string]domain.SolicitacaoRecorrencia{}}}
+	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, tokens: map[string][]byte{}, pix: map[string]domain.PixRecebido{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, cobvs: map[domain.Txid]domain.CobrancaVencimento{}, idem: map[[2]string]domain.RegistroIdempotencia{}, distrib: map[string]bool{}, destinos: map[string]domain.Destino{}, entregas: map[[2]string]domain.Entrega{}, recs: map[string]domain.Recorrencia{}, solics: map[string]domain.SolicitacaoRecorrencia{}, cobrs: map[domain.Txid]domain.CobrancaRecorrente{}, devs: map[[2]string]domain.Devolucao{}}}
 }
 
 // Eventos devolve o que foi publicado no outbox, para asserções.
@@ -489,9 +493,12 @@ func (r idem) Remover(_ context.Context, dono, chave string) error {
 	return nil
 }
 
-// txidUsado confere cobs e cobvs: o txid é único na instância (RN-10).
+// txidUsado confere cobs, cobvs e cobrs: o txid é único na instância (RN-10).
 func (d *dados) txidUsado(txid domain.Txid) bool {
 	if _, ok := d.cobvs[txid]; ok {
+		return true
+	}
+	if _, ok := d.cobrs[txid]; ok {
 		return true
 	}
 	for _, c := range d.cobrancas {

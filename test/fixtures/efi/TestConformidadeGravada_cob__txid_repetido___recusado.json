@@ -1,0 +1,80 @@
+{
+  "agora": "2026-10-29T21:50:37Z",
+  "rodada": "10292150",
+  "dados": {
+    "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+    "webhook": ""
+  },
+  "interacoes": [
+    {
+      "metodo": "POST",
+      "url": "/oauth/token",
+      "corpo": {
+        "grant_type": "client_credentials"
+      },
+      "status": 200,
+      "resposta": {
+        "access_token": "gravado",
+        "expires_in": 3600,
+        "scope": "cob.read cob.write cobv.read cobv.write pix.read pix.write webhook.write",
+        "token_type": "Bearer"
+      }
+    },
+    {
+      "metodo": "PUT",
+      "url": "/v2/cob/conformidade10292150cob002",
+      "corpo": {
+        "calendario": {
+          "expiracao": 86400
+        },
+        "valor": {
+          "original": "25.00"
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "solicitacaoPagador": "Teste de conformidade"
+      },
+      "status": 201,
+      "resposta": {
+        "calendario": {
+          "criacao": "2026-10-29T21:50:38.120Z",
+          "expiracao": 86400
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "loc": {
+          "criacao": "2026-10-29T21:50:38.122Z",
+          "id": 28,
+          "location": "qrcodespix-h.sejaefi.com.br/v2/204926f2a1e04a2d88029b7153842882",
+          "tipoCob": "cob"
+        },
+        "location": "qrcodespix-h.sejaefi.com.br/v2/204926f2a1e04a2d88029b7153842882",
+        "pixCopiaECola": "00020101021226850014BR.GOV.BCB.PIX2563qrcodespix-h.sejaefi.com.br/v2/204926f2a1e04a2d88029b71538428825204000053039865802BR5905EFISA6008SAOPAULO62070503***6304B5CF",
+        "revisao": 0,
+        "solicitacaoPagador": "Teste de conformidade",
+        "status": "ATIVA",
+        "txid": "conformidade10292150cob002",
+        "valor": {
+          "original": "25.00"
+        }
+      }
+    },
+    {
+      "metodo": "PUT",
+      "url": "/v2/cob/conformidade10292150cob002",
+      "corpo": {
+        "calendario": {
+          "expiracao": 86400
+        },
+        "valor": {
+          "original": "25.00"
+        },
+        "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+        "solicitacaoPagador": "Teste de conformidade"
+      },
+      "status": 409,
+      "resposta": {
+        "mensagem": "Campo txid informado já foi utilizado em outra cobrança",
+        "nome": "txid_duplicado"
+      }
+    }
+  ]
+}

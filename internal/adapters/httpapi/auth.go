@@ -29,16 +29,25 @@ var escopoDaRota = map[string]domain.Escopo{
 	"POST /rec":                             domain.EscopoRecWrite,
 	"GET /rec/{idRec}":                      domain.EscopoRecRead,
 	"POST /solicrec":                        domain.EscopoRecWrite,
+	"POST /cobr":                            domain.EscopoCobrWrite,
+	"PUT /cobr/{txid}":                      domain.EscopoCobrWrite,
+	"GET /cobr/{txid}":                      domain.EscopoCobrRead,
+	"PATCH /cobr/{txid}":                    domain.EscopoCobrWrite,
+	"POST /cobr/{txid}/retentativa/{data}":  domain.EscopoCobrWrite,
+	"PUT /pix/{e2eid}/devolucao/{id}":       domain.EscopoDevolucaoWrite,
+	"GET /pix/{e2eid}/devolucao/{id}":       domain.EscopoPixRead,
 }
 
 // rotasPublicas não exigem API key. Os webhooks são chamados pelo banco e
 // autenticados pelo token da URL, conferido no caso de uso.
 var rotasPublicas = map[string]bool{
-	"GET /health":                              true,
-	"POST /webhooks/pix/{contaId}/{token}":     true,
-	"POST /webhooks/pix/{contaId}/{token}/pix": true,
-	"POST /webhooks/rec/{contaId}/{token}":     true,
-	"POST /webhooks/rec/{contaId}/{token}/rec": true,
+	"GET /health":                                true,
+	"POST /webhooks/pix/{contaId}/{token}":       true,
+	"POST /webhooks/pix/{contaId}/{token}/pix":   true,
+	"POST /webhooks/rec/{contaId}/{token}":       true,
+	"POST /webhooks/rec/{contaId}/{token}/rec":   true,
+	"POST /webhooks/cobr/{contaId}/{token}":      true,
+	"POST /webhooks/cobr/{contaId}/{token}/cobr": true,
 }
 
 // autenticar exige "Authorization: Bearer lst_..." com o escopo da rota, e

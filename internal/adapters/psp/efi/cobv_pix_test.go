@@ -162,3 +162,26 @@ func TestDevolverEIdempotentePeloIDENaoPassaDoRecebido(t *testing.T) {
 		t.Fatalf("Pix inexistente: err = %v; quer ErrNaoEncontrado", err)
 	}
 }
+
+func TestConsultarDevolucao(t *testing.T) {
+	c := novo(t)
+	ctx := context.Background()
+	criada, _ := c.psp.CriarCob(ctx, c.conta, cob("efi00000000000000000000012"))
+	e2e := c.efi.Pagar(string(criada.Txid), agora)
+	if _, err := c.psp.Devolver(ctx, c.conta, domain.Devolucao{ID: "d1", EndToEndID: e2e, Valor: 500}); err != nil {
+		t.Fatal(err)
+	}
+	d, err := c.psp.ConsultarDevolucao(ctx, c.conta, e2e, "d1")
+	if err != nil || d.Status != domain.DevolucaoEmProcessamento || !d.LiquidadaEm.IsZero() || d.EndToEndID != e2e {
+		t.Fatalf("em processamento: %+v, %v", d, err)
+	}
+	liquidada := agora.Add(time.Minute)
+	c.efi.LiquidarDevolucao(e2e, "d1", liquidada)
+	d, err = c.psp.ConsultarDevolucao(ctx, c.conta, e2e, "d1")
+	if err != nil || d.Status != domain.DevolucaoDevolvido || !d.LiquidadaEm.Equal(liquidada) || d.Valor != 500 || d.RtrID == "" {
+		t.Fatalf("liquidada: %+v, %v", d, err)
+	}
+	if _, err := c.psp.ConsultarDevolucao(ctx, c.conta, e2e, "d9"); !errors.Is(err, ports.ErrNaoEncontrado) {
+		t.Fatalf("inexistente: err = %v; quer ErrNaoEncontrado", err)
+	}
+}

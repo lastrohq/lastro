@@ -52,12 +52,13 @@ chave Pix + credenciais (client id/secret e certificado) + ambiente
 
 ### RN-10 · txid
 
-- Em `cob` e `cobv`: de **26 a 35** caracteres, `[a-zA-Z0-9]`.
+- Em `cob`, `cobv` e `cobr`: de **26 a 35** caracteres, `[a-zA-Z0-9]`.
 - Se o cliente não informar, o Lastro gera (aleatório criptográfico, 32 caracteres).
 - Se informar, o Lastro valida antes de chamar o banco — erro de formato nunca
   vira chamada de rede.
 - txid é único **na instância inteira** — mais estrito que a spec (que exige
   unicidade por recebedor), para que `GET /cob/{txid}` não precise saber a conta.
+  Vale entre os três tipos: o txid de uma cob não serve para uma cobv nem para uma cobr.
 - A conta da cobrança é a dona da `chave` informada no corpo. Chave Pix é única
   na instância, como no DICT.
 
@@ -144,12 +145,34 @@ EM_PROCESSAMENTO ──▶ DEVOLVIDO
                  └─▶ NAO_REALIZADO
 ```
 
+- O banco é a fonte da verdade sobre o resultado. Ele chega pelas `devolucoes`
+  do aviso de Pix (`POST {webhookUrl}/pix`, RN-30) ou pela conciliação (RN-31),
+  que consulta `GET /pix/{e2eid}/devolucao/{id}` de cada devolução ainda
+  `EM_PROCESSAMENTO`. Cada mudança grava status, motivo, `rtrId` e liquidação e
+  publica `devolucao.atualizada`. Aviso repetido não publica de novo.
+- Devolução que o Lastro não pediu, de outra conta ou com status que volta
+  atrás é ignorada com aviso no log, sem erro: responder erro faria o banco
+  reenviar para sempre.
+
 ### RN-21 · Limites
 
 - A soma das devoluções de um Pix (`endToEndId`) não ultrapassa o valor recebido.
-- Devolução identificada pelo par `e2eid` + `id` (id definido pelo cliente,
-  idempotente).
+  Devolução `NAO_REALIZADO` não conta: o valor dela volta a estar disponível.
+- Devolução identificada pelo par `e2eid` + `id` (id definido pelo cliente, de 1
+  a 35 caracteres `[a-zA-Z0-9]`). **Idempotente:** repetir o par com o mesmo
+  valor devolve a devolução existente sem chamar o banco; com outro valor, 409.
 - Prazo máximo de **90 dias** após o pagamento — validado antes de chamar o banco.
+- Rotas da spec: `PUT /pix/{e2eid}/devolucao/{id}` (escopo `devolucao:write`) e
+  `GET /pix/{e2eid}/devolucao/{id}` (escopo `pix:read`).
+- Natureza `ORIGINAL` (o default). `RETIRADA` é a devolução de Pix Saque ou
+  Troco, que o Lastro não recebe, e é recusada. Descrição até 140 caracteres.
+- Tudo isso é conferido **antes de chamar o banco**. Devoluções simultâneas do
+  mesmo Pix são feitas uma de cada vez, para que juntas não passem do valor.
+- O Pix precisa estar gravado no Lastro (webhook ou conciliação) e ser da conta
+  da API key restrita; senão, 404. Conta desativada continua devolvendo: o Pix
+  já entrou.
+- Cada devolução aceita pelo banco é gravada com o evento `devolucao.solicitada`.
+  Se o banco falhar, nada é gravado nem publicado.
 
 ---
 
@@ -225,6 +248,27 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
 
 - Status da API Pix (`CobRStatus`, 2.10.0): `CRIADA`, `ATIVA`, `CONCLUIDA`,
   `EXPIRADA`, `REJEITADA`, `CANCELADA`. O recebedor só cancela.
+
+  ```
+  CRIADA ──▶ ATIVA ──▶ CONCLUIDA
+     │         ├─────▶ EXPIRADA
+     ├─────────┼─────▶ REJEITADA
+     └─────────┴─────▶ CANCELADA
+  ```
+
+  `CRIADA` é a cobrança registrada no PSP do recebedor; `ATIVA`, a instrução
+  aceita pelo PSP do pagador. Ela **continua `ATIVA` durante as retentativas**,
+  como no exemplo da spec. A spec lista os status, não as transições: o
+  diagrama precisa ser conferido no *Manual de Fluxos*, como o da RN-41.
+- **Só nasce de recorrência `APROVADA`**, com o vencimento dentro da vigência
+  dela e, se a recorrência tem valor fixo, **com esse valor**. A cobrança é da
+  conta da recorrência; key restrita a outra conta recebe 404 (RN-60).
+- **Uma cobrança por ciclo:** enquanto a do ciclo está `CRIADA`, `ATIVA` ou
+  `CONCLUIDA`, outra no mesmo ciclo é recusada. Depois de cancelada, rejeitada ou
+  expirada, o recebedor pode criar outra.
+- Pedir retentativa publica `cobranca_recorrente.tentativa`, com a data nova;
+  cancelar publica `cobranca_recorrente.atualizada`. Se o aviso do banco chegou
+  antes da resposta do PSP, nada é publicado de novo.
 - **Antecedência:** a instrução de pagamento chega ao PSP do pagador **de 2 a 10
   dias corridos** antes da data prevista de liquidação. O Lastro recusa enviar
   fora dessa janela, em vez de deixar o banco recusar.
@@ -232,15 +276,33 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
   for `PERMITE_3R_7D`: no máximo **3 datas** diferentes, em até **7 dias corridos**
   da data original, sem passar do início do ciclo seguinte (ou do fim da
   recorrência), com **o mesmo valor**, pedida até **23h59 do dia anterior** à nova data.
-- Mudanças chegam por webhook de cobrança recorrente (`/webhookcobr`), separado
-  do de recorrência.
+  Os dias são contados no fuso de Brasília. Os ciclos contam a partir da
+  `dataInicial`; nos mensais, o dia que não existe no mês vira o último dia
+  dele (31/01 → 28/02 → 31/03).
+- **Mudanças chegam pelo webhook de cobrança recorrente**
+  (`/webhooks/cobr/{conta}/{token}`, com ou sem o `/cobr` que a spec manda
+  acrescentar), separado do de recorrência e registrado por `lastro conta
+  webhook` com o mesmo token. Cada aviso grava a cobrança e publica, numa
+  transação só, `cobranca_recorrente.tentativa` para cada tentativa nova ou que
+  mudou e `cobranca_recorrente.atualizada` se o status mudou. O banco é a fonte
+  da verdade sobre cada tentativa (identificada pela data e pelo tipo); a
+  retentativa que só o Lastro conhece continua até o banco avisar. Aviso
+  repetido não muda nada; aviso fora do diagrama (uma volta de `CONCLUIDA` para
+  `ATIVA`, por exemplo) é ignorado com registro no log; cobrança desconhecida é
+  ignorada, para o banco não reenviar para sempre.
+- **Sem aviso, a consulta e a conciliação acham a mudança:** `GET /cobr/{txid}`
+  pergunta ao PSP enquanto a cobrança está aberta (se o PSP falhar, devolve a
+  gravada), e `lastro conciliar` confere todas as abertas de cada conta pelo
+  mesmo caminho do webhook.
 
 ### RN-43 · Prazos versionados
 
 Antecedência, janelas de retentativa e afins **não são constantes no código**.
 Ficam numa tabela de parâmetros com **data do normativo** de origem, para que
 cada mudança do BCB vire um commit pequeno, revisável e com fonte — e um
-release com nota.
+release com nota. A tabela fica em `internal/domain/parametros.go`: cada linha
+tem a fonte e a data a partir da qual vale, e uma linha que já vale nunca é
+editada; mudança entra como linha nova.
 
 Valores de partida, do *Guia de implementação do Pix Automático* v1.3
 (BCB, 19/08/2026), conferidos pelo estudo #1:
@@ -292,6 +354,10 @@ recorrências abertas (`CRIADA` e `APROVADA`) e aplica as mudanças sem aviso
 pelo caminho do webhook de recorrência (RN-40). Uma recorrência que falha não
 impede as outras, e as recorrências não dependem de a consulta de Pix dar certo.
 
+A rodada também consulta no banco cada devolução `EM_PROCESSAMENTO` (RN-20).
+Assim, o resultado da devolução de um Pix antigo, que já saiu da janela do
+`GET /pix`, também chega mesmo sem aviso.
+
 - Padrão: a cada **5 min**, olhando as últimas **2 h**
   (`LASTRO_CONCILIACAO_INTERVALO`, `LASTRO_CONCILIACAO_JANELA`). Intervalo `0`
   desliga, com aviso no log; janela zero é recusada.
@@ -312,9 +378,10 @@ impede as outras, e as recorrências não dependem de a consulta de Pix dar cert
   para assinar). https obrigatório (http só para localhost).
 - **Eventos:** `cobranca.criada`, `cobranca.revisada`, `cobranca.concluida`,
   `cobranca.removida`, `pix.recebido` (com `divergente` quando o valor pago
-  difere do cobrado), `certificado.expirando` (RN-62) e, do Pix Automático,
+  difere do cobrado), `devolucao.solicitada` (RN-21), `devolucao.atualizada` (RN-20), `certificado.expirando` (RN-62) e, do Pix Automático,
   `recorrencia.criada`, `recorrencia.atualizada` e `recorrencia.solicitacao`
-  (RN-40, RN-41). O corpo é o envelope do Standard Webhooks:
+  (RN-40, RN-41), e `cobranca_recorrente.criada`, `cobranca_recorrente.atualizada`
+  e `cobranca_recorrente.tentativa` (RN-42). O corpo é o envelope do Standard Webhooks:
   `{"type": ..., "timestamp": ..., "data": {...}}`, normalizado, igual para
   qualquer banco.
 - **Assinatura** no padrão [Standard Webhooks](https://www.standardwebhooks.com/):
@@ -342,7 +409,7 @@ impede as outras, e as recorrências não dependem de a consulta de Pix dar cert
 
 - Toda rota, exceto `/health`, exige `Authorization: Bearer lst_<id>_<segredo>`.
 - Escopos: `cob:read`, `cob:write`, `cobv:read`, `cobv:write`, `pix:read`,
-  `devolucao:write`, `rec:read`, `rec:write`, `webhook:admin`, `conta:admin`.
+  `devolucao:write`, `rec:read`, `rec:write`, `cobr:read`, `cobr:write`, `webhook:admin`, `conta:admin`.
   Cada rota exige exatamente um; rota sem escopo mapeado é **recusada** (falha
   fechado), e um teste aponta a rota esquecida.
 - O segredo aparece **uma vez**, na criação. Só o hash SHA-256 é gravado: com

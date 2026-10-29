@@ -104,13 +104,15 @@ func (p *PSP) ListarPix(ctx context.Context, conta domain.Conta, j ports.Janela)
 }
 
 type devolucaoEfi struct {
-	ID      string `json:"id,omitempty"`
-	RtrID   string `json:"rtrId,omitempty"`
-	Valor   string `json:"valor"`
-	Status  string `json:"status,omitempty"`
-	Motivo  string `json:"motivo,omitempty"`
-	Horario *struct {
+	ID       string `json:"id,omitempty"`
+	RtrID    string `json:"rtrId,omitempty"`
+	Valor    string `json:"valor"`
+	Natureza string `json:"natureza,omitempty"`
+	Status   string `json:"status,omitempty"`
+	Motivo   string `json:"motivo,omitempty"`
+	Horario  *struct {
 		Solicitacao string `json:"solicitacao"`
+		Liquidacao  string `json:"liquidacao,omitempty"`
 	} `json:"horario,omitempty"`
 	Descricao string `json:"descricao,omitempty"`
 }
@@ -136,6 +138,13 @@ func paraDevolucao(conta domain.Conta, r devolucaoEfi, base domain.Devolucao) (d
 	if r.Motivo != "" {
 		d.Motivo = r.Motivo
 	}
+	if r.Descricao != "" {
+		d.Descricao = r.Descricao
+	}
+	if r.Natureza != "" {
+		d.Natureza = domain.NaturezaDevolucao(r.Natureza)
+	}
+	d.RtrID = r.RtrID
 	if r.Horario != nil && r.Horario.Solicitacao != "" {
 		criada, err := parseHorario(r.Horario.Solicitacao)
 		if err != nil {
@@ -143,7 +152,23 @@ func paraDevolucao(conta domain.Conta, r devolucaoEfi, base domain.Devolucao) (d
 		}
 		d.CriadaEm = criada
 	}
+	if r.Horario != nil && r.Horario.Liquidacao != "" {
+		liquidada, err := parseHorario(r.Horario.Liquidacao)
+		if err != nil {
+			return domain.Devolucao{}, fmt.Errorf("efi: horario.liquidacao: %w", err)
+		}
+		d.LiquidadaEm = liquidada
+	}
 	return d, nil
+}
+
+// ConsultarDevolucao lê a devolução (GET /v2/pix/:e2eId/devolucao/:id).
+func (p *PSP) ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, id string) (domain.Devolucao, error) {
+	var r devolucaoEfi
+	if err := p.chamar(ctx, conta, http.MethodGet, caminhoDevolucao(e2e, id), nil, &r); err != nil {
+		return domain.Devolucao{}, err
+	}
+	return paraDevolucao(conta, r, domain.Devolucao{ID: id, EndToEndID: e2e})
 }
 
 // Devolver pede a devolução (PUT /v2/pix/:e2eId/devolucao/:id).
@@ -152,7 +177,7 @@ func paraDevolucao(conta domain.Conta, r devolucaoEfi, base domain.Devolucao) (d
 // idempotência pelo id, então o adapter consulta a devolução existente e a
 // devolve se o valor for o mesmo; valor diferente é ErrJaExiste.
 func (p *PSP) Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error) {
-	corpo := devolucaoEfi{Valor: d.Valor.String(), Descricao: d.Motivo}
+	corpo := devolucaoEfi{Valor: d.Valor.String(), Natureza: string(d.Natureza), Descricao: d.Descricao}
 	var r devolucaoEfi
 	err := p.chamar(ctx, conta, http.MethodPut, caminhoDevolucao(d.EndToEndID, d.ID), corpo, &r)
 	if errors.Is(err, errDevolucaoDuplicada) {

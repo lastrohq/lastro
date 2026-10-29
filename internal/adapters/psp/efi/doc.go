@@ -13,16 +13,21 @@
 //     status_cobranca_invalido → ErrTransicaoInvalida).
 //   - calendario.expiracao é número no envio e às vezes string ("3600") na
 //     resposta do GET.
-//   - Na cobv, o erro vem no formato de problema da spec (title/detail), e o
-//     Efí não documenta um nome para txid repetido. Se o PUT falha com 4xx e
-//     o txid já existe, o erro vira ErrJaExiste. Isso precisa ser confirmado
-//     na homologação.
+//   - Na cobv, o erro vem no formato de problema da spec (title/detail).
+//   - PUT /v2/cobv/:txid num txid que já existe não dá erro: sobrescreve a
+//     cobv e soma uma revisão (visto na homologação em 29/10/2026; na cob, o
+//     Efí recusa com txid_duplicado). O adapter consulta o txid antes do PUT e
+//     devolve ErrJaExiste, para não apagar uma cobrança existente.
+//   - A resposta da cobv não traz location no topo, só em loc.location.
 //   - Devolução com id repetido responde 409 devolucao_id_duplicado. O port
 //     pede idempotência, então o adapter devolve a devolução existente se o
 //     valor for o mesmo, e ErrJaExiste se for outro.
+//   - Devolução inexistente responde 400 devolucao_nao_encontrada, não 404
+//     (visto na homologação); o adapter devolve ErrNaoEncontrado.
 //   - GET /v2/pix filtra com fim inclusivo; o port pede [Inicio, Fim), e o
 //     adapter descarta o que cai exatamente em Fim.
 //
 // Homologação: só cobranças de R$ 0,01 a R$ 10,00 são confirmadas e geram
-// webhook; acima disso, a cobrança fica ATIVA.
+// webhook; acima disso, a cobrança fica ATIVA. A confirmação leva uns 30 s na
+// consulta, mas a cobrança já não aceita revisão segundos depois de criada.
 package efi
