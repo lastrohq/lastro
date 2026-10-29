@@ -56,3 +56,15 @@ func TestContaComCertificadoRecusadoResponde400(t *testing.T) {
 		})
 	}
 }
+
+func TestCertificadoDeHomologacaoEmProducaoResponde400(t *testing.T) {
+	a := novaAPI(t) // o leitor falso devolve sempre o mesmo certificado
+	if st := a.chamar(http.MethodPost, "/lastro/v1/contas", contaComCertificado, nil, nil); st != http.StatusCreated {
+		t.Fatalf("homologação: %d", st)
+	}
+	prod := strings.NewReplacer(`"id":"nova"`, `"id":"nova-prod"`, `nova@example.com`, `prod@example.com`, `"homologacao"`, `"producao"`).Replace(contaComCertificado)
+	rec := a.chamarBruto(http.MethodPost, "/lastro/v1/contas", prod, nil)
+	if rec.Code != http.StatusBadRequest || !strings.Contains(rec.Body.String(), "homologação nova") {
+		t.Fatalf("produção: %d %s", rec.Code, rec.Body)
+	}
+}

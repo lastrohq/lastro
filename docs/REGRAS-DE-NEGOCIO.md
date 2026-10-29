@@ -301,8 +301,14 @@ escrito em log — nem mascarado parcialmente.
   (`conta listar`, `GET /lastro/v1/contas`). São dados públicos do certificado;
   o certificado e a chave continuam cifrados (RN-61).
 - Alerta (painel e webhook `certificado.expirando`) a **30 dias** do vencimento.
-- Recusa usar em conta de produção um certificado marcado como de homologação
-  (o Bradesco, por exemplo, não aceita o mesmo certificado nos dois).
+- **Certificado de homologação não entra em conta de produção.** Nada no X.509
+  diz o ambiente; para o Lastro, é de homologação o certificado (pela impressão
+  digital) **já cadastrado numa conta de homologação**, mesmo que ela esteja
+  desativada. A conta de produção é recusada com o nome da conta onde ele está.
+  O contrário é aceito (certificado de produção numa conta de homologação), e
+  várias contas do mesmo ambiente podem compartilhar o certificado. Motivo: o
+  Bradesco, por exemplo, não aceita o mesmo certificado nos dois ambientes, e o
+  erro só apareceria na primeira cobrança real.
 
 ---
 

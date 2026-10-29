@@ -175,3 +175,72 @@ func TestCriarContaComCertificadoSemLeitorFalhaFechado(t *testing.T) {
 		t.Fatal("aceitou certificado sem conseguir conferir")
 	}
 }
+
+func contaEm(id string, ambiente domain.Ambiente) domain.Conta {
+	return domain.Conta{ID: id, Nome: "Loja", PSP: "sandbox", ChavePix: id + "@example.com", Ambiente: ambiente}
+}
+
+func TestCertificadoDeHomologacaoNaoEntraEmProducao(t *testing.T) {
+	svc, s := novoContas(t) // o leitor falso devolve sempre o mesmo certificado
+	ctx := context.Background()
+	if err := svc.Criar(ctx, contaEm("loja-homolog", domain.Homologacao), cred); err != nil {
+		t.Fatal(err)
+	}
+	err := svc.Criar(ctx, contaEm("loja-prod", domain.Producao), cred)
+	if !errors.Is(err, domain.ErrCertificadoDeHomologacao) || !errors.Is(err, domain.ErrContaInvalida) {
+		t.Fatalf("err = %v; quer ErrCertificadoDeHomologacao", err)
+	}
+	if !strings.Contains(err.Error(), "loja-homolog") {
+		t.Fatalf("a mensagem não diz qual conta de homologação tem o certificado: %v", err)
+	}
+	if _, err := s.Contas().Buscar(ctx, "loja-prod"); !errors.Is(err, ports.ErrNaoEncontrado) {
+		t.Fatalf("a conta recusada foi gravada: %v", err)
+	}
+}
+
+func TestCertificadoEAmbientePermitidos(t *testing.T) {
+	outroCert := certValido
+	outroCert.ImpressaoDigital = "cd34"
+	for nome, c := range map[string]struct {
+		primeira, segunda domain.Ambiente
+		certSegunda       domain.Certificado
+	}{
+		"produção e depois homologação":  {domain.Producao, domain.Homologacao, certValido},
+		"duas de homologação":            {domain.Homologacao, domain.Homologacao, certValido},
+		"duas de produção":               {domain.Producao, domain.Producao, certValido},
+		"produção com outro certificado": {domain.Homologacao, domain.Producao, outroCert},
+	} {
+		t.Run(nome, func(t *testing.T) {
+			svc, _ := novoContas(t)
+			ctx := context.Background()
+			if err := svc.Criar(ctx, contaEm("a", c.primeira), cred); err != nil {
+				t.Fatal(err)
+			}
+			svc.Certificados = fake.Certificados{Certificado: c.certSegunda}
+			if err := svc.Criar(ctx, contaEm("b", c.segunda), cred); err != nil {
+				t.Fatalf("recusou: %v", err)
+			}
+		})
+	}
+}
+
+func TestContaDeHomologacaoDesativadaAindaMarcaOCertificado(t *testing.T) {
+	svc, _ := novoContas(t)
+	ctx := context.Background()
+	_ = svc.Criar(ctx, contaEm("velha", domain.Homologacao), cred)
+	if err := svc.Desativar(ctx, "velha"); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.Criar(ctx, contaEm("prod", domain.Producao), cred); !errors.Is(err, domain.ErrCertificadoDeHomologacao) {
+		t.Fatalf("err = %v; o certificado continua sendo de homologação mesmo com a conta desativada", err)
+	}
+}
+
+func TestContaDeProducaoSemCertificadoNaoEConferida(t *testing.T) {
+	svc, _ := novoContas(t)
+	ctx := context.Background()
+	_ = svc.Criar(ctx, contaEm("homolog", domain.Homologacao), cred)
+	if err := svc.Criar(ctx, contaEm("prod", domain.Producao), domain.Credenciais{ClientID: "x"}); err != nil {
+		t.Fatalf("conta sem certificado recusada: %v", err)
+	}
+}
