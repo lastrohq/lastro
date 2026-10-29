@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
 )
 
 // segundos aceita número ou string: o Efí envia expiracao como string no GET.
@@ -83,8 +82,12 @@ func paraValor(v domain.Money, permiteAlteracao bool) *valor {
 	return out
 }
 
-// corpoCob monta o PUT /v2/cob/:txid a partir da cobrança do domínio.
-func corpoCob(c domain.Cobranca) cobEfi {
+// corpoCob monta o PUT /v2/cob/:txid a partir da cobrança do domínio. Sem chave
+// na cobrança, vale a chave da conta (o Efí exige a chave).
+func corpoCob(conta domain.Conta, c domain.Cobranca) cobEfi {
+	if c.Chave == "" {
+		c.Chave = conta.ChavePix
+	}
 	return cobEfi{
 		Calendario:         &calendario{Expiracao: segundos(c.Expiracao / time.Second)},
 		Devedor:            paraDevedor(c.Devedor),
@@ -162,7 +165,7 @@ func caminhoCob(txid domain.Txid) string { return "/v2/cob/" + url.PathEscape(st
 // CriarCob cria a cobrança com o txid do Lastro (PUT /v2/cob/:txid).
 func (p *PSP) CriarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
 	var r cobEfi
-	if err := p.chamar(ctx, conta, http.MethodPut, caminhoCob(c.Txid), corpoCob(c), &r); err != nil {
+	if err := p.chamar(ctx, conta, http.MethodPut, caminhoCob(c.Txid), corpoCob(conta, c), &r); err != nil {
 		return domain.Cobranca{}, err
 	}
 	return paraCobranca(conta, r, c)
@@ -180,7 +183,7 @@ func (p *PSP) ConsultarCob(ctx context.Context, conta domain.Conta, txid domain.
 // RevisarCob envia o novo estado (PATCH /v2/cob/:txid). Remoção pelo recebedor
 // vai sozinha, só com o status, como no exemplo do Efí.
 func (p *PSP) RevisarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
-	corpo := corpoCob(c)
+	corpo := corpoCob(conta, c)
 	corpo.Chave = "" // a chave não muda numa revisão
 	if c.Status == domain.CobrancaRemovidaPeloUsuarioRecebedor {
 		corpo = cobEfi{Status: string(c.Status)}
@@ -190,20 +193,6 @@ func (p *PSP) RevisarCob(ctx context.Context, conta domain.Conta, c domain.Cobra
 		return domain.Cobranca{}, err
 	}
 	return paraCobranca(conta, r, c)
-}
-
-func naoImplementado(capacidade ports.Capacidade) error {
-	return fmt.Errorf("efi: %w: %s ainda não implementado neste adapter", ports.ErrNaoSuportado, capacidade)
-}
-
-// ConfigurarWebhook ainda não está implementado no adapter do Efí.
-func (p *PSP) ConfigurarWebhook(context.Context, domain.Conta, string) error {
-	return naoImplementado(ports.CapWebhook)
-}
-
-// InterpretarWebhook ainda não está implementado no adapter do Efí.
-func (p *PSP) InterpretarWebhook(domain.Conta, []byte) ([]domain.PixRecebido, error) {
-	return nil, naoImplementado(ports.CapWebhook)
 }
 
 var _ json.Unmarshaler = (*segundos)(nil)

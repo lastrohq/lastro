@@ -84,7 +84,10 @@ func deModalidade(m *modalidade) (*domain.ValorModalidade, error) {
 	return &domain.ValorModalidade{Modalidade: m.Modalidade, ValorPerc: v}, nil
 }
 
-func corpoCobv(c domain.CobrancaVencimento) cobvEfi {
+func corpoCobv(conta domain.Conta, c domain.CobrancaVencimento) cobvEfi {
+	if c.Chave == "" {
+		c.Chave = conta.ChavePix
+	}
 	d := c.Devedor
 	dv := &devedorV{Nome: d.Nome, Email: d.Email, Logradouro: d.Logradouro, Cidade: d.Cidade, UF: d.UF, CEP: d.CEP}
 	if len(d.Documento) == 11 {
@@ -214,7 +217,7 @@ func caminhoCobv(txid domain.Txid) string { return "/v2/cobv/" + url.PathEscape(
 // se a cobv já existe, o erro é ErrJaExiste. A confirmar na homologação.
 func (p *PSP) CriarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
 	var r cobvEfi
-	err := p.chamar(ctx, conta, http.MethodPut, caminhoCobv(c.Txid), corpoCobv(c), &r)
+	err := p.chamar(ctx, conta, http.MethodPut, caminhoCobv(c.Txid), corpoCobv(conta, c), &r)
 	if err != nil {
 		var e *erroHTTP
 		if errors.As(err, &e) && e.status >= 400 && e.status < 500 && !errors.Is(err, ports.ErrJaExiste) {
@@ -239,7 +242,7 @@ func (p *PSP) ConsultarCobv(ctx context.Context, conta domain.Conta, txid domain
 // RevisarCobv envia o novo estado (PATCH /v2/cobv/:txid). Remoção pelo
 // recebedor vai sozinha, só com o status.
 func (p *PSP) RevisarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
-	corpo := corpoCobv(c)
+	corpo := corpoCobv(conta, c)
 	corpo.Chave = ""
 	if c.Status == domain.CobrancaRemovidaPeloUsuarioRecebedor {
 		corpo = cobvEfi{Status: string(c.Status)}

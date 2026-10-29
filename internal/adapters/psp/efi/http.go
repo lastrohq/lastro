@@ -46,6 +46,11 @@ func buscarToken(mtls *http.Client, base, clientID, clientSecret string, clock p
 
 // chamar faz a requisição na API Pix da conta e decodifica a resposta em saida.
 func (p *PSP) chamar(ctx context.Context, conta domain.Conta, metodo, caminho string, entrada, saida any) error {
+	return p.chamarCom(ctx, conta, metodo, caminho, entrada, saida, nil)
+}
+
+// chamarCom é o chamar com headers extras.
+func (p *PSP) chamarCom(ctx context.Context, conta domain.Conta, metodo, caminho string, entrada, saida any, headers map[string]string) error {
 	c, err := p.clienteDa(ctx, conta)
 	if err != nil {
 		return err
@@ -67,6 +72,9 @@ func (p *PSP) chamar(ctx context.Context, conta domain.Conta, metodo, caminho st
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("Accept", "application/json")
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return fmt.Errorf("efi: %s %s: %w", metodo, caminho, err)

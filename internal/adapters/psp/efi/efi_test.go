@@ -225,12 +225,15 @@ func TestTrocarCredenciaisMontaOutroCliente(t *testing.T) {
 	}
 }
 
-func TestCapacidadesAindaNaoImplementadas(t *testing.T) {
+func TestDeclaraAsCapacidadesImplementadas(t *testing.T) {
 	c := novo(t)
-	if err := c.psp.Capabilities().Suporta(ports.CapWebhook); !errors.Is(err, ports.ErrNaoSuportado) {
-		t.Fatalf("declara webhook antes de implementar: %v", err)
+	for _, capacidade := range []ports.Capacidade{ports.CapCob, ports.CapCobv, ports.CapDevolucao, ports.CapWebhook} {
+		if err := c.psp.Capabilities().Suporta(capacidade); err != nil {
+			t.Errorf("%s: %v", capacidade, err)
+		}
 	}
-	if err := c.psp.ConfigurarWebhook(context.Background(), c.conta, "https://x"); !errors.Is(err, ports.ErrNaoSuportado) {
-		t.Fatalf("ConfigurarWebhook: %v", err)
+	// Pix Automático é a F6.
+	if err := c.psp.Capabilities().Suporta(ports.CapRec); !errors.Is(err, ports.ErrNaoSuportado) {
+		t.Errorf("declara rec antes da F6: %v", err)
 	}
 }
