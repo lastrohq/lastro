@@ -21,6 +21,7 @@ type Store interface {
 	Contas() ContaRepo
 	Cobrancas() CobrancaRepo
 	CobrancasV() CobrancaVRepo
+	Pix() PixRepo
 	Outbox() OutboxRepo
 	APIKeys() APIKeyRepo
 	Idempotencia() IdempotenciaRepo
@@ -41,6 +42,10 @@ type ContaRepo interface {
 	SalvarCredenciais(ctx context.Context, contaID string, cifrado []byte) error
 	// BuscarCredenciais devolve o blob cifrado, ou ErrNaoEncontrado se a conta não tiver credenciais.
 	BuscarCredenciais(ctx context.Context, contaID string) ([]byte, error)
+	// SalvarTokenWebhook grava o hash do token da URL de webhook da conta.
+	SalvarTokenWebhook(ctx context.Context, contaID string, hash []byte) error
+	// BuscarTokenWebhook devolve o hash, ou ErrNaoEncontrado se a conta não tiver webhook configurado.
+	BuscarTokenWebhook(ctx context.Context, contaID string) ([]byte, error)
 }
 
 // FiltroCobrancas restringe a listagem; zero vale "sem filtro".
@@ -108,4 +113,14 @@ type CobrancaVRepo interface {
 	// Listar usa os mesmos filtros e paginação da cob; Janela filtra pela criação.
 	Listar(ctx context.Context, f FiltroCobrancas) ([]domain.CobrancaVencimento, string, error)
 	Contar(ctx context.Context, f FiltroCobrancas) (int, error)
+}
+
+// PixRepo guarda os Pix recebidos. O endToEndId é único: o mesmo pagamento
+// avisado duas vezes (webhook repetido, conciliação) é gravado uma vez só (RN-30).
+type PixRepo interface {
+	// Registrar grava o Pix e devolve novo=false, sem erro, se ele já existia.
+	Registrar(ctx context.Context, p domain.PixRecebido) (novo bool, err error)
+	BuscarPorE2E(ctx context.Context, e2e string) (domain.PixRecebido, error)
+	// ListarPorTxid devolve os Pix de uma cobrança, em ordem de horário.
+	ListarPorTxid(ctx context.Context, txid domain.Txid) ([]domain.PixRecebido, error)
 }

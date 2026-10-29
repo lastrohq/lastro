@@ -22,6 +22,7 @@ type Opcoes struct {
 	Cobrancas  app.Cobrancas
 	CobrancasV app.CobrancasV
 	Contas     app.Contas
+	Webhooks   app.Webhooks
 	APIKeys    app.APIKeys
 	// Idempotencia vazia (Store nil) desliga o Idempotency-Key.
 	Idempotencia app.Idempotencia
@@ -34,6 +35,7 @@ type Server struct {
 	cobrancas  app.Cobrancas
 	cobrancasV app.CobrancasV
 	contas     app.Contas
+	webhooks   app.Webhooks
 	clock      ports.Clock
 }
 
@@ -41,7 +43,7 @@ var _ gen.StrictServerInterface = (*Server)(nil)
 
 // NewRouter monta o roteador HTTP a partir do contrato gerado.
 func NewRouter(o Opcoes) http.Handler {
-	s := &Server{version: o.Versao, cobrancas: o.Cobrancas, cobrancasV: o.CobrancasV, contas: o.Contas, clock: o.Clock}
+	s := &Server{version: o.Versao, cobrancas: o.Cobrancas, cobrancasV: o.CobrancasV, contas: o.Contas, webhooks: o.Webhooks, clock: o.Clock}
 	strict := gen.NewStrictHandlerWithOptions(s, nil, gen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			escreverProblema(w, gen.Problema{Status: http.StatusBadRequest, Type: tipoErro("RequisicaoInvalida"), Title: "Requisição inválida", Detail: ptr(err.Error())})
@@ -54,11 +56,20 @@ func NewRouter(o Opcoes) http.Handler {
 		// Rodam por rota, depois do roteamento: r.Pattern já diz qual escopo exigir.
 		// O último da lista é o mais externo: autentica primeiro, porque a
 		// Idempotency-Key pertence à API key.
-		Middlewares: []gen.MiddlewareFunc{idempotente(o.Idempotencia), autenticar(o.APIKeys)},
+		Middlewares: []gen.MiddlewareFunc{idempotente(o.Idempotencia), autenticar(o.APIKeys), limitarCorpo},
 		// Parâmetro de path, query ou header fora do contrato também responde como Problema.
 		ErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			escreverProblema(w, gen.Problema{Status: http.StatusBadRequest, Type: tipoErro("RequisicaoInvalida"), Title: "Requisição inválida", Detail: ptr(err.Error())})
 		},
+	})
+}
+
+// limitarCorpo recusa corpos acima de 1 MiB em qualquer rota. As rotas de
+// webhook são públicas: sem limite, qualquer um mandaria um corpo gigante.
+func limitarCorpo(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, limiteCorpo)
+		next.ServeHTTP(w, r)
 	})
 }
 

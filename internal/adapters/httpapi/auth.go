@@ -28,8 +28,13 @@ var escopoDaRota = map[string]domain.Escopo{
 	"POST /lastro/v1/contas/{id}/desativar": domain.EscopoContaAdmin,
 }
 
-// rotasPublicas não exigem API key.
-var rotasPublicas = map[string]bool{"GET /health": true}
+// rotasPublicas não exigem API key. Os webhooks são chamados pelo banco e
+// autenticados pelo token da URL, conferido no caso de uso.
+var rotasPublicas = map[string]bool{
+	"GET /health":                              true,
+	"POST /webhooks/pix/{contaId}/{token}":     true,
+	"POST /webhooks/pix/{contaId}/{token}/pix": true,
+}
 
 // autenticar exige "Authorization: Bearer lst_..." com o escopo da rota, e
 // anexa o acesso (conta restrita, se houver) ao contexto dos casos de uso.

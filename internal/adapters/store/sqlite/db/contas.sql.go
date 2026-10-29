@@ -100,6 +100,17 @@ func (q *Queries) BuscarCredenciais(ctx context.Context, id string) ([]byte, err
 	return credenciais, err
 }
 
+const buscarTokenWebhook = `-- name: BuscarTokenWebhook :one
+SELECT webhook_token_hash FROM contas WHERE id = ?
+`
+
+func (q *Queries) BuscarTokenWebhook(ctx context.Context, id string) ([]byte, error) {
+	row := q.db.QueryRowContext(ctx, buscarTokenWebhook, id)
+	var webhook_token_hash []byte
+	err := row.Scan(&webhook_token_hash)
+	return webhook_token_hash, err
+}
+
 const criarConta = `-- name: CriarConta :exec
 INSERT INTO contas (id, nome, psp, chave_pix, ambiente, ativa) VALUES (?, ?, ?, ?, ?, ?)
 `
@@ -179,6 +190,23 @@ type SalvarCredenciaisParams struct {
 
 func (q *Queries) SalvarCredenciais(ctx context.Context, arg SalvarCredenciaisParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, salvarCredenciais, arg.Credenciais, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const salvarTokenWebhook = `-- name: SalvarTokenWebhook :execrows
+UPDATE contas SET webhook_token_hash = ? WHERE id = ?
+`
+
+type SalvarTokenWebhookParams struct {
+	WebhookTokenHash []byte
+	ID               string
+}
+
+func (q *Queries) SalvarTokenWebhook(ctx context.Context, arg SalvarTokenWebhookParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, salvarTokenWebhook, arg.WebhookTokenHash, arg.ID)
 	if err != nil {
 		return 0, err
 	}

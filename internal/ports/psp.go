@@ -63,6 +63,9 @@ type PSP interface {
 	ListarPix(ctx context.Context, conta domain.Conta, j Janela) ([]domain.PixRecebido, error)
 	Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error)
 	ConfigurarWebhook(ctx context.Context, conta domain.Conta, url string) error
+	// InterpretarWebhook lê o corpo que o PSP enviou ao webhook. Quem segue a
+	// spec usa psp.WebhookPixBCB; quem desvia trata o desvio aqui.
+	InterpretarWebhook(conta domain.Conta, corpo []byte) ([]domain.PixRecebido, error)
 }
 
 // ErrPSPDesconhecido indica um nome de PSP que nenhum adapter registrou.

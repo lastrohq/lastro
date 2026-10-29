@@ -34,7 +34,11 @@ func (s *Server) ConsultarCobv(ctx context.Context, r gen.ConsultarCobvRequestOb
 	if err != nil {
 		return nil, err
 	}
-	return gen.ConsultarCobv200JSONResponse(s.cobvCompleta(c)), nil
+	out := s.cobvCompleta(c)
+	if out.Pix, err = s.pixDaCobranca(ctx, c.ContaID, c.Txid); err != nil {
+		return nil, err
+	}
+	return gen.ConsultarCobv200JSONResponse(out), nil
 }
 
 // RevisarCobv aplica um PATCH na cobv.
@@ -187,7 +191,7 @@ func (s *Server) cobvGerada(c domain.CobrancaVencimento) gen.CobVGerada {
 	return g
 }
 
-// cobvCompleta é a cobvGerada mais a lista de Pix, que chega com a conciliação (F4).
+// cobvCompleta é a cobvGerada; a lista de Pix é preenchida só na consulta individual.
 func (s *Server) cobvCompleta(c domain.CobrancaVencimento) gen.CobVCompleta {
 	g := s.cobvGerada(c)
 	return gen.CobVCompleta{
