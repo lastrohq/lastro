@@ -31,7 +31,7 @@ comunidade sem medo.
 | `internal/adapters/psp/*` | Um pacote por banco + `sandbox` | `ports`, `domain`, `platform`, o registry `adapters/psp`, `pkg` |
 | `internal/adapters/store/*` | `sqlite` (padrão), `postgres` (v0.3) | `ports`, `domain` |
 | `internal/adapters/notifier` | Outbox, entrega, retry, DLQ, assinatura | `ports`, `domain` |
-| `internal/adapters/mcp` | Ferramentas MCP sobre os casos de uso | `app`, `ports`, `domain` |
+| `internal/adapters/mcp` | Ferramentas MCP sobre a API HTTP, com a API key do agente ([ADR-008](adr/008-mcp-como-cliente-da-api.md)) | SDK MCP, `net/http` |
 | `internal/adapters/jobs` | Laço periódico (conciliação, entrega, limpezas) | só stdlib/libs |
 | `internal/platform` | `vault` (AES-256-GCM), `oauth` (cache de token OAuth2 por conta), `certificado` (leitura de .p12/PEM), e depois mTLS | só stdlib/libs — a checagem `var _ ports.Vault` fica no teste |
 | `internal/adapters/psp` | `Registry` + um subpacote por banco | `ports`, `domain` |

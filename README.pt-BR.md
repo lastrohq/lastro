@@ -25,6 +25,23 @@ terminal: cinco segundos depois o "pagador" de mentira paga e a cobrança vira
 `CONCLUIDA`. Sem conta PJ, sem configurar nada. Sem Docker:
 `go run ./cmd/lastro sandbox`. Valores mágicos no [guia do sandbox](./docs/SANDBOX.md).
 
+## Use com seu agente
+
+`lastro mcp` é um servidor MCP para agentes de IA: cria, consulta, lista e
+cancela cobranças Pix, e devolve pagamentos. Ele fala com a API do Lastro usando
+uma API key, então os escopos da key valem: uma key só de leitura dá um agente
+que só consulta.
+
+```bash
+lastro sandbox   # copie a key lst_... que ele imprime
+claude mcp add lastro -e LASTRO_TOKEN=lst_... -e LASTRO_CHAVE_PIX=sandbox@lastro.dev -- lastro mcp
+```
+
+Depois peça: *"cobre R$ 49,90 do pedido 42 e me mostre o Pix copia e cola"*.
+Qualquer cliente MCP funciona igual: rode `lastro mcp` por stdio com
+`LASTRO_URL` (padrão `http://localhost:8080`), `LASTRO_TOKEN` e, se quiser,
+`LASTRO_CHAVE_PIX`.
+
 ## Por quê
 
 Gateways cobram a partir de ~1,19% por Pix — num meio de pagamento que custa

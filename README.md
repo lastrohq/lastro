@@ -25,6 +25,22 @@ seconds later the fake payer pays and the charge turns `CONCLUIDA`. No bank
 account, no config. Without Docker: `go run ./cmd/lastro sandbox`.
 See [the sandbox guide (pt-BR)](./docs/SANDBOX.md) for magic values.
 
+## Use it from your agent
+
+`lastro mcp` is an MCP server for AI agents: create, check, list and cancel Pix
+charges, and refund payments. It talks to the Lastro API with an API key, so the
+key's scopes apply — a read-only key gives you an agent that can only look.
+
+```bash
+lastro sandbox   # copy the lst_... key it prints
+claude mcp add lastro -e LASTRO_TOKEN=lst_... -e LASTRO_CHAVE_PIX=sandbox@lastro.dev -- lastro mcp
+```
+
+Then ask: *"charge R$ 49.90 for order 42 and show me the Pix code"*. Any MCP
+client works the same way: run `lastro mcp` over stdio with `LASTRO_URL`
+(default `http://localhost:8080`), `LASTRO_TOKEN` and, optionally,
+`LASTRO_CHAVE_PIX`.
+
 ## Why
 
 Payment gateways charge ~1% or more per Pix — on a payment rail that costs the
