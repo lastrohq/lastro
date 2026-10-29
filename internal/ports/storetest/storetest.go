@@ -54,6 +54,7 @@ func comContas(t *testing.T, novo func(t *testing.T) ports.Store) ports.Store {
 func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 	runRecorrencias(t, novo)
 	runCobr(t, novo)
+	runDevolucoes(t, novo)
 	t.Run("conta: guarda os dados públicos do certificado", func(t *testing.T) {
 		s, ctx := novo(t), context.Background()
 		c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true,

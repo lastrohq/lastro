@@ -7,3 +7,5 @@ sql:
       go:
         package: db
         out: internal/adapters/store/sqlite/db
+        rename:
+          devoluco: Devolucao

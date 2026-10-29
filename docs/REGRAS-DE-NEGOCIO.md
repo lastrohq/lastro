@@ -148,9 +148,20 @@ EM_PROCESSAMENTO ──▶ DEVOLVIDO
 ### RN-21 · Limites
 
 - A soma das devoluções de um Pix (`endToEndId`) não ultrapassa o valor recebido.
-- Devolução identificada pelo par `e2eid` + `id` (id definido pelo cliente,
-  idempotente).
+  Devolução `NAO_REALIZADO` não conta: o valor dela volta a estar disponível.
+- Devolução identificada pelo par `e2eid` + `id` (id definido pelo cliente, de 1
+  a 35 caracteres `[a-zA-Z0-9]`). **Idempotente:** repetir o par com o mesmo
+  valor devolve a devolução existente sem chamar o banco; com outro valor, 409.
 - Prazo máximo de **90 dias** após o pagamento — validado antes de chamar o banco.
+- Natureza `ORIGINAL` (o default). `RETIRADA` é a devolução de Pix Saque ou
+  Troco, que o Lastro não recebe, e é recusada. Descrição até 140 caracteres.
+- Tudo isso é conferido **antes de chamar o banco**. Devoluções simultâneas do
+  mesmo Pix são feitas uma de cada vez, para que juntas não passem do valor.
+- O Pix precisa estar gravado no Lastro (webhook ou conciliação) e ser da conta
+  da API key restrita; senão, 404. Conta desativada continua devolvendo: o Pix
+  já entrou.
+- Cada devolução aceita pelo banco é gravada com o evento `devolucao.solicitada`.
+  Se o banco falhar, nada é gravado nem publicado.
 
 ---
 
@@ -352,7 +363,7 @@ impede as outras, e as recorrências não dependem de a consulta de Pix dar cert
   para assinar). https obrigatório (http só para localhost).
 - **Eventos:** `cobranca.criada`, `cobranca.revisada`, `cobranca.concluida`,
   `cobranca.removida`, `pix.recebido` (com `divergente` quando o valor pago
-  difere do cobrado), `certificado.expirando` (RN-62) e, do Pix Automático,
+  difere do cobrado), `devolucao.solicitada` (RN-21), `certificado.expirando` (RN-62) e, do Pix Automático,
   `recorrencia.criada`, `recorrencia.atualizada` e `recorrencia.solicitacao`
   (RN-40, RN-41), e `cobranca_recorrente.criada`, `cobranca_recorrente.atualizada`
   e `cobranca_recorrente.tentativa` (RN-42). O corpo é o envelope do Standard Webhooks:
