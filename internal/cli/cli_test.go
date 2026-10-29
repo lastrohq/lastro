@@ -154,3 +154,22 @@ func TestContaWebhookValidaArgumentos(t *testing.T) {
 		t.Fatalf("sem --url-publica: err = %v", err)
 	}
 }
+
+func TestConciliarEValidaDuracoes(t *testing.T) {
+	env := envComBanco(t)
+	amb, out := ambiente(t, env)
+	if err := Run(context.Background(), []string{"conciliar"}, amb); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "0 contas conciliadas") {
+		t.Fatalf("saída: %s", out)
+	}
+	env["LASTRO_CONCILIACAO_JANELA"] = "duas horas"
+	if err := Run(context.Background(), []string{"conciliar"}, amb); err == nil || !strings.Contains(err.Error(), "LASTRO_CONCILIACAO_JANELA") {
+		t.Fatalf("janela inválida: err = %v", err)
+	}
+	env["LASTRO_CONCILIACAO_JANELA"] = "0s"
+	if err := Run(context.Background(), []string{"conciliar"}, amb); err == nil {
+		t.Fatal("aceitou janela zero")
+	}
+}
