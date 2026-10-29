@@ -1,0 +1,11 @@
+/* Ouro do design system (docs/DESIGN-SYSTEM.md), nos tons que passam AA. */
+:root {
+  --sl-color-accent-low: #3b2c05;
+  --sl-color-accent: #d4a017;
+  --sl-color-accent-high: #f3dc9a;
+}
+:root[data-theme="light"] {
+  --sl-color-accent-low: #f6ecd2;
+  --sl-color-accent: #946c08;
+  --sl-color-accent-high: #4a3604;
+}

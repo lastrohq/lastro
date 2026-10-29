@@ -10,7 +10,7 @@ cuida dos certificados mTLS e normaliza os webhooks.
 
 <img src="docs/demo/sandbox.gif" alt="lastro sandbox: uma cobrança Pix é criada e paga em poucos segundos" width="820">
 
-[English](./README.md) · [Docs](./docs) · [Board](https://github.com/orgs/lastrohq/projects/1)
+[English](./README.md) · [Docs](https://lastrohq.github.io/lastro/) · [Board](https://github.com/orgs/lastrohq/projects/1)
 
 </div>
 
