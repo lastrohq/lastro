@@ -59,6 +59,7 @@ func novaAPI(t *testing.T) *api {
 		CobrancasV:   app.CobrancasV{Store: store, PSPs: registry, Clock: clock},
 		Contas:       app.Contas{Store: store, Vault: v, PSPs: registry, Certificados: certs, Clock: clock},
 		Webhooks:     webhooks,
+		Recorrencias: app.Recorrencias{Store: store, PSPs: registry, Clock: clock},
 		APIKeys:      keys,
 		Idempotencia: app.Idempotencia{Store: store, Clock: clock},
 		Clock:        clock,

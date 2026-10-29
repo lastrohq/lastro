@@ -224,3 +224,23 @@ func TestSolicitarConfirmacaoRecusa(t *testing.T) {
 		}
 	})
 }
+
+func TestRecorrenciaDeOutraContaNaoAparece(t *testing.T) {
+	svc, s, _ := novasRecorrencias(t)
+	ctx := context.Background()
+	_, _ = svc.Criar(ctx, "loja", pedidoRec())
+	_ = s.Contas().Criar(ctx, domain.Conta{ID: "outra", Nome: "Outra", PSP: "banco-rec", ChavePix: "outra@example.com", Ambiente: domain.Producao, Ativa: true})
+	daOutra := app.ComAcesso(ctx, app.Acesso{ContaID: "outra"})
+	if _, err := svc.Consultar(daOutra, idRecPSP); !errors.Is(err, ports.ErrNaoEncontrado) {
+		t.Fatalf("consultar de outra conta: %v", err)
+	}
+	if _, err := svc.SolicitarConfirmacao(daOutra, idRecPSP, domain.ContaPagador{ISPB: "18236120", Conta: "1"}, agoraRec.Add(time.Hour)); !errors.Is(err, ports.ErrNaoEncontrado) {
+		t.Fatalf("solicitar de outra conta: %v", err)
+	}
+	if _, err := svc.Criar(daOutra, "loja", pedidoRec()); !errors.Is(err, ports.ErrNaoEncontrado) {
+		t.Fatalf("criar na conta dos outros: %v", err)
+	}
+	if _, err := svc.Consultar(app.ComAcesso(ctx, app.Acesso{ContaID: "loja"}), idRecPSP); err != nil {
+		t.Fatalf("a própria conta não enxerga: %v", err)
+	}
+}

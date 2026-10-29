@@ -352,6 +352,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 			CobrancasV:   app.CobrancasV{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			Contas:       contas,
 			Webhooks:     app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock}},
+			Recorrencias: app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			APIKeys:      app.APIKeys{Store: store, Clock: amb.Clock},
 			Idempotencia: app.Idempotencia{Store: store, Clock: amb.Clock},
 			Clock:        amb.Clock,

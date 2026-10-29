@@ -23,7 +23,9 @@ type Opcoes struct {
 	CobrancasV app.CobrancasV
 	Contas     app.Contas
 	Webhooks   app.Webhooks
-	APIKeys    app.APIKeys
+	// Recorrencias vazia (Store nil) faz as rotas de Pix Automático responderem 501.
+	Recorrencias app.Recorrencias
+	APIKeys      app.APIKeys
 	// Idempotencia vazia (Store nil) desliga o Idempotency-Key.
 	Idempotencia app.Idempotencia
 	Clock        ports.Clock
@@ -31,19 +33,20 @@ type Opcoes struct {
 
 // Server implementa gen.StrictServerInterface.
 type Server struct {
-	version    string
-	cobrancas  app.Cobrancas
-	cobrancasV app.CobrancasV
-	contas     app.Contas
-	webhooks   app.Webhooks
-	clock      ports.Clock
+	version      string
+	cobrancas    app.Cobrancas
+	cobrancasV   app.CobrancasV
+	contas       app.Contas
+	webhooks     app.Webhooks
+	recorrencias app.Recorrencias
+	clock        ports.Clock
 }
 
 var _ gen.StrictServerInterface = (*Server)(nil)
 
 // NewRouter monta o roteador HTTP a partir do contrato gerado.
 func NewRouter(o Opcoes) http.Handler {
-	s := &Server{version: o.Versao, cobrancas: o.Cobrancas, cobrancasV: o.CobrancasV, contas: o.Contas, webhooks: o.Webhooks, clock: o.Clock}
+	s := &Server{version: o.Versao, cobrancas: o.Cobrancas, cobrancasV: o.CobrancasV, contas: o.Contas, webhooks: o.Webhooks, recorrencias: o.Recorrencias, clock: o.Clock}
 	strict := gen.NewStrictHandlerWithOptions(s, nil, gen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			escreverProblema(w, gen.Problema{Status: http.StatusBadRequest, Type: tipoErro("RequisicaoInvalida"), Title: "Requisição inválida", Detail: ptr(err.Error())})

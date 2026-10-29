@@ -64,6 +64,9 @@ func pspRecorrencia(r ports.Registry, conta domain.Conta) (ports.PSPRecorrencia,
 // Criar valida a recorrência, envia ao PSP da conta e grava o que o PSP
 // devolveu, com o idRec dele, junto com o evento recorrencia.criada.
 func (s Recorrencias) Criar(ctx context.Context, contaID string, r domain.Recorrencia) (domain.Recorrencia, error) {
+	if !AcessoDe(ctx).enxerga(contaID) {
+		return domain.Recorrencia{}, fmt.Errorf("conta %s: %w", contaID, ports.ErrNaoEncontrado)
+	}
 	conta, err := s.Store.Contas().Buscar(ctx, contaID)
 	if err != nil {
 		return domain.Recorrencia{}, err
@@ -107,9 +110,17 @@ func (s Recorrencias) Criar(ctx context.Context, contaID string, r domain.Recorr
 	return criada, nil
 }
 
-// Consultar devolve a recorrência gravada.
+// Consultar devolve a recorrência gravada. Acesso restrito a outra conta não
+// a enxerga: responde ErrNaoEncontrado, sem revelar que ela existe.
 func (s Recorrencias) Consultar(ctx context.Context, idRec string) (domain.Recorrencia, error) {
-	return s.Store.Recorrencias().Buscar(ctx, idRec)
+	rec, err := s.Store.Recorrencias().Buscar(ctx, idRec)
+	if err != nil {
+		return domain.Recorrencia{}, err
+	}
+	if !AcessoDe(ctx).enxerga(rec.ContaID) {
+		return domain.Recorrencia{}, fmt.Errorf("recorrência %s: %w", idRec, ports.ErrNaoEncontrado)
+	}
+	return rec, nil
 }
 
 // idSolicRec segue a regra de formação da spec: SC + ISPB + data + 11 caracteres.
@@ -118,7 +129,7 @@ var idSolicRec = regexp.MustCompile(`^SC[0-9A-Z]{8}[0-9]{8}[a-zA-Z0-9]{11}$`)
 // SolicitarConfirmacao pede a autorização da recorrência no app do pagador
 // (jornada 1). Só recorrência CRIADA pede confirmação.
 func (s Recorrencias) SolicitarConfirmacao(ctx context.Context, idRec string, destinatario domain.ContaPagador, expiraEm time.Time) (domain.SolicitacaoRecorrencia, error) {
-	rec, err := s.Store.Recorrencias().Buscar(ctx, idRec)
+	rec, err := s.Consultar(ctx, idRec)
 	if err != nil {
 		return domain.SolicitacaoRecorrencia{}, err
 	}

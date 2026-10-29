@@ -178,6 +178,10 @@ CRIADA ──▶ APROVADA ──▶ CANCELADA
   um **piso para esse máximo** (`valorMinimoRecebedor`): com piso de R$ 50,00,
   o pagador não autoriza um máximo de R$ 30,00. Fixo e piso são excludentes.
 - Só gera cobrança (`cobr`) quando `APROVADA`.
+- **Pela API, a recorrência é criada com uma API key restrita a uma conta.** É
+  ela que identifica o recebedor, como a credencial do cliente na spec do BCB;
+  key irrestrita responde 400. Consultar e pedir confirmação seguem a RN-60:
+  recorrência de outra conta responde 404.
 - Rejeição pelo pagador vem com motivo; o Lastro guarda o motivo.
 - A autorização é dada por uma de quatro **jornadas** do BCB: (1) notificação no
   app do pagador, sem QR Code (`/solicrec`); (2) QR Code só com a recorrência;
