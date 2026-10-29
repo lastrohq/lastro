@@ -77,4 +77,22 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
   memória, até o Lastro gravar devoluções (F7).
 - **Valor da cobv:** o sandbox paga o valor **original**. Multa, juros e desconto
   são calculados pelo banco de verdade.
-- **Pix Automático:** entra com a fase dele.
+- **Cobrança recorrente:** `PUT /cobr/{txid}` (ou `POST /cobr`) cobra um ciclo
+  de uma recorrência aprovada. O sandbox comprime o calendário: em vez de esperar
+  o dia da liquidação, a cobrança anda um passo a cada atraso (5 s). Depois de um
+  atraso o PSP do pagador aceita a instrução (`ATIVA`); depois de dois, a
+  tentativa do vencimento é liquidada. Como a cobrança tem o valor fixo da
+  recorrência, quem escolhe o comportamento é a **recorrência**:
+
+  | Valor fixo | A cobrança |
+  |---|---|
+  | R$ 0,44 | o PSP do pagador rejeita a instrução: `REJEITADA` |
+  | R$ 0,55 | a tentativa do vencimento falha por falta de saldo (`AM04`) e a cobrança segue `ATIVA`; a retentativa (`POST /cobr/{txid}/retentativa/{data}`) é paga um atraso depois de pedida |
+  | R$ 0,66 | o sandbox recusa criar |
+  | outros | é paga no vencimento: `CONCLUIDA` |
+
+  Cancelar (`PATCH /cobr/{txid}` com `CANCELADA`) congela a cobrança: nada é
+  liquidado depois. **O Lastro ainda não acompanha essas mudanças**: elas chegam
+  com o webhook de cobrança recorrente e a conciliação, que fecham a #32. Até lá,
+  o `GET /cobr/{txid}` mostra o que o Lastro gravou na criação, no cancelamento e
+  na retentativa.

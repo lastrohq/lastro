@@ -370,7 +370,7 @@ impede as outras, e as recorrências não dependem de a consulta de Pix dar cert
 
 - Toda rota, exceto `/health`, exige `Authorization: Bearer lst_<id>_<segredo>`.
 - Escopos: `cob:read`, `cob:write`, `cobv:read`, `cobv:write`, `pix:read`,
-  `devolucao:write`, `rec:read`, `rec:write`, `webhook:admin`, `conta:admin`.
+  `devolucao:write`, `rec:read`, `rec:write`, `cobr:read`, `cobr:write`, `webhook:admin`, `conta:admin`.
   Cada rota exige exatamente um; rota sem escopo mapeado é **recusada** (falha
   fechado), e um teste aponta a rota esquecida.
 - O segredo aparece **uma vez**, na criação. Só o hash SHA-256 é gravado: com

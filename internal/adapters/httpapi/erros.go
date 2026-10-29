@@ -39,7 +39,7 @@ func problemaDe(ctx context.Context, err error) gen.Problema {
 	case errors.Is(err, domain.ErrSemEscopo):
 		return p(http.StatusForbidden, "AcessoNegado", "A API key não tem o escopo necessário")
 	case errors.Is(err, domain.ErrContaInvalida), errors.Is(err, domain.ErrAPIKeyInvalida), errors.Is(err, ports.ErrPSPDesconhecido),
-		errors.Is(err, domain.ErrRecorrenciaInvalida):
+		errors.Is(err, domain.ErrRecorrenciaInvalida), errors.Is(err, domain.ErrCobrancaRecorrenteInvalida), errors.Is(err, domain.ErrRetentativaRecusada):
 		return p(http.StatusBadRequest, "RequisicaoInvalida", "A requisição viola uma regra de negócio")
 	case errors.Is(err, domain.ErrPixInvalido):
 		return p(http.StatusBadRequest, "WebhookInvalido", "O corpo do webhook não está no formato esperado")

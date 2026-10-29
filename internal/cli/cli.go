@@ -70,7 +70,7 @@ const uso = `uso: lastro <comando>
   apikey revogar <id>            revoga uma API key na hora
 
 escopos: cob:read cob:write cobv:read cobv:write pix:read devolucao:write
-         rec:read rec:write webhook:admin conta:admin
+         rec:read rec:write cobr:read cobr:write webhook:admin conta:admin
 
 variáveis: LASTRO_DB (padrão lastro.db), LASTRO_MASTER_KEY, LASTRO_ADDR (padrão :8080),
            LASTRO_CONCILIACAO_INTERVALO (padrão 5m; 0 desliga), LASTRO_CONCILIACAO_JANELA (padrão 2h),
@@ -355,10 +355,11 @@ func serve(ctx context.Context, amb Ambiente) error {
 			Contas:     contas,
 			Webhooks: app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock},
 				Recorrencias: app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}},
-			Recorrencias: app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			APIKeys:      app.APIKeys{Store: store, Clock: amb.Clock},
-			Idempotencia: app.Idempotencia{Store: store, Clock: amb.Clock},
-			Clock:        amb.Clock,
+			Recorrencias:         app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			APIKeys:              app.APIKeys{Store: store, Clock: amb.Clock},
+			Idempotencia:         app.Idempotencia{Store: store, Clock: amb.Clock},
+			Clock:                amb.Clock,
 		}),
 		ReadHeaderTimeout: 10 * time.Second,
 		BaseContext:       func(net.Listener) context.Context { return ctx },

@@ -29,6 +29,11 @@ var escopoDaRota = map[string]domain.Escopo{
 	"POST /rec":                             domain.EscopoRecWrite,
 	"GET /rec/{idRec}":                      domain.EscopoRecRead,
 	"POST /solicrec":                        domain.EscopoRecWrite,
+	"POST /cobr":                            domain.EscopoCobrWrite,
+	"PUT /cobr/{txid}":                      domain.EscopoCobrWrite,
+	"GET /cobr/{txid}":                      domain.EscopoCobrRead,
+	"PATCH /cobr/{txid}":                    domain.EscopoCobrWrite,
+	"POST /cobr/{txid}/retentativa/{data}":  domain.EscopoCobrWrite,
 }
 
 // rotasPublicas não exigem API key. Os webhooks são chamados pelo banco e

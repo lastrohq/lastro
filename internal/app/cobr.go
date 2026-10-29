@@ -107,6 +107,9 @@ func (s CobrancasRecorrentes) Criar(ctx context.Context, idRec string, c domain.
 	} else if _, err := domain.ParseTxid(string(c.Txid)); err != nil {
 		return domain.CobrancaRecorrente{}, &ErroValidacao{Violacoes: []Violacao{{Propriedade: "txid", Razao: err.Error(), Valor: string(c.Txid)}}}
 	}
+	if err := txidLivre(ctx, s.Store, c.Txid); err != nil {
+		return domain.CobrancaRecorrente{}, err
+	}
 	c.RecorrenciaID, c.ContaID, c.Status, c.Revisao = rec.ID, conta.ID, domain.CobrCriada, 0
 	c.Tentativas, c.MotivoEncerramento, c.CriadaEm = nil, "", s.Clock.Now()
 	if err := c.ValidarCriacao(rec, s.Clock.Now()); err != nil {
@@ -117,9 +120,6 @@ func (s CobrancasRecorrentes) Criar(ctx context.Context, idRec string, c domain.
 	}
 	psp, err := pspCobr(s.PSPs, conta)
 	if err != nil {
-		return domain.CobrancaRecorrente{}, err
-	}
-	if err := txidLivre(ctx, s.Store, c.Txid); err != nil {
 		return domain.CobrancaRecorrente{}, err
 	}
 	criada, err := psp.CriarCobr(ctx, conta, c)
