@@ -23,6 +23,10 @@ type Alvo struct {
 	// Pagar faz a cobrança ser paga. Só o sandbox e fixtures gravadas conseguem;
 	// nil pula os cenários de pagamento.
 	Pagar func(t *testing.T, txid domain.Txid)
+	// Rodada entra em todo txid criado pela suíte. Contra um banco de verdade
+	// cada gravação precisa de uma rodada nova, porque o banco não esquece as
+	// cobranças da gravação anterior. Vazia vale "00000000".
+	Rodada string
 }
 
 // Run executa a suíte. novo deve devolver um alvo limpo a cada chamada.
@@ -40,7 +44,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 	t.Run("cob: criar devolve ATIVA, location e BR Code válido", func(t *testing.T) {
 		a := novo(t)
 		exigir(t, a, ports.CapCob)
-		c, err := a.PSP.CriarCob(context.Background(), a.Conta, novaCob(a, "conformidade0000000000001"))
+		c, err := a.PSP.CriarCob(context.Background(), a.Conta, novaCob(a, txid(a, "cob001")))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -60,10 +64,10 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		a := novo(t)
 		exigir(t, a, ports.CapCob)
 		ctx := context.Background()
-		if _, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, "conformidade0000000000002")); err != nil {
+		if _, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, txid(a, "cob002"))); err != nil {
 			t.Fatal(err)
 		}
-		if _, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, "conformidade0000000000002")); !errors.Is(err, ports.ErrJaExiste) {
+		if _, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, txid(a, "cob002"))); !errors.Is(err, ports.ErrJaExiste) {
 			t.Fatalf("err = %v, quer ErrJaExiste", err)
 		}
 	})
@@ -80,7 +84,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		a := novo(t)
 		exigir(t, a, ports.CapCob)
 		ctx := context.Background()
-		c, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, "conformidade0000000000005"))
+		c, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, txid(a, "cob005")))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -103,7 +107,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		a := novo(t)
 		exigir(t, a, ports.CapCobv)
 		ctx := context.Background()
-		v := novaCobv(a, "conformidadev000000000000001")
+		v := novaCobv(a, txid(a, "cobv01"))
 		c, err := a.PSP.CriarCobv(ctx, a.Conta, v)
 		if err != nil {
 			t.Fatal(err)
@@ -138,7 +142,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 			t.Skip("alvo não simula pagamento")
 		}
 		ctx := context.Background()
-		c, err := a.PSP.CriarCobv(ctx, a.Conta, novaCobv(a, "conformidadev000000000000002"))
+		c, err := a.PSP.CriarCobv(ctx, a.Conta, novaCobv(a, txid(a, "cobv02")))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -155,7 +159,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 			t.Skip("alvo não simula pagamento")
 		}
 		ctx := context.Background()
-		c, _ := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, "conformidade0000000000006"))
+		c, _ := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, txid(a, "cob006")))
 		c.Status = domain.CobrancaRemovidaPeloUsuarioRecebedor
 		if _, err := a.PSP.RevisarCob(ctx, a.Conta, c); err != nil {
 			t.Fatal(err)
@@ -174,7 +178,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 		ctx := context.Background()
 		inicio := a.Agora()
-		c, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, "conformidade0000000000003"))
+		c, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, txid(a, "cob003")))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -200,7 +204,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 		ctx := context.Background()
 		inicio := a.Agora()
-		c, _ := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, "conformidade0000000000004"))
+		c, _ := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, txid(a, "cob004")))
 		a.Pagar(t, c.Txid)
 		pix, _ := a.PSP.ListarPix(ctx, a.Conta, ports.Janela{Inicio: inicio, Fim: a.Agora().Add(time.Second)})
 		if len(pix) == 0 {
@@ -217,6 +221,12 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 		if _, err := a.PSP.Devolver(ctx, a.Conta, domain.Devolucao{ID: "d2", EndToEndID: e2e, Valor: c.Valor}); err == nil {
 			t.Fatal("aceitou devolver mais do que o recebido")
+		}
+		if lida, err := a.PSP.ConsultarDevolucao(ctx, a.Conta, e2e, "d1"); err != nil || lida.ID != "d1" || lida.Valor != 1000 || lida.Status == "" {
+			t.Fatalf("consultar devolução: %+v, %v", lida, err)
+		}
+		if _, err := a.PSP.ConsultarDevolucao(ctx, a.Conta, e2e, "inexistente"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("devolução inexistente: err = %v", err)
 		}
 	})
 
@@ -275,10 +285,10 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 			t.Fatal(err)
 		}
 		c, err := cobr.CriarCobr(ctx, a.Conta, domain.CobrancaRecorrente{
-			Txid: "conformidadecobr0000000001", RecorrenciaID: r.ID, ContaID: a.Conta.ID, Valor: 1500,
+			Txid: domain.Txid(txid(a, "cobr01")), RecorrenciaID: r.ID, ContaID: a.Conta.ID, Valor: 1500,
 			Vencimento: hoje.SomarDias(5), AjusteDiaUtil: true, CriadaEm: a.Agora(),
 		})
-		if err != nil || c.Status != domain.CobrCriada || c.Txid != "conformidadecobr0000000001" {
+		if err != nil || c.Status != domain.CobrCriada || string(c.Txid) != txid(a, "cobr01") {
 			t.Fatalf("criar: %+v, %v", c, err)
 		}
 		if lida, err := cobr.ConsultarCobr(ctx, a.Conta, c.Txid); err != nil || lida.Txid != c.Txid || lida.RecorrenciaID != r.ID {
@@ -286,6 +296,9 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 		if cancelada, err := cobr.CancelarCobr(ctx, a.Conta, c.Txid); err != nil || cancelada.Status != domain.CobrCancelada {
 			t.Fatalf("cancelar: %+v, %v", cancelada, err)
+		}
+		if _, err := cobr.SolicitarRetentativa(ctx, a.Conta, c.Txid, hoje.SomarDias(7)); err == nil {
+			t.Fatal("aceitou retentativa de cobrança cancelada")
 		}
 		if _, err := cobr.ConsultarCobr(ctx, a.Conta, "conformidadecobrinexistente1"); !errors.Is(err, ports.ErrNaoEncontrado) {
 			t.Fatalf("inexistente: %v", err)
@@ -302,6 +315,96 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 			t.Fatal(err)
 		}
 	})
+
+	t.Run("webhook: interpreta o aviso de Pix no formato da spec", func(t *testing.T) {
+		a := novo(t)
+		exigir(t, a, ports.CapWebhook)
+		corpo := `{"pix":[{"endToEndId":"E12345678202610291200abcdefghijk","txid":"` + txid(a, "cob007") + `","valor":"49.90",
+		  "chave":"` + a.Conta.ChavePix + `","horario":"2026-10-29T12:00:05-03:00","infoPagador":"obrigado"}]}`
+		pix, err := a.PSP.InterpretarWebhook(a.Conta, []byte(corpo))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(pix) != 1 || pix[0].EndToEndID != "E12345678202610291200abcdefghijk" || string(pix[0].Txid) != txid(a, "cob007") ||
+			pix[0].Valor != 4990 || pix[0].ContaID != a.Conta.ID || pix[0].Horario.IsZero() {
+			t.Fatalf("pix = %+v", pix)
+		}
+		if _, err := a.PSP.InterpretarWebhook(a.Conta, []byte(`{"pix":`)); err == nil {
+			t.Fatal("aceitou corpo quebrado")
+		}
+	})
+
+	t.Run("webhook: interpreta os avisos de rec e cobr no formato da spec", func(t *testing.T) {
+		a := novo(t)
+		exigir(t, a, ports.CapRec)
+		rec, ok := a.PSP.(ports.PSPRecorrencia)
+		if !ok {
+			t.Fatal("declara rec mas não implementa ports.PSPRecorrencia")
+		}
+		ctx := context.Background()
+		if err := rec.ConfigurarWebhookRec(ctx, a.Conta, "https://lastro.example.com/webhooks/rec/"+a.Conta.ID+"/token"); err != nil {
+			t.Fatalf("configurar webhookrec: %v", err)
+		}
+		ats, err := rec.InterpretarWebhookRec(a.Conta, []byte(`{"recs":[{"idRec":"RR1026652320240821lab77511abf","status":"APROVADA",
+		  "atualizacao":[{"status":"CRIADA","data":"2024-08-20T10:12:07.567Z"},{"status":"APROVADA","data":"2024-08-22T12:43:53.337Z"}]}]}`))
+		if err != nil || len(ats) != 1 || ats[0].IDRec != "RR1026652320240821lab77511abf" || ats[0].Status != domain.RecorrenciaAprovada {
+			t.Fatalf("rec: %+v, %v", ats, err)
+		}
+		if a.PSP.Capabilities().Suporta(ports.CapCobr) != nil {
+			return
+		}
+		cobr, ok := a.PSP.(ports.PSPCobrancaRecorrente)
+		if !ok {
+			t.Fatal("declara cobr mas não implementa ports.PSPCobrancaRecorrente")
+		}
+		atc, err := cobr.InterpretarWebhookCobr(a.Conta, []byte(`{"cobsr":[{"idRec":"RR1026652320240821lab77511abf","txid":"`+txid(a, "cobr02")+`",
+		  "status":"ATIVA","atualizacao":[{"status":"ATIVA","data":"2024-08-20T12:34:21.300Z"}],
+		  "tentativas":[{"dataLiquidacao":"2024-08-20","tipo":"AGND","status":"SOLICITADA","endToEndId":"E12345678202406201221abcdef12345"}],
+		  "valor":{"original":"100.00"}}]}`))
+		if err != nil || len(atc) != 1 || string(atc[0].Txid) != txid(a, "cobr02") || atc[0].Status != domain.CobrAtiva || len(atc[0].Tentativas) != 1 {
+			t.Fatalf("cobr: %+v, %v", atc, err)
+		}
+	})
+
+	t.Run("capacidades: o que é declarado está implementado, o resto responde ErrNaoSuportado", func(t *testing.T) {
+		a := novo(t)
+		caps := a.PSP.Capabilities()
+		if _, ok := a.PSP.(ports.PSPRecorrencia); caps[ports.CapRec] && !ok {
+			t.Error("declara rec mas não implementa ports.PSPRecorrencia")
+		}
+		if _, ok := a.PSP.(ports.PSPCobrancaRecorrente); caps[ports.CapCobr] && !ok {
+			t.Error("declara cobr mas não implementa ports.PSPCobrancaRecorrente")
+		}
+		if caps[ports.CapCobr] && !caps[ports.CapRec] {
+			t.Error("declara cobr sem rec: a cobrança recorrente precisa de uma recorrência")
+		}
+		ctx := context.Background()
+		naoDeclaradas := map[ports.Capacidade]func() error{
+			ports.CapCob: func() error {
+				_, err := a.PSP.CriarCob(ctx, a.Conta, novaCob(a, txid(a, "cob099")))
+				return err
+			},
+			ports.CapCobv: func() error {
+				_, err := a.PSP.CriarCobv(ctx, a.Conta, novaCobv(a, txid(a, "cobv99")))
+				return err
+			},
+			ports.CapDevolucao: func() error {
+				_, err := a.PSP.Devolver(ctx, a.Conta, domain.Devolucao{ID: "d1", EndToEndID: "E12345678202610291200abcdefghijk", Valor: 100})
+				return err
+			},
+			ports.CapWebhook: func() error {
+				return a.PSP.ConfigurarWebhook(ctx, a.Conta, "https://lastro.example.com/webhook/"+a.Conta.ID)
+			},
+		}
+		for c, chamar := range naoDeclaradas {
+			if caps[c] {
+				continue
+			}
+			if err := chamar(); !errors.Is(err, ports.ErrNaoSuportado) {
+				t.Errorf("%s não foi declarada, mas a chamada devolveu %v em vez de ErrNaoSuportado", c, err)
+			}
+		}
+	})
 }
 
 func exigir(t *testing.T, a Alvo, c ports.Capacidade) {
@@ -309,6 +412,15 @@ func exigir(t *testing.T, a Alvo, c ports.Capacidade) {
 	if err := a.PSP.Capabilities().Suporta(c); err != nil {
 		t.Skipf("adapter não declara %s", c)
 	}
+}
+
+// txid monta um txid de 26 caracteres: "conformidade" + rodada + sufixo de 6.
+func txid(a Alvo, sufixo string) string {
+	rodada := a.Rodada
+	if rodada == "" {
+		rodada = "00000000"
+	}
+	return "conformidade" + rodada + sufixo
 }
 
 func novaCobv(a Alvo, txid string) domain.CobrancaVencimento {

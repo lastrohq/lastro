@@ -30,6 +30,7 @@ type PSP struct {
 	raizes      *x509.CertPool
 	timeout     time.Duration
 	tokens      *oauth.Cache
+	envolver    func(http.RoundTripper) http.RoundTripper
 
 	mu       sync.Mutex
 	clientes map[string]*cliente
@@ -52,6 +53,12 @@ func ComRaizes(raizes *x509.CertPool) Opcao { return func(p *PSP) { p.raizes = r
 
 // ComTimeout limita cada chamada ao Efí (padrão 30 s).
 func ComTimeout(d time.Duration) Opcao { return func(p *PSP) { p.timeout = d } }
+
+// ComTransporte envolve o transporte mTLS de cada conta, token incluído (nos
+// testes de conformidade, a fita que grava e reproduz o Efí de verdade).
+func ComTransporte(envolver func(http.RoundTripper) http.RoundTripper) Opcao {
+	return func(p *PSP) { p.envolver = envolver }
+}
 
 // New cria o adapter. credenciais entrega o client id/secret e o certificado
 // de cada conta.
@@ -110,10 +117,13 @@ func (p *PSP) clienteDa(ctx context.Context, conta domain.Conta) (*cliente, erro
 	if err != nil {
 		return nil, fmt.Errorf("efi: certificado da conta %s: %w", conta.ID, err)
 	}
-	mtls := &http.Transport{
+	var mtls http.RoundTripper = &http.Transport{
 		TLSClientConfig:     &tls.Config{Certificates: []tls.Certificate{par}, RootCAs: p.raizes, MinVersion: tls.VersionTLS12},
 		ForceAttemptHTTP2:   true,
 		TLSHandshakeTimeout: 10 * time.Second,
+	}
+	if p.envolver != nil {
+		mtls = p.envolver(mtls)
 	}
 	// O token é guardado por versão das credenciais: trocar o secret não reusa o token velho.
 	chaveToken := fmt.Sprintf("%s/%x", conta.ID, versao[:8])
