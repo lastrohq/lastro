@@ -57,11 +57,13 @@ dockers_v2:
       org.opencontainers.image.description: "Pix sem gateway: gateway Pix self-hosted e multi-banco"
 
 changelog:
-  sort: asc
+  # Sem sort: mantém a ordem do git. ("asc" ordena pela mensagem, em ordem alfabética.)
   use: git
+  abbrev: 7
   filters:
     exclude:
       - "^Merge "
+      - "^release: "
       - "^chore: commit inicial"
   groups:
     - title: Funcionalidades
