@@ -22,6 +22,11 @@
    os escopos que o Lastro usa são `cob.write`, `cob.read`, `cobv.write`,
    `cobv.read`, `pix.read` (Pix recebidos), `pix.write` (devolução) e
    `webhook.write`.
+   No painel eles aparecem como Alterar/Consultar cobranças, Alterar/Consultar
+   Pix, Alterar Webhooks e Alterar/Consultar cobranças com vencimento. Não
+   marque Enviar Pix nem Pagar QR Code: o Lastro só recebe. O painel não deixa
+   criar a aplicação sem ao menos um escopo de **produção**; para testar só na
+   homologação, marque em produção apenas "Consultar cobranças", que só lê.
 3. Copie o **Client ID** e o **Client Secret** do ambiente que vai usar. Cada
    aplicação tem um par para produção e outro para homologação.
 4. Em **API → Meus Certificados**, gere o certificado do **mesmo ambiente** e
