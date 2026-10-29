@@ -206,3 +206,31 @@ func (s *SolicitacaoRecorrencia) Transitar(para StatusSolicitacao) error {
 	s.Status = para
 	return nil
 }
+
+// AtualizacaoRecorrencia é uma mudança de status avisada pelo banco no webhook
+// de recorrência (RN-40).
+type AtualizacaoRecorrencia struct {
+	IDRec  string
+	Status StatusRecorrencia
+	// MotivoRejeicao vem quando o pagador rejeita: código e descrição do encerramento.
+	MotivoRejeicao string
+	// Em é o instante da mudança segundo o banco; zero se ele não informou.
+	Em time.Time
+}
+
+// SolicitacaoDaRecorrencia diz para qual status a solicitação vai quando a
+// recorrência muda: o pagador respondeu (ou não) pela solicitação. Recorrência
+// que não encerra a solicitação devolve false.
+func SolicitacaoDaRecorrencia(status StatusRecorrencia) (StatusSolicitacao, bool) {
+	switch status {
+	case RecorrenciaAprovada:
+		return SolicitacaoAceita, true
+	case RecorrenciaRejeitada:
+		return SolicitacaoRejeitada, true
+	case RecorrenciaExpirada:
+		return SolicitacaoExpirada, true
+	case RecorrenciaCancelada:
+		return SolicitacaoCancelada, true
+	}
+	return "", false
+}

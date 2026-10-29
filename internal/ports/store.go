@@ -52,6 +52,8 @@ type SolicitacaoRepo interface {
 	Buscar(ctx context.Context, id string) (domain.SolicitacaoRecorrencia, error)
 	// AtualizarStatus grava o novo status. ErrNaoEncontrado se não existir.
 	AtualizarStatus(ctx context.Context, id string, status domain.StatusSolicitacao) error
+	// DaRecorrencia devolve as solicitações da recorrência, em ordem de criação.
+	DaRecorrencia(ctx context.Context, idRec string) ([]domain.SolicitacaoRecorrencia, error)
 }
 
 // ContaRepo guarda as contas recebedoras e as credenciais delas, já cifradas.

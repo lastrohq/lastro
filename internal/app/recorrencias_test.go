@@ -23,10 +23,12 @@ type pspRec struct {
 	idSolicRec string
 	err        error
 	chamadas   int
+	webhookRec string
 }
 
-func (p *pspRec) Nome() string                     { return p.nome }
-func (p *pspRec) Capabilities() ports.Capabilities { return p.caps }
+func (p *pspRec) Nome() string                                                  { return p.nome }
+func (p *pspRec) ConfigurarWebhook(context.Context, domain.Conta, string) error { return nil }
+func (p *pspRec) Capabilities() ports.Capabilities                              { return p.caps }
 
 func (p *pspRec) CriarRecorrencia(_ context.Context, _ domain.Conta, r domain.Recorrencia) (domain.Recorrencia, error) {
 	p.chamadas++
@@ -48,6 +50,15 @@ func (p *pspRec) SolicitarConfirmacao(_ context.Context, _ domain.Conta, s domai
 	}
 	s.ID, s.Status = p.idSolicRec, domain.SolicitacaoEnviada
 	return s, nil
+}
+
+func (p *pspRec) ConfigurarWebhookRec(_ context.Context, _ domain.Conta, url string) error {
+	p.webhookRec = url
+	return nil
+}
+
+func (p *pspRec) InterpretarWebhookRec(conta domain.Conta, corpo []byte) ([]domain.AtualizacaoRecorrencia, error) {
+	return psp.WebhookRecBCB(conta, corpo)
 }
 
 // soCob é um PSP sem Pix Automático.

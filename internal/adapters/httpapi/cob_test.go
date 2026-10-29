@@ -52,7 +52,8 @@ func novaAPI(t *testing.T) *api {
 		Sujeito: "CN=loja", ImpressaoDigital: strings.Repeat("ab", 32), Validade: clock.Now().Add(90 * 24 * time.Hour),
 	}}
 	keys := app.APIKeys{Store: store, Clock: clock}
-	webhooks := app.Webhooks{Store: store, PSPs: registry, Recebimentos: app.Recebimentos{Store: store, Clock: clock}}
+	webhooks := app.Webhooks{Store: store, PSPs: registry, Recebimentos: app.Recebimentos{Store: store, Clock: clock},
+		Recorrencias: app.Recorrencias{Store: store, PSPs: registry, Clock: clock}}
 	h := NewRouter(Opcoes{
 		Versao:       "v-test",
 		Cobrancas:    app.Cobrancas{Store: store, PSPs: registry, Clock: clock},

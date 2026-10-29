@@ -100,11 +100,27 @@ func (r solicitacoes) Buscar(ctx context.Context, id string) (domain.Solicitacao
 	if err != nil {
 		return domain.SolicitacaoRecorrencia{}, traduzir(err, "solicitação "+id)
 	}
+	return paraSolicitacao(row), nil
+}
+
+func paraSolicitacao(row db.SolicitacoesRecorrencium) domain.SolicitacaoRecorrencia {
 	return domain.SolicitacaoRecorrencia{
 		ID: row.ID, RecorrenciaID: row.RecorrenciaID, ContaID: row.ContaID, Status: domain.StatusSolicitacao(row.Status),
 		Destinatario: domain.ContaPagador{ISPB: row.Ispb, Agencia: row.Agencia, Conta: row.Conta},
 		ExpiraEm:     time.Unix(0, row.ExpiraEm).UTC(), CriadaEm: time.Unix(0, row.CriadaEm).UTC(),
-	}, nil
+	}
+}
+
+func (r solicitacoes) DaRecorrencia(ctx context.Context, idRec string) ([]domain.SolicitacaoRecorrencia, error) {
+	rows, err := r.q.SolicitacoesDaRecorrencia(ctx, idRec)
+	if err != nil {
+		return nil, traduzir(err, "solicitações da recorrência "+idRec)
+	}
+	out := make([]domain.SolicitacaoRecorrencia, len(rows))
+	for i, row := range rows {
+		out[i] = paraSolicitacao(row)
+	}
+	return out, nil
 }
 
 func (r solicitacoes) AtualizarStatus(ctx context.Context, id string, status domain.StatusSolicitacao) error {

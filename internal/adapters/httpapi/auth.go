@@ -37,6 +37,8 @@ var rotasPublicas = map[string]bool{
 	"GET /health":                              true,
 	"POST /webhooks/pix/{contaId}/{token}":     true,
 	"POST /webhooks/pix/{contaId}/{token}/pix": true,
+	"POST /webhooks/rec/{contaId}/{token}":     true,
+	"POST /webhooks/rec/{contaId}/{token}/rec": true,
 }
 
 // autenticar exige "Authorization: Bearer lst_..." com o escopo da rota, e

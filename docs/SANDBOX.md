@@ -55,6 +55,20 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
 - **Webhook do banco:** o sandbox não chama o webhook de entrada sozinho; o
   pagamento chega pela conciliação. Para testar o webhook, simule o banco com
   `curl -X POST {url-do-webhook}/pix` (veja a RN-30).
+- **Pix Automático:** `POST /rec` cria a recorrência e `POST /solicrec` pede a
+  confirmação. Depois do atraso, o "pagador" responde e o sandbox avisa pelo
+  webhook de recorrência, conforme o **valor fixo** da recorrência:
+
+  | Valor fixo | O pagador |
+  |---|---|
+  | R$ 0,66 | — o sandbox recusa criar a recorrência |
+  | R$ 0,77 | rejeita (`AP13`) |
+  | R$ 0,88 | não responde: a solicitação expira |
+  | outros (e valor variável) | aprova |
+
+  ⚠️ O sandbox guarda a URL do webhook de recorrência **em memória**: o aviso só
+  chega se `lastro conta webhook` e o `serve` rodarem no mesmo processo. Entre
+  processos, a recorrência fica `CRIADA` até a conciliação de recorrências (#93).
 - **Estado:** o sandbox lembra das cobranças depois de reiniciar o Lastro. Ele
   reconstrói a partir das cobranças que o próprio Lastro gravou no SQLite: uma
   cobrança criada antes do restart é paga no horário de sempre, e os valores

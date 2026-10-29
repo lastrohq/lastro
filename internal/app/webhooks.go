@@ -8,6 +8,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"strings"
 
@@ -20,6 +21,8 @@ type Webhooks struct {
 	Store        ports.Store
 	PSPs         ports.Registry
 	Recebimentos Recebimentos
+	// Recorrencias aplica os avisos de Pix Automático (webhookrec).
+	Recorrencias Recorrencias
 }
 
 // Configurar gera um token novo, registra a URL no PSP e só então grava o
@@ -50,24 +53,71 @@ func (s Webhooks) Configurar(ctx context.Context, contaID, urlPublica string) (s
 	if err := s.Store.Contas().SalvarTokenWebhook(ctx, conta.ID, h[:]); err != nil {
 		return "", fmt.Errorf("o PSP já recebeu a URL nova, mas o token não foi gravado; configure de novo: %w", err)
 	}
+	// Com Pix Automático, o mesmo token vale para o aviso de recorrência. Fica
+	// depois de gravar o token: se falhar, o aviso de Pix continua valendo.
+	if rec, err := pspRecorrencia(s.PSPs, conta); err == nil {
+		if err := rec.ConfigurarWebhookRec(ctx, conta, base.String()+"/webhooks/rec/"+conta.ID+"/"+token); err != nil {
+			return endereco, fmt.Errorf("o aviso de Pix foi configurado, mas o de recorrência não; configure de novo: %w", erroDoPSP(err))
+		}
+	}
 	return endereco, nil
+}
+
+// contaDoToken confere o token da URL do webhook e devolve a conta. Token
+// ausente ou errado é ErrNaoAutenticado, sem dizer qual dos dois.
+func (s Webhooks) contaDoToken(ctx context.Context, contaID, token string) (domain.Conta, error) {
+	esperado, err := s.Store.Contas().BuscarTokenWebhook(ctx, contaID)
+	if errors.Is(err, ports.ErrNaoEncontrado) {
+		return domain.Conta{}, domain.ErrNaoAutenticado
+	}
+	if err != nil {
+		return domain.Conta{}, err
+	}
+	h := sha256.Sum256([]byte(token))
+	if subtle.ConstantTimeCompare(h[:], esperado) != 1 {
+		return domain.Conta{}, domain.ErrNaoAutenticado
+	}
+	return s.Store.Contas().Buscar(ctx, contaID)
+}
+
+// ReceberRec confere o token, interpreta o aviso de recorrência pelo adapter
+// da conta e aplica cada mudança. Devolve quantas recorrências mudaram.
+func (s Webhooks) ReceberRec(ctx context.Context, contaID, token string, corpo []byte) (int, error) {
+	conta, err := s.contaDoToken(ctx, contaID, token)
+	if err != nil {
+		return 0, err
+	}
+	psp, err := pspRecorrencia(s.PSPs, conta)
+	if err != nil {
+		return 0, err
+	}
+	ats, err := psp.InterpretarWebhookRec(conta, corpo)
+	if err != nil {
+		return 0, err
+	}
+	mudaram := 0
+	for _, a := range ats {
+		mudou, err := s.Recorrencias.RegistrarAtualizacao(ctx, conta.ID, a)
+		if errors.Is(err, ports.ErrNaoEncontrado) {
+			// Recorrência criada fora do Lastro, ou de outra conta: responder erro
+			// faria o banco reenviar para sempre.
+			slog.WarnContext(ctx, "aviso de recorrência desconhecida ignorado", "conta", conta.ID, "idRec", a.IDRec)
+			continue
+		}
+		if err != nil {
+			return mudaram, err
+		}
+		if mudou {
+			mudaram++
+		}
+	}
+	return mudaram, nil
 }
 
 // Receber confere o token da URL, interpreta o corpo pelo adapter da conta e
 // registra os Pix. Só devolve sucesso depois de tudo gravado (RN-30).
 func (s Webhooks) Receber(ctx context.Context, contaID, token string, corpo []byte) (int, error) {
-	esperado, err := s.Store.Contas().BuscarTokenWebhook(ctx, contaID)
-	if errors.Is(err, ports.ErrNaoEncontrado) {
-		return 0, domain.ErrNaoAutenticado
-	}
-	if err != nil {
-		return 0, err
-	}
-	h := sha256.Sum256([]byte(token))
-	if subtle.ConstantTimeCompare(h[:], esperado) != 1 {
-		return 0, domain.ErrNaoAutenticado
-	}
-	conta, err := s.Store.Contas().Buscar(ctx, contaID)
+	conta, err := s.contaDoToken(ctx, contaID, token)
 	if err != nil {
 		return 0, err
 	}

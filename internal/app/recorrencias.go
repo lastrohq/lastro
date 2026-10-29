@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"regexp"
 	"time"
 
@@ -178,4 +179,59 @@ func (s Recorrencias) SolicitarConfirmacao(ctx context.Context, idRec string, de
 		return domain.SolicitacaoRecorrencia{}, fmt.Errorf("o PSP criou a solicitação %s, mas ela não foi gravada: %w", criada.ID, err)
 	}
 	return criada, nil
+}
+
+// RegistrarAtualizacao aplica a mudança de status que o banco avisou (RN-40):
+// grava a recorrência, encerra as solicitações pendentes dela (RN-41) e
+// publica recorrencia.atualizada, numa transação só. Devolve se algo mudou.
+//
+// Aviso repetido (mesmo status) não muda nada. Aviso que a RN-40 não permite,
+// como uma volta de APROVADA para CRIADA por aviso fora de ordem, é ignorado
+// com registro no log: o banco reenvia o estado atual no próximo aviso.
+func (s Recorrencias) RegistrarAtualizacao(ctx context.Context, contaID string, a domain.AtualizacaoRecorrencia) (bool, error) {
+	mudou := false
+	err := s.Store.WithTx(ctx, func(tx ports.Store) error {
+		rec, err := tx.Recorrencias().Buscar(ctx, a.IDRec)
+		if err != nil {
+			return err
+		}
+		if rec.ContaID != contaID {
+			return fmt.Errorf("recorrência %s de outra conta: %w", a.IDRec, ports.ErrNaoEncontrado)
+		}
+		if rec.Status == a.Status {
+			return nil
+		}
+		de := rec.Status
+		if err := rec.Transitar(a.Status); err != nil {
+			slog.WarnContext(ctx, "aviso de recorrência ignorado: transição fora da RN-40", "idRec", rec.ID, "de", de, "para", a.Status)
+			return nil
+		}
+		if a.Status == domain.RecorrenciaRejeitada {
+			rec.MotivoRejeicao = a.MotivoRejeicao
+		}
+		if err := tx.Recorrencias().Atualizar(ctx, &rec); err != nil {
+			return err
+		}
+		if final, ok := domain.SolicitacaoDaRecorrencia(rec.Status); ok {
+			sols, err := tx.Solicitacoes().DaRecorrencia(ctx, rec.ID)
+			if err != nil {
+				return err
+			}
+			for _, sol := range sols {
+				// A recorrência é a fonte da verdade: a solicitação pendente vai
+				// direto ao status final, mesmo sem ter passado por RECEBIDA.
+				if domain.TransicoesSolicitacao.Terminal(sol.Status) {
+					continue
+				}
+				if err := tx.Solicitacoes().AtualizarStatus(ctx, sol.ID, final); err != nil {
+					return err
+				}
+			}
+		}
+		mudou = true
+		return tx.Outbox().Adicionar(ctx, domain.Evento{
+			ID: novoID(), Tipo: domain.EventoRecorrenciaAtualizada, ContaID: rec.ContaID, OcorridoEm: s.Clock.Now(), Dados: dadosRecorrencia(rec),
+		})
+	})
+	return mudou, err
 }

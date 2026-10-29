@@ -3,6 +3,7 @@ package fake
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/lastrohq/lastro/internal/domain"
 	"github.com/lastrohq/lastro/internal/ports"
@@ -91,4 +92,17 @@ func (r solicitacoes) AtualizarStatus(_ context.Context, id string, status domai
 	sol.Status = status
 	r.s.d.solics[id] = sol
 	return nil
+}
+
+func (r solicitacoes) DaRecorrencia(_ context.Context, idRec string) ([]domain.SolicitacaoRecorrencia, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	var out []domain.SolicitacaoRecorrencia
+	for _, sol := range r.s.d.solics {
+		if sol.RecorrenciaID == idRec {
+			out = append(out, sol)
+		}
+	}
+	slices.SortFunc(out, func(a, b domain.SolicitacaoRecorrencia) int { return a.CriadaEm.Compare(b.CriadaEm) })
+	return out, nil
 }

@@ -220,6 +220,39 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 	})
 
+	t.Run("rec: criar devolve CRIADA com idRec da spec, e a solicitação tem idSolicRec", func(t *testing.T) {
+		a := novo(t)
+		exigir(t, a, ports.CapRec)
+		rec, ok := a.PSP.(ports.PSPRecorrencia)
+		if !ok {
+			t.Fatal("declara rec mas não implementa ports.PSPRecorrencia")
+		}
+		ctx := context.Background()
+		r := domain.Recorrencia{
+			ContaID: a.Conta.ID, Contrato: "conformidade", Devedor: domain.Devedor{Documento: "11222333000181", Nome: "Empresa de Teste"},
+			DataInicial: domain.DataDe(a.Agora()).SomarDias(10), Periodicidade: domain.Mensal, ValorFixo: 1500, Politica: domain.Retentativa3Em7Dias,
+		}
+		criada, err := rec.CriarRecorrencia(ctx, a.Conta, r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := domain.ValidarIDRecorrencia(criada.ID); err != nil || criada.Status != domain.RecorrenciaCriada || criada.ID[1] != 'R' {
+			t.Fatalf("criada: id %q status %s (%v); com PERMITE_3R_7D o 2º caractere é R", criada.ID, criada.Status, err)
+		}
+		if lida, err := rec.ConsultarRecorrencia(ctx, a.Conta, criada.ID); err != nil || lida.ID != criada.ID {
+			t.Fatalf("consultar: %+v, %v", lida, err)
+		}
+		sol, err := rec.SolicitarConfirmacao(ctx, a.Conta, domain.SolicitacaoRecorrencia{
+			RecorrenciaID: criada.ID, ContaID: a.Conta.ID, Destinatario: domain.ContaPagador{ISPB: "18236120", Conta: "123456"}, ExpiraEm: a.Agora().Add(24 * time.Hour),
+		})
+		if err != nil || len(sol.ID) != 29 || sol.ID[:2] != "SC" {
+			t.Fatalf("solicitação: %+v, %v", sol, err)
+		}
+		if _, err := rec.ConsultarRecorrencia(ctx, a.Conta, "RR0000000020261029inexistent"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("inexistente: %v", err)
+		}
+	})
+
 	t.Run("webhook: configurar URL", func(t *testing.T) {
 		a := novo(t)
 		exigir(t, a, ports.CapWebhook)
