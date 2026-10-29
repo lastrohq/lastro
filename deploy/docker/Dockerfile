@@ -8,6 +8,8 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}"
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=build /out/lastro /lastro
+# O usuário nonroot só grava aqui: é onde ficam lastro.db e o banco do sandbox.
+WORKDIR /home/nonroot
 EXPOSE 8080
 ENTRYPOINT ["/lastro"]
 CMD ["serve"]

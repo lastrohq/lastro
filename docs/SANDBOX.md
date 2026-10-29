@@ -3,12 +3,43 @@
 O adapter `sandbox` é um PSP de mentira: implementa as capacidades do Lastro
 sem banco nenhum, para você testar o fluxo inteiro **sem conta PJ** (RN-52).
 
+## Um comando
+
 ```bash
-export LASTRO_MASTER_KEY=$(lastro chave gerar)
-lastro conta criar --id teste --nome "Minha Loja" --psp sandbox --chave teste@example.com
+lastro sandbox
+# ou
+docker run --rm -p 8080:8080 ghcr.io/lastrohq/lastro sandbox
 ```
 
-## Do zero a um Pix pago
+O `lastro sandbox` cria um banco separado (`lastro-sandbox.db`), guarda a chave
+mestra ao lado dele (`lastro-sandbox.key`), cadastra a conta `sandbox` com a
+chave Pix `sandbox@lastro.dev`, gera uma API key com todos os escopos e imprime
+um `curl` que já funciona:
+
+```bash
+export LASTRO_TOKEN=lst_...   # o que o terminal mostrou
+curl -s -X POST localhost:8080/cob \
+  -H "Authorization: Bearer $LASTRO_TOKEN" -H "Idempotency-Key: pedido-$RANDOM" \
+  -H 'Content-Type: application/json' \
+  -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"sandbox@lastro.dev"}'
+# → 201, status ATIVA, com txid e pixCopiaECola
+
+sleep 10
+curl -s -H "Authorization: Bearer $LASTRO_TOKEN" localhost:8080/cob/{txid}
+# → status CONCLUIDA
+```
+
+No modo sandbox a conciliação roda a cada 10 s (mude com
+`LASTRO_CONCILIACAO_INTERVALO`), então o pagamento aparece sozinho. A cada
+subida sai uma API key nova; as anteriores continuam valendo. Os dados
+sobrevivem ao restart; no Docker, monte um volume em `/home/nonroot` para
+guardá-los. Por segurança, o comando se recusa a rodar num banco que já tenha
+conta de um PSP real.
+
+## Passo a passo, sem atalho
+
+Para ver o que o `lastro sandbox` faz por baixo, ou montar o sandbox num banco
+seu:
 
 ```bash
 export LASTRO_MASTER_KEY=$(lastro chave gerar)
@@ -21,7 +52,6 @@ curl -X PUT localhost:8080/cob/pedido00000000000000000000001 \
   -H "Authorization: Bearer $LASTRO_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"loja@example.com"}'
-# → 201, status ATIVA, com o pixCopiaECola
 
 sleep 5
 curl -H "Authorization: Bearer $LASTRO_TOKEN" localhost:8080/cob/pedido00000000000000000000001

@@ -12,7 +12,18 @@ cuida dos certificados mTLS e normaliza os webhooks.
 
 </div>
 
-> 🚧 **Pré-alpha.** Nada aqui funciona ainda. Acompanhe pelo board.
+> 🚧 **Alpha.** O sandbox e o adapter da Efí funcionam; a API ainda pode mudar. Acompanhe pelo board.
+
+## Teste em 10 segundos
+
+```bash
+docker run --rm -p 8080:8080 ghcr.io/lastrohq/lastro sandbox
+```
+
+Ele imprime uma API key de teste e um `curl` que cria uma cobrança Pix. Cole no
+terminal: cinco segundos depois o "pagador" de mentira paga e a cobrança vira
+`CONCLUIDA`. Sem conta PJ, sem configurar nada. Sem Docker:
+`go run ./cmd/lastro sandbox`. Valores mágicos no [guia do sandbox](./docs/SANDBOX.md).
 
 ## Por quê
 
