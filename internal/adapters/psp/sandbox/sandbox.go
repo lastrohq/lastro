@@ -14,13 +14,15 @@
 // Com ComStore, o sandbox lembra das cobranças depois de reiniciar: o que não
 // está na memória é reconstruído das cobranças que o Lastro gravou, que são o
 // espelho do que o sandbox sabia (valor, location e criação bastam para os
-// valores mágicos). As devoluções continuam só na memória até o Lastro gravá-las (F7).
+// valores mágicos). As devoluções também: as que o Lastro gravou contam no saldo
+// do Pix e respondem pelo id.
 package sandbox
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -314,7 +316,8 @@ func (p *PSP) ListarPix(ctx context.Context, conta domain.Conta, j ports.Janela)
 	return out, nil
 }
 
-// Devolver aceita devoluções até o valor do Pix e responde DEVOLVIDO na hora.
+// Devolver aceita devoluções até o valor do Pix e responde DEVOLVIDO na hora,
+// com rtrId e horário de liquidação.
 func (p *PSP) Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error) {
 	pixes, err := p.ListarPix(ctx, conta, ports.Janela{Fim: p.clock.Now().Add(time.Nanosecond)})
 	if err != nil {
@@ -330,10 +333,14 @@ func (p *PSP) Devolver(ctx context.Context, conta domain.Conta, d domain.Devoluc
 	if recebido == 0 {
 		return domain.Devolucao{}, fmt.Errorf("sandbox: pix %s: %w", d.EndToEndID, ports.ErrNaoEncontrado)
 	}
+	anteriores, err := p.devolucoesDoPix(ctx, d.EndToEndID)
+	if err != nil {
+		return domain.Devolucao{}, err
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	var devolvido domain.Money
-	for _, ant := range p.devolucoes[d.EndToEndID] {
+	for _, ant := range anteriores {
 		if ant.ID == d.ID {
 			return ant, nil // idempotente pelo id
 		}
@@ -342,9 +349,32 @@ func (p *PSP) Devolver(ctx context.Context, conta domain.Conta, d domain.Devoluc
 	if devolvido+d.Valor > recebido {
 		return domain.Devolucao{}, fmt.Errorf("sandbox: devolução de %s excede o saldo de %s", d.Valor, recebido-devolvido)
 	}
-	d.ContaID, d.Status, d.CriadaEm = conta.ID, domain.DevolucaoDevolvido, p.clock.Now()
+	agora := p.clock.Now()
+	d.ContaID, d.Status, d.CriadaEm, d.LiquidadaEm = conta.ID, domain.DevolucaoDevolvido, agora, agora
+	d.RtrID = "D" + ispbSandbox + agora.UTC().Format("200601021504") + sufixo11()
 	p.devolucoes[d.EndToEndID] = append(p.devolucoes[d.EndToEndID], d)
 	return d, nil
+}
+
+// devolucoesDoPix junta as devoluções da memória com as que o Lastro gravou,
+// que sobrevivem a um restart do sandbox.
+func (p *PSP) devolucoesDoPix(ctx context.Context, e2e string) ([]domain.Devolucao, error) {
+	p.mu.Lock()
+	out := slices.Clone(p.devolucoes[e2e])
+	p.mu.Unlock()
+	if p.store == nil {
+		return out, nil
+	}
+	gravadas, err := p.store.Devolucoes().DoPix(ctx, e2e)
+	if err != nil {
+		return nil, fmt.Errorf("sandbox: lembrando as devoluções do Pix %s: %w", e2e, err)
+	}
+	for _, g := range gravadas {
+		if !slices.ContainsFunc(out, func(d domain.Devolucao) bool { return d.ID == g.ID }) {
+			out = append(out, g)
+		}
+	}
+	return out, nil
 }
 
 // ConfigurarWebhook guarda a URL. A entrega dos avisos chega com a F4.

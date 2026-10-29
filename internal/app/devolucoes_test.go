@@ -177,7 +177,7 @@ func TestSolicitarDevolucaoRecusaAntesDoBanco(t *testing.T) {
 			return d
 		}, quer: domain.ErrDevolucaoInvalida},
 		"id fora do formato":  {pedido: func() domain.Devolucao { return pedidoDev("dev-1", 100) }, quer: domain.ErrDevolucaoInvalida},
-		"e2e fora do formato": {pedido: func() domain.Devolucao { d := pedidoDev("dev1", 100); d.EndToEndID = "curto"; return d }, quer: domain.ErrPixInvalido},
+		"e2e fora do formato": {pedido: func() domain.Devolucao { d := pedidoDev("dev1", 100); d.EndToEndID = "curto"; return d }, quer: app.ErrRequisicaoInvalida},
 		"pix desconhecido": {pedido: func() domain.Devolucao {
 			d := pedidoDev("dev1", 100)
 			d.EndToEndID = "E18236120202610281200nada0000001"

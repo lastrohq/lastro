@@ -41,6 +41,10 @@ tags:
     description: >-
       Pix Automático: cobrança recorrente de uma recorrência aprovada (RN-42). O
       recebedor é a conta da recorrência, então o corpo não traz recebedor.
+  - name: Pix
+    description: >-
+      Devolução de Pix recebidos (RN-20, RN-21). O Pix precisa estar gravado no
+      Lastro, pelo webhook ou pela conciliação.
   - name: Lastro
     description: Rotas do Lastro, fora da spec do BCB.
   - name: Webhooks
@@ -599,6 +603,65 @@ paths:
         "403":
           $ref: "#/components/responses/AcessoNegado"
 
+  /pix/{e2eid}/devolucao/{id}:
+    parameters:
+      - $ref: "#/components/parameters/E2eidPath"
+      - $ref: "#/components/parameters/IdDevolucaoPath"
+    put:
+      tags: [Pix]
+      operationId: solicitarDevolucao
+      summary: Solicitar devolução
+      description: >-
+        Devolve o Pix total ou parcialmente. O par `e2eid` + `id` é idempotente:
+        repetir com o mesmo valor devolve a devolução existente, com outro valor
+        responde 409. Saldo, prazo de 90 dias e natureza são conferidos antes de
+        chamar o banco (RN-21).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DevolucaoSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Devolução solicitada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Devolucao"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+    get:
+      tags: [Pix]
+      operationId: consultarDevolucao
+      summary: Consultar devolução
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Devolução.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Devolucao"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
   /lastro/v1/contas:
     post:
       tags: [Lastro]
@@ -856,6 +919,20 @@ components:
       required: true
       schema:
         $ref: "#/components/schemas/IdRec"
+    E2eidPath:
+      name: e2eid
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/E2eid"
+    IdDevolucaoPath:
+      name: id
+      in: path
+      required: true
+      description: Escolhido pelo cliente; identifica a devolução junto com o e2eid.
+      schema:
+        type: string
+        pattern: "^[a-zA-Z0-9]{1,35}$"
     TxidPath:
       name: txid
       in: path
@@ -1229,6 +1306,55 @@ components:
         status:
           type: string
           enum: [CANCELADA]
+    E2eid:
+      type: string
+      pattern: "^[a-zA-Z0-9]{32}$"
+    DevolucaoSolicitada:
+      type: object
+      required: [valor]
+      properties:
+        valor:
+          $ref: "#/components/schemas/Valor"
+        natureza:
+          type: string
+          enum: [ORIGINAL, RETIRADA]
+          default: ORIGINAL
+          description: RETIRADA (Pix Saque ou Troco) é recusada; o Lastro não recebe esse tipo de Pix.
+        descricao:
+          type: string
+          maxLength: 140
+    Devolucao:
+      type: object
+      required: [id, valor, natureza, horario, status]
+      properties:
+        id:
+          type: string
+        rtrId:
+          type: string
+          description: Identificador da devolução no SPI, gerado pelo banco.
+        valor:
+          $ref: "#/components/schemas/Valor"
+        natureza:
+          type: string
+          enum: [ORIGINAL, RETIRADA]
+        descricao:
+          type: string
+        horario:
+          type: object
+          required: [solicitacao]
+          properties:
+            solicitacao:
+              type: string
+              format: date-time
+            liquidacao:
+              type: string
+              format: date-time
+        status:
+          type: string
+          enum: [EM_PROCESSAMENTO, DEVOLVIDO, NAO_REALIZADO]
+        motivo:
+          type: string
+          description: Por que a devolução não foi realizada.
     Txid:
       type: string
       pattern: "^[a-zA-Z0-9]{26,35}$"

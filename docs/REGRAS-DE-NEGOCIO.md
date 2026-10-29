@@ -153,6 +153,8 @@ EM_PROCESSAMENTO ──▶ DEVOLVIDO
   a 35 caracteres `[a-zA-Z0-9]`). **Idempotente:** repetir o par com o mesmo
   valor devolve a devolução existente sem chamar o banco; com outro valor, 409.
 - Prazo máximo de **90 dias** após o pagamento — validado antes de chamar o banco.
+- Rotas da spec: `PUT /pix/{e2eid}/devolucao/{id}` (escopo `devolucao:write`) e
+  `GET /pix/{e2eid}/devolucao/{id}` (escopo `pix:read`).
 - Natureza `ORIGINAL` (o default). `RETIRADA` é a devolução de Pix Saque ou
   Troco, que o Lastro não recebe, e é recusada. Descrição até 140 caracteres.
 - Tudo isso é conferido **antes de chamar o banco**. Devoluções simultâneas do
