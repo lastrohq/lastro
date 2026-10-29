@@ -180,3 +180,27 @@ func TestNenhumSegredoNoLogNemNaSaida(t *testing.T) {
 		}
 	}
 }
+
+func TestCertificadoDeHomologacaoRecusadoEmProducaoPelaCLI(t *testing.T) {
+	par := certificadotest.Gerar(t, "loja", validadeTeste)
+	amb, _ := ambiente(t, envComBanco(t))
+	ctx := context.Background()
+	cert, senha := arquivo(t, "cert.p12", par.P12), arquivo(t, "senha", []byte(certificadotest.Senha))
+	criar := func(id, ambiente string) error {
+		return Run(ctx, []string{"conta", "criar", "--id", id, "--nome", "Loja", "--psp", "sandbox", "--chave", id + "@example.com",
+			"--ambiente", ambiente, "--certificado", cert, "--senha-certificado-arquivo", senha}, amb)
+	}
+	if err := criar("loja-homolog", "homologacao"); err != nil {
+		t.Fatal(err)
+	}
+	err := criar("loja-prod", "producao")
+	if !errors.Is(err, domain.ErrCertificadoDeHomologacao) || !strings.Contains(err.Error(), "loja-homolog") {
+		t.Fatalf("err = %v", err)
+	}
+	// Com o certificado de produção, a mesma conta entra.
+	prod := certificadotest.Gerar(t, "loja", validadeTeste)
+	if err := Run(ctx, []string{"conta", "criar", "--id", "loja-prod", "--nome", "Loja", "--psp", "sandbox", "--chave", "loja-prod@example.com",
+		"--ambiente", "producao", "--certificado", arquivo(t, "prod.p12", prod.P12), "--senha-certificado-arquivo", senha}, amb); err != nil {
+		t.Fatalf("certificado de produção recusado: %v", err)
+	}
+}
