@@ -34,6 +34,64 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 29/10/2026 (tarde) — v0.4.0: o primeiro banco de verdade, ainda sem falar com ele
+
+O Lastro ganhou o adapter do Efí: cob, cobv, Pix recebidos, devolução e webhook,
+com mTLS e OAuth2 por conta, escrito pela documentação oficial e passando na
+suíte de conformidade contra um Efí simulado. E o sandbox parou de esquecer as
+cobranças quando o processo reinicia.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#64](https://github.com/lastrohq/lastro/issues/64) | Sandbox lembra das cobranças depois de reiniciar | Adapters PSP | M | Baixa | [#85](https://github.com/lastrohq/lastro/pull/85) `49bedce` | [v0.4.0](https://github.com/lastrohq/lastro/releases/tag/v0.4.0) · [#83](https://github.com/lastrohq/lastro/pull/83) `62266ca` | 29/10 13:51 |
+
+> **Também no release, sem fechar issue:** a [#27](https://github.com/lastrohq/lastro/issues/27) (adapter do Efí) entrou
+> em três PRs — [#80](https://github.com/lastrohq/lastro/pull/80) `169ca43`, [#81](https://github.com/lastrohq/lastro/pull/81) `92037b3`
+> e [#82](https://github.com/lastrohq/lastro/pull/82) `f8c5a5d` — e segue em `🧪 Em teste` até o teste na homologação do Efí, que é
+> critério de aceite. A correção dos testes instáveis entrou pelo [#84](https://github.com/lastrohq/lastro/pull/84) `b445ed7`.
+>
+> Release [v0.4.0](https://github.com/lastrohq/lastro/releases/tag/v0.4.0) com 6 binários, checksums e imagem
+> `ghcr.io/lastrohq/lastro:0.4.0` (amd64 e arm64, digest `sha256:aba25d53…`). O binário linux/amd64 foi baixado,
+> conferido contra o `checksums.txt`, respondeu `0.4.0` e lista `[efi sandbox]`.
+>
+> **Ainda não ⚠️ — imagem privada**, a mesma pendência das levas anteriores.
+
+### Um banco escrito pela documentação
+
+Sem credenciais de homologação, o adapter do Efí foi escrito pela documentação
+oficial e testado contra um Efí simulado que segue os exemplos dela: TLS que exige
+certificado de cliente, token por Basic auth com corpo JSON, erros no formato
+próprio do Efí. A suíte de conformidade pegou dois erros, nenhum do adapter: o
+simulado deixava pagar cobrança removida, e o exemplo de aviso da documentação
+tem um `endToEndId` de 26 caracteres, quando a spec exige 32. **A validação
+ficou; o exemplo é que estava errado.** O único ponto baseado em suposição (o
+erro de `txid` repetido na cobv) está marcado no código e no roteiro da #27.
+
+### Corrigir um arquivo não é corrigir o defeito
+
+O CI do release reprovou num teste de API key que falhava 1 vez em 64: o mesmo
+defeito corrigido no v0.3.0 (trocar o último caractere de um token sorteado por
+`x`, que às vezes já era `x`). No v0.3.0 só o arquivo que falhou foi corrigido. A
+busca pelo padrão achou mais um, e uma busca mais larga, outro com outra forma.
+Ficou a regra: **achou um defeito, procura o padrão no repositório inteiro.**
+
+### Reconstruir em vez de guardar
+
+A #64 oferecia duas saídas: tabelas próprias para o sandbox ou reconstruir o
+estado pelas cobranças gravadas. A segunda ganhou porque o que o sandbox sabia já
+era o que o Lastro grava. O teste que prova isso reproduz o defeito sem a mudança
+("0 Pix recuperados") e passa com ela; o binário de verdade foi parado antes do
+pagamento simulado e, ao voltar, a cobrança apareceu paga.
+
+### Ficou aberto
+
+- [#27](https://github.com/lastrohq/lastro/issues/27) — teste do adapter do Efí na homologação; roteiro de 7 passos na issue.
+- [#79](https://github.com/lastrohq/lastro/issues/79) — contas cadastradas antes do v0.3.0 não recebem o aviso de vencimento do certificado.
+- [#21](https://github.com/lastrohq/lastro/issues/21) — fixtures gravadas da homologação para a suíte de conformidade.
+- [#1](https://github.com/lastrohq/lastro/issues/1) — estudo de quais bancos expõem Pix Automático, que destrava a F6.
+
+---
+
 ## Leva de 29/10/2026 — v0.3.0: o certificado é conferido antes de o banco reclamar
 
 A base dos adapters reais (F5), entregue antes de o primeiro banco entrar: o
@@ -103,7 +161,7 @@ usado de verdade o depguard apareceu.
 - [#21](https://github.com/lastrohq/lastro/issues/21) — conformidade espera as fixtures do primeiro banco real.
 - [#64](https://github.com/lastrohq/lastro/issues/64) — sandbox ainda esquece as cobranças ao reiniciar.
 - [#1](https://github.com/lastrohq/lastro/issues/1) — estudo de quais bancos expõem Pix Automático, que destrava a F6.
-- Contas cadastradas antes do v0.3.0 não têm os dados públicos do certificado e não recebem o aviso de vencimento (sem issue ainda).
+- [#79](https://github.com/lastrohq/lastro/issues/79) — contas cadastradas antes do v0.3.0 não têm os dados públicos do certificado e não recebem o aviso de vencimento.
 
 ---
 
