@@ -30,6 +30,8 @@ type dados struct {
 	entregas  map[[2]string]domain.Entrega
 	apikeys   map[string]domain.APIKey
 	idem      map[[2]string]domain.RegistroIdempotencia
+	recs      map[string]domain.Recorrencia
+	solics    map[string]domain.SolicitacaoRecorrencia
 }
 
 func (d *dados) clonar() *dados {
@@ -48,6 +50,8 @@ func (d *dados) clonar() *dados {
 		entregas:  maps.Clone(d.entregas),
 		apikeys:   maps.Clone(d.apikeys),
 		idem:      maps.Clone(d.idem),
+		recs:      maps.Clone(d.recs),
+		solics:    maps.Clone(d.solics),
 	}
 }
 
@@ -63,7 +67,7 @@ var _ ports.Store = (*Store)(nil)
 
 // NewStore cria um Store vazio.
 func NewStore() *Store {
-	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, tokens: map[string][]byte{}, pix: map[string]domain.PixRecebido{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, cobvs: map[domain.Txid]domain.CobrancaVencimento{}, idem: map[[2]string]domain.RegistroIdempotencia{}, distrib: map[string]bool{}, destinos: map[string]domain.Destino{}, entregas: map[[2]string]domain.Entrega{}}}
+	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, tokens: map[string][]byte{}, pix: map[string]domain.PixRecebido{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, cobvs: map[domain.Txid]domain.CobrancaVencimento{}, idem: map[[2]string]domain.RegistroIdempotencia{}, distrib: map[string]bool{}, destinos: map[string]domain.Destino{}, entregas: map[[2]string]domain.Entrega{}, recs: map[string]domain.Recorrencia{}, solics: map[string]domain.SolicitacaoRecorrencia{}}}
 }
 
 // Eventos devolve o que foi publicado no outbox, para asserções.

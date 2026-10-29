@@ -89,7 +89,8 @@ Definidos em `internal/ports` (#11):
 
 | Port | O que faz |
 |---|---|
-| `PSP` | Adapter do banco: `CriarCob`, `ConsultarCob`, `ListarPix`, `Devolver`, `ConfigurarWebhook`, mais `Capabilities()` (RN-50). Pix Automático entra como interface opcional na F6 |
+| `PSP` | Adapter do banco: `CriarCob`, `ConsultarCob`, `ListarPix`, `Devolver`, `ConfigurarWebhook`, mais `Capabilities()` (RN-50) |
+| `PSPRecorrencia` | Parte **opcional** do PSP para Pix Automático: `CriarRecorrencia`, `ConsultarRecorrencia`, `SolicitarConfirmacao`. Só o adapter que declara `CapRec` a implementa; o caso de uso confere as duas coisas e responde `ErrNaoSuportado` se faltar uma |
 | `Store` | `Contas()`, `Cobrancas()`, `Outbox()` e `WithTx`. Atualização com **revisão otimista**: escrita sobre revisão velha falha com `ErrConflito` |
 | `OutboxRepo` | É o lado "publicar" do Notifier: o evento entra na mesma transação da mudança de estado (ADR-005). A entrega fica no adapter `notifier` |
 | `Clock` | Fonte de tempo injetável |

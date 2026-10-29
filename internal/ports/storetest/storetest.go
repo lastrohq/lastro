@@ -52,6 +52,7 @@ func comContas(t *testing.T, novo func(t *testing.T) ports.Store) ports.Store {
 
 // Run executa a suíte. novo deve devolver um Store vazio a cada chamada.
 func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
+	runRecorrencias(t, novo)
 	t.Run("conta: guarda os dados públicos do certificado", func(t *testing.T) {
 		s, ctx := novo(t), context.Background()
 		c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true,

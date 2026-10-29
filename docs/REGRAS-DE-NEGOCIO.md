@@ -291,7 +291,9 @@ webhook (RN-30): deduplicado por `endToEndId`, concluindo a cobrança e publican
   para assinar). https obrigatório (http só para localhost).
 - **Eventos:** `cobranca.criada`, `cobranca.revisada`, `cobranca.concluida`,
   `cobranca.removida`, `pix.recebido` (com `divergente` quando o valor pago
-  difere do cobrado) e `certificado.expirando` (RN-62). O corpo é o envelope do Standard Webhooks:
+  difere do cobrado), `certificado.expirando` (RN-62) e, do Pix Automático,
+  `recorrencia.criada`, `recorrencia.atualizada` e `recorrencia.solicitacao`
+  (RN-40, RN-41). O corpo é o envelope do Standard Webhooks:
   `{"type": ..., "timestamp": ..., "data": {...}}`, normalizado, igual para
   qualquer banco.
 - **Assinatura** no padrão [Standard Webhooks](https://www.standardwebhooks.com/):
