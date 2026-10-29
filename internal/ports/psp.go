@@ -68,6 +68,23 @@ type PSP interface {
 	InterpretarWebhook(conta domain.Conta, corpo []byte) ([]domain.PixRecebido, error)
 }
 
+// PSPRecorrencia é a parte opcional do PSP para Pix Automático (F6). Só o
+// adapter que declara CapRec a implementa; o caso de uso confere as duas coisas.
+type PSPRecorrencia interface {
+	// CriarRecorrencia envia a recorrência (POST /rec) e devolve o que o PSP
+	// gravou, com o idRec gerado por ele e o status CRIADA.
+	CriarRecorrencia(ctx context.Context, conta domain.Conta, r domain.Recorrencia) (domain.Recorrencia, error)
+	ConsultarRecorrencia(ctx context.Context, conta domain.Conta, id string) (domain.Recorrencia, error)
+	// SolicitarConfirmacao pede a autorização no app do pagador (POST
+	// /solicrec, jornada 1) e devolve a solicitação com o idSolicRec do PSP.
+	SolicitarConfirmacao(ctx context.Context, conta domain.Conta, s domain.SolicitacaoRecorrencia) (domain.SolicitacaoRecorrencia, error)
+	// ConfigurarWebhookRec registra a URL do webhook de recorrência (PUT /webhookrec).
+	ConfigurarWebhookRec(ctx context.Context, conta domain.Conta, url string) error
+	// InterpretarWebhookRec lê o aviso de recorrência que o PSP enviou. Quem
+	// segue a spec usa psp.WebhookRecBCB.
+	InterpretarWebhookRec(conta domain.Conta, corpo []byte) ([]domain.AtualizacaoRecorrencia, error)
+}
+
 // Credenciais entrega a um adapter de PSP as credenciais decifradas de uma conta
 // (RN-61). Só o adapter pede; nada mais no núcleo vê o segredo em claro.
 type Credenciais interface {

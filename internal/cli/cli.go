@@ -179,7 +179,8 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 		if err := fs.Parse(args[2:]); err != nil {
 			return err
 		}
-		wh := app.Webhooks{Store: contas.Store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock}}
+		wh := app.Webhooks{Store: contas.Store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock},
+			Recorrencias: app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}}
 		endereco, err := wh.Configurar(ctx, args[1], *urlPublica)
 		if err != nil {
 			return err
@@ -291,6 +292,13 @@ func serve(ctx context.Context, amb Ambiente) error {
 	defer fechar()
 	// Os jobs param e terminam antes de o store fechar: o defer abaixo roda antes
 	// do fechar() acima, inclusive quando o servidor nem chega a subir.
+	// Contas de antes do v0.3.0 ganham os dados públicos do certificado antes de
+	// os jobs rodarem, para o aviso de vencimento já as enxergar (#79).
+	if n, err := contas.PreencherCertificados(ctx); err != nil {
+		return err
+	} else if n > 0 {
+		slog.InfoContext(ctx, "dados do certificado preenchidos em contas antigas", "contas", n)
+	}
 	ctxJobs, pararJobs := context.WithCancel(ctx)
 	var rodando sync.WaitGroup
 	defer func() {
@@ -299,6 +307,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 	}()
 	store := contas.Store
 	conc.Store, conc.Recebimentos.Store, conc.PSPs = store, store, contas.PSPs
+	conc.Recorrencias = app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}
 	if intervalo > 0 {
 		rodando.Go(func() {
 			jobs.Periodico(ctxJobs, "conciliação", intervalo, func(ctx context.Context) error {
@@ -340,11 +349,13 @@ func serve(ctx context.Context, amb Ambiente) error {
 	srv := &http.Server{
 		Addr: addr,
 		Handler: httpapi.NewRouter(httpapi.Opcoes{
-			Versao:       amb.Versao,
-			Cobrancas:    app.Cobrancas{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			CobrancasV:   app.CobrancasV{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			Contas:       contas,
-			Webhooks:     app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock}},
+			Versao:     amb.Versao,
+			Cobrancas:  app.Cobrancas{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			CobrancasV: app.CobrancasV{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			Contas:     contas,
+			Webhooks: app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock},
+				Recorrencias: app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}},
+			Recorrencias: app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			APIKeys:      app.APIKeys{Store: store, Clock: amb.Clock},
 			Idempotencia: app.Idempotencia{Store: store, Clock: amb.Clock},
 			Clock:        amb.Clock,
@@ -471,11 +482,12 @@ func conciliar(ctx context.Context, amb Ambiente) error {
 	}
 	defer fechar()
 	conc.Store, conc.Recebimentos.Store, conc.PSPs = contas.Store, contas.Store, contas.PSPs
+	conc.Recorrencias = app.Recorrencias{Store: contas.Store, PSPs: contas.PSPs, Clock: amb.Clock}
 	r, err := conc.Rodar(ctx)
 	if err != nil {
 		return err
 	}
-	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d falhas\n", r.Contas, r.Novos, r.Falhas)
+	_, err = fmt.Fprintf(amb.Saida, "%d contas conciliadas, %d Pix recuperados, %d recorrências atualizadas, %d falhas\n", r.Contas, r.Novos, r.Recorrencias, r.Falhas)
 	if err == nil && r.Falhas > 0 {
 		err = fmt.Errorf("%d contas falharam (detalhes no log)", r.Falhas)
 	}

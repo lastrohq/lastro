@@ -143,7 +143,7 @@ Uma issue só entra na sprint se:
 | **F3 · Sandbox com estado** | Adapter sandbox, `lastro sandbox` |
 | **F4 · Webhooks & conciliação** | Entrada, outbox, retry, DLQ, assinatura, conciliação |
 | **F5 · Adapters reais** | Certificados, OAuth2, Efí, Inter, Sicoob, BB, conformidade |
-| **F6 · Pix Automático** | `rec`, `solicrec`, `cobr`, `webhookrec` |
+| **F6 · Pix Automático** | `rec`, `solicrec`, `cobr`, `webhookrec`, `webhookcobr` |
 | **F7 · Devoluções** | Devolução com limites e prazos |
 | **F8 · Painel** | Design system + telas do MVP |
 | **F9 · DX** | SDK TS, MCP, site de docs, `docker run` de um comando |

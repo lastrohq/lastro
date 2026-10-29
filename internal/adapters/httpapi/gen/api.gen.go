@@ -171,6 +171,129 @@ func (e LocTipoCob) Valid() bool {
 	}
 }
 
+// Defines values for RecCalendarioPeriodicidade.
+const (
+	ANUAL      RecCalendarioPeriodicidade = "ANUAL"
+	MENSAL     RecCalendarioPeriodicidade = "MENSAL"
+	SEMANAL    RecCalendarioPeriodicidade = "SEMANAL"
+	SEMESTRAL  RecCalendarioPeriodicidade = "SEMESTRAL"
+	TRIMESTRAL RecCalendarioPeriodicidade = "TRIMESTRAL"
+)
+
+// Valid indicates whether the value is a known member of the RecCalendarioPeriodicidade enum.
+func (e RecCalendarioPeriodicidade) Valid() bool {
+	switch e {
+	case ANUAL:
+		return true
+	case MENSAL:
+		return true
+	case SEMANAL:
+		return true
+	case SEMESTRAL:
+		return true
+	case TRIMESTRAL:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RecGeradaPoliticaRetentativa.
+const (
+	RecGeradaPoliticaRetentativaNAOPERMITE  RecGeradaPoliticaRetentativa = "NAO_PERMITE"
+	RecGeradaPoliticaRetentativaPERMITE3R7D RecGeradaPoliticaRetentativa = "PERMITE_3R_7D"
+)
+
+// Valid indicates whether the value is a known member of the RecGeradaPoliticaRetentativa enum.
+func (e RecGeradaPoliticaRetentativa) Valid() bool {
+	switch e {
+	case RecGeradaPoliticaRetentativaNAOPERMITE:
+		return true
+	case RecGeradaPoliticaRetentativaPERMITE3R7D:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RecGeradaStatus.
+const (
+	RecGeradaStatusAPROVADA  RecGeradaStatus = "APROVADA"
+	RecGeradaStatusCANCELADA RecGeradaStatus = "CANCELADA"
+	RecGeradaStatusCRIADA    RecGeradaStatus = "CRIADA"
+	RecGeradaStatusEXPIRADA  RecGeradaStatus = "EXPIRADA"
+	RecGeradaStatusREJEITADA RecGeradaStatus = "REJEITADA"
+)
+
+// Valid indicates whether the value is a known member of the RecGeradaStatus enum.
+func (e RecGeradaStatus) Valid() bool {
+	switch e {
+	case RecGeradaStatusAPROVADA:
+		return true
+	case RecGeradaStatusCANCELADA:
+		return true
+	case RecGeradaStatusCRIADA:
+		return true
+	case RecGeradaStatusEXPIRADA:
+		return true
+	case RecGeradaStatusREJEITADA:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for RecSolicitadaPoliticaRetentativa.
+const (
+	RecSolicitadaPoliticaRetentativaNAOPERMITE  RecSolicitadaPoliticaRetentativa = "NAO_PERMITE"
+	RecSolicitadaPoliticaRetentativaPERMITE3R7D RecSolicitadaPoliticaRetentativa = "PERMITE_3R_7D"
+)
+
+// Valid indicates whether the value is a known member of the RecSolicitadaPoliticaRetentativa enum.
+func (e RecSolicitadaPoliticaRetentativa) Valid() bool {
+	switch e {
+	case RecSolicitadaPoliticaRetentativaNAOPERMITE:
+		return true
+	case RecSolicitadaPoliticaRetentativaPERMITE3R7D:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SolicRecGeradaStatus.
+const (
+	SolicRecGeradaStatusACEITA    SolicRecGeradaStatus = "ACEITA"
+	SolicRecGeradaStatusCANCELADA SolicRecGeradaStatus = "CANCELADA"
+	SolicRecGeradaStatusCRIADA    SolicRecGeradaStatus = "CRIADA"
+	SolicRecGeradaStatusENVIADA   SolicRecGeradaStatus = "ENVIADA"
+	SolicRecGeradaStatusEXPIRADA  SolicRecGeradaStatus = "EXPIRADA"
+	SolicRecGeradaStatusRECEBIDA  SolicRecGeradaStatus = "RECEBIDA"
+	SolicRecGeradaStatusREJEITADA SolicRecGeradaStatus = "REJEITADA"
+)
+
+// Valid indicates whether the value is a known member of the SolicRecGeradaStatus enum.
+func (e SolicRecGeradaStatus) Valid() bool {
+	switch e {
+	case SolicRecGeradaStatusACEITA:
+		return true
+	case SolicRecGeradaStatusCANCELADA:
+		return true
+	case SolicRecGeradaStatusCRIADA:
+		return true
+	case SolicRecGeradaStatusENVIADA:
+		return true
+	case SolicRecGeradaStatusEXPIRADA:
+		return true
+	case SolicRecGeradaStatusRECEBIDA:
+		return true
+	case SolicRecGeradaStatusREJEITADA:
+		return true
+	default:
+		return false
+	}
+}
+
 // CalendarioVencimento defines model for CalendarioVencimento.
 type CalendarioVencimento struct {
 	DataDeVencimento openapi_types.Date `json:"dataDeVencimento"`
@@ -520,6 +643,9 @@ type Health struct {
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
 
+// IdRec Identificador da recorrência, gerado pelo PSP (R + R/N + ISPB + AAAAMMDD + 11 caracteres).
+type IdRec = string
+
 // InfoAdicional defines model for InfoAdicional.
 type InfoAdicional struct {
 	Nome  string `json:"nome"`
@@ -580,6 +706,68 @@ type Problema struct {
 	Violacoes     *[]Violacao `json:"violacoes,omitempty"`
 }
 
+// RecCalendario defines model for RecCalendario.
+type RecCalendario struct {
+	DataFinal     *openapi_types.Date        `json:"dataFinal,omitempty"`
+	DataInicial   openapi_types.Date         `json:"dataInicial"`
+	Periodicidade RecCalendarioPeriodicidade `json:"periodicidade"`
+}
+
+// RecCalendarioPeriodicidade defines model for RecCalendario.Periodicidade.
+type RecCalendarioPeriodicidade string
+
+// RecGerada defines model for RecGerada.
+type RecGerada struct {
+	Calendario RecCalendario `json:"calendario"`
+
+	// IdRec Identificador da recorrência, gerado pelo PSP (R + R/N + ISPB + AAAAMMDD + 11 caracteres).
+	IdRec               IdRec                        `json:"idRec"`
+	MotivoRejeicao      *string                      `json:"motivoRejeicao,omitempty"`
+	PoliticaRetentativa RecGeradaPoliticaRetentativa `json:"politicaRetentativa"`
+	Status              RecGeradaStatus              `json:"status"`
+
+	// Valor valorRec fixa o valor de toda cobrança. Sem ele, o valor varia, e o pagador define um máximo na autorização; valorMinimoRecebedor é o piso desse máximo. Os dois são excludentes (RN-40).
+	Valor   *RecValor  `json:"valor,omitempty"`
+	Vinculo RecVinculo `json:"vinculo"`
+}
+
+// RecGeradaPoliticaRetentativa defines model for RecGerada.PoliticaRetentativa.
+type RecGeradaPoliticaRetentativa string
+
+// RecGeradaStatus defines model for RecGerada.Status.
+type RecGeradaStatus string
+
+// RecSolicitada defines model for RecSolicitada.
+type RecSolicitada struct {
+	Calendario          RecCalendario                    `json:"calendario"`
+	PoliticaRetentativa RecSolicitadaPoliticaRetentativa `json:"politicaRetentativa"`
+
+	// Valor valorRec fixa o valor de toda cobrança. Sem ele, o valor varia, e o pagador define um máximo na autorização; valorMinimoRecebedor é o piso desse máximo. Os dois são excludentes (RN-40).
+	Valor   *RecValor  `json:"valor,omitempty"`
+	Vinculo RecVinculo `json:"vinculo"`
+}
+
+// RecSolicitadaPoliticaRetentativa defines model for RecSolicitada.PoliticaRetentativa.
+type RecSolicitadaPoliticaRetentativa string
+
+// RecValor valorRec fixa o valor de toda cobrança. Sem ele, o valor varia, e o pagador define um máximo na autorização; valorMinimoRecebedor é o piso desse máximo. Os dois são excludentes (RN-40).
+type RecValor struct {
+	// ValorMinimoRecebedor Example: 10.50
+	ValorMinimoRecebedor *Valor `json:"valorMinimoRecebedor,omitempty"`
+
+	// ValorRec Example: 10.50
+	ValorRec *Valor `json:"valorRec,omitempty"`
+}
+
+// RecVinculo defines model for RecVinculo.
+type RecVinculo struct {
+	Contrato string `json:"contrato"`
+
+	// Devedor Pessoa física (cpf) ou jurídica (cnpj). Informe um dos dois.
+	Devedor Devedor `json:"devedor"`
+	Objeto  *string `json:"objeto,omitempty"`
+}
+
 // Recebedor defines model for Recebedor.
 type Recebedor struct {
 	Cep    *string `json:"cep,omitempty"`
@@ -592,6 +780,43 @@ type Recebedor struct {
 	Nome         *string `json:"nome,omitempty"`
 	NomeFantasia *string `json:"nomeFantasia,omitempty"`
 	Uf           *string `json:"uf,omitempty"`
+}
+
+// SolicRecGerada defines model for SolicRecGerada.
+type SolicRecGerada struct {
+	Calendario struct {
+		// DataExpiracaoSolicitacao No futuro e em até 30 dias (RN-41).
+		DataExpiracaoSolicitacao time.Time `json:"dataExpiracaoSolicitacao"`
+	} `json:"calendario"`
+	Destinatario struct {
+		Agencia          *string `json:"agencia,omitempty"`
+		Conta            string  `json:"conta"`
+		IspbParticipante string  `json:"ispbParticipante"`
+	} `json:"destinatario"`
+
+	// IdRec Identificador da recorrência, gerado pelo PSP (R + R/N + ISPB + AAAAMMDD + 11 caracteres).
+	IdRec      IdRec                `json:"idRec"`
+	IdSolicRec string               `json:"idSolicRec"`
+	Status     SolicRecGeradaStatus `json:"status"`
+}
+
+// SolicRecGeradaStatus defines model for SolicRecGerada.Status.
+type SolicRecGeradaStatus string
+
+// SolicRecSolicitada defines model for SolicRecSolicitada.
+type SolicRecSolicitada struct {
+	Calendario struct {
+		// DataExpiracaoSolicitacao No futuro e em até 30 dias (RN-41).
+		DataExpiracaoSolicitacao time.Time `json:"dataExpiracaoSolicitacao"`
+	} `json:"calendario"`
+	Destinatario struct {
+		Agencia          *string `json:"agencia,omitempty"`
+		Conta            string  `json:"conta"`
+		IspbParticipante string  `json:"ispbParticipante"`
+	} `json:"destinatario"`
+
+	// IdRec Identificador da recorrência, gerado pelo PSP (R + R/N + ISPB + AAAAMMDD + 11 caracteres).
+	IdRec IdRec `json:"idRec"`
 }
 
 // Txid defines model for Txid.
@@ -621,6 +846,9 @@ type CpfFiltro = Cpf
 
 // Fim defines model for Fim.
 type Fim = time.Time
+
+// IdRecPath Identificador da recorrência, gerado pelo PSP (R + R/N + ISPB + AAAAMMDD + 11 caracteres).
+type IdRecPath = IdRec
 
 // IdempotencyKey defines model for IdempotencyKey.
 type IdempotencyKey = string
@@ -666,6 +894,9 @@ type RequisicaoInvalida = Problema
 
 // WebhookPix Callback da spec do BCB. Aceito como objeto livre porque quem interpreta é o adapter do banco.
 type WebhookPix = map[string]interface{}
+
+// WebhookRec Callback de recorrência da spec do BCB. Aceito como objeto livre porque quem interpreta é o adapter do banco.
+type WebhookRec = map[string]interface{}
 
 // ListarCobsParams defines parameters for ListarCobs.
 type ListarCobsParams struct {
@@ -719,11 +950,29 @@ type CriarCobvParams struct {
 	IdempotencyKey *IdempotencyKeyOpcional `json:"Idempotency-Key,omitempty"`
 }
 
+// CriarRecParams defines parameters for CriarRec.
+type CriarRecParams struct {
+	// IdempotencyKey Reenvio com a mesma chave em até 24 h devolve a resposta original (RN-11).
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
+// CriarSolicRecParams defines parameters for CriarSolicRec.
+type CriarSolicRecParams struct {
+	// IdempotencyKey Reenvio com a mesma chave em até 24 h devolve a resposta original (RN-11).
+	IdempotencyKey IdempotencyKey `json:"Idempotency-Key"`
+}
+
 // ReceberWebhookPixJSONBody defines parameters for ReceberWebhookPix.
 type ReceberWebhookPixJSONBody = map[string]interface{}
 
 // ReceberWebhookPixComSufixoJSONBody defines parameters for ReceberWebhookPixComSufixo.
 type ReceberWebhookPixComSufixoJSONBody = map[string]interface{}
+
+// ReceberWebhookRecJSONBody defines parameters for ReceberWebhookRec.
+type ReceberWebhookRecJSONBody = map[string]interface{}
+
+// ReceberWebhookRecComSufixoJSONBody defines parameters for ReceberWebhookRecComSufixo.
+type ReceberWebhookRecComSufixoJSONBody = map[string]interface{}
 
 // CriarCobJSONRequestBody defines body for CriarCob for application/json ContentType.
 type CriarCobJSONRequestBody = CobSolicitada
@@ -743,11 +992,23 @@ type CriarCobvJSONRequestBody = CobVSolicitada
 // CriarContaJSONRequestBody defines body for CriarConta for application/json ContentType.
 type CriarContaJSONRequestBody = ContaSolicitada
 
+// CriarRecJSONRequestBody defines body for CriarRec for application/json ContentType.
+type CriarRecJSONRequestBody = RecSolicitada
+
+// CriarSolicRecJSONRequestBody defines body for CriarSolicRec for application/json ContentType.
+type CriarSolicRecJSONRequestBody = SolicRecSolicitada
+
 // ReceberWebhookPixJSONRequestBody defines body for ReceberWebhookPix for application/json ContentType.
 type ReceberWebhookPixJSONRequestBody = ReceberWebhookPixJSONBody
 
 // ReceberWebhookPixComSufixoJSONRequestBody defines body for ReceberWebhookPixComSufixo for application/json ContentType.
 type ReceberWebhookPixComSufixoJSONRequestBody = ReceberWebhookPixComSufixoJSONBody
+
+// ReceberWebhookRecJSONRequestBody defines body for ReceberWebhookRec for application/json ContentType.
+type ReceberWebhookRecJSONRequestBody = ReceberWebhookRecJSONBody
+
+// ReceberWebhookRecComSufixoJSONRequestBody defines body for ReceberWebhookRecComSufixo for application/json ContentType.
+type ReceberWebhookRecComSufixoJSONRequestBody = ReceberWebhookRecComSufixoJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -793,12 +1054,27 @@ type ServerInterface interface {
 	// DesativarConta Desativar conta
 	// (POST /lastro/v1/contas/{id}/desativar)
 	DesativarConta(w http.ResponseWriter, r *http.Request, id ContaIdPath)
+	// CriarRec Criar recorrência de Pix Automático
+	// (POST /rec)
+	CriarRec(w http.ResponseWriter, r *http.Request, params CriarRecParams)
+	// ConsultarRec Consultar recorrência
+	// (GET /rec/{idRec})
+	ConsultarRec(w http.ResponseWriter, r *http.Request, idRec IdRecPath)
+	// CriarSolicRec Pedir a confirmação da recorrência no app do pagador (jornada 1)
+	// (POST /solicrec)
+	CriarSolicRec(w http.ResponseWriter, r *http.Request, params CriarSolicRecParams)
 	// ReceberWebhookPix Aviso de Pix recebido, enviado pelo banco
 	// (POST /webhooks/pix/{contaId}/{token})
 	ReceberWebhookPix(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook)
 	// ReceberWebhookPixComSufixo O mesmo aviso, com o /pix que a spec manda o banco acrescentar
 	// (POST /webhooks/pix/{contaId}/{token}/pix)
 	ReceberWebhookPixComSufixo(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook)
+	// ReceberWebhookRec Aviso de mudança de recorrência (Pix Automático), enviado pelo banco
+	// (POST /webhooks/rec/{contaId}/{token})
+	ReceberWebhookRec(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook)
+	// ReceberWebhookRecComSufixo O mesmo aviso, com o /rec que a spec manda o banco acrescentar
+	// (POST /webhooks/rec/{contaId}/{token}/rec)
+	ReceberWebhookRecComSufixo(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -1433,6 +1709,122 @@ func (siw *ServerInterfaceWrapper) DesativarConta(w http.ResponseWriter, r *http
 	handler.ServeHTTP(w, r)
 }
 
+// CriarRec operation middleware
+func (siw *ServerInterfaceWrapper) CriarRec(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CriarRecParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CriarRec(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ConsultarRec operation middleware
+func (siw *ServerInterfaceWrapper) ConsultarRec(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "idRec" -------------
+	var idRec IdRecPath
+
+	err = runtime.BindStyledParameterWithOptions("simple", "idRec", r.PathValue("idRec"), &idRec, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "idRec", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ConsultarRec(w, r, idRec)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CriarSolicRec operation middleware
+func (siw *ServerInterfaceWrapper) CriarSolicRec(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params CriarSolicRecParams
+
+	headers := r.Header
+
+	// ------------- Required header parameter "Idempotency-Key" -------------
+	if valueList, found := headers[http.CanonicalHeaderKey("Idempotency-Key")]; found {
+		var IdempotencyKey IdempotencyKey
+		n := len(valueList)
+		if n != 1 {
+			siw.ErrorHandlerFunc(w, r, &TooManyValuesForParamError{ParamName: "Idempotency-Key", Count: n})
+			return
+		}
+
+		err = runtime.BindStyledParameterWithOptions("simple", "Idempotency-Key", valueList[0], &IdempotencyKey, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: true, Type: "string", Format: ""})
+		if err != nil {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "Idempotency-Key", Err: err})
+			return
+		}
+
+		params.IdempotencyKey = IdempotencyKey
+
+	} else {
+		err := fmt.Errorf("Header parameter Idempotency-Key is required, but not found")
+		siw.ErrorHandlerFunc(w, r, &RequiredHeaderError{ParamName: "Idempotency-Key", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CriarSolicRec(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ReceberWebhookPix operation middleware
 func (siw *ServerInterfaceWrapper) ReceberWebhookPix(w http.ResponseWriter, r *http.Request) {
 
@@ -1494,6 +1886,76 @@ func (siw *ServerInterfaceWrapper) ReceberWebhookPixComSufixo(w http.ResponseWri
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ReceberWebhookPixComSufixo(w, r, contaId, token)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReceberWebhookRec operation middleware
+func (siw *ServerInterfaceWrapper) ReceberWebhookRec(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "contaId" -------------
+	var contaId ContaIdWebhook
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contaId", r.PathValue("contaId"), &contaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "contaId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "token" -------------
+	var token TokenWebhook
+
+	err = runtime.BindStyledParameterWithOptions("simple", "token", r.PathValue("token"), &token, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReceberWebhookRec(w, r, contaId, token)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ReceberWebhookRecComSufixo operation middleware
+func (siw *ServerInterfaceWrapper) ReceberWebhookRecComSufixo(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "contaId" -------------
+	var contaId ContaIdWebhook
+
+	err = runtime.BindStyledParameterWithOptions("simple", "contaId", r.PathValue("contaId"), &contaId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "contaId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "token" -------------
+	var token TokenWebhook
+
+	err = runtime.BindStyledParameterWithOptions("simple", "token", r.PathValue("token"), &token, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "token", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ReceberWebhookRecComSufixo(w, r, contaId, token)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1627,6 +2089,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cob/{txid}", wrapper.ConsultarCob)
 	m.HandleFunc(http.MethodPatch+" "+options.BaseURL+"/cob/{txid}", wrapper.RevisarCob)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/cob/{txid}", wrapper.CriarCobComTxid)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/rec", wrapper.CriarRec)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/rec/{idRec}", wrapper.ConsultarRec)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/solicrec", wrapper.CriarSolicRec)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cob", wrapper.ListarCobs)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/cob", wrapper.CriarCob)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/cobv/{txid}", wrapper.ConsultarCobv)
@@ -1639,6 +2104,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/lastro/v1/contas/{id}/desativar", wrapper.DesativarConta)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/webhooks/pix/{contaId}/{token}", wrapper.ReceberWebhookPix)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/webhooks/pix/{contaId}/{token}/pix", wrapper.ReceberWebhookPixComSufixo)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/webhooks/rec/{contaId}/{token}", wrapper.ReceberWebhookRec)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/webhooks/rec/{contaId}/{token}/rec", wrapper.ReceberWebhookRecComSufixo)
 
 	return m
 }
@@ -2787,6 +3254,317 @@ func (response DesativarContadefaultApplicationProblemPlusJSONResponse) VisitDes
 	return err
 }
 
+type CriarRecRequestObject struct {
+	Params CriarRecParams
+	Body   *CriarRecJSONRequestBody
+}
+
+type CriarRecResponseObject interface {
+	VisitCriarRecResponse(w http.ResponseWriter) error
+}
+
+type CriarRec201JSONResponse RecGerada
+
+func (response CriarRec201JSONResponse) VisitCriarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarRec400ApplicationProblemPlusJSONResponse struct {
+	RequisicaoInvalidaApplicationProblemPlusJSONResponse
+}
+
+func (response CriarRec400ApplicationProblemPlusJSONResponse) VisitCriarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarRec401ApplicationProblemPlusJSONResponse struct {
+	NaoAutenticadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarRec401ApplicationProblemPlusJSONResponse) VisitCriarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarRec403ApplicationProblemPlusJSONResponse struct {
+	AcessoNegadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarRec403ApplicationProblemPlusJSONResponse) VisitCriarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarRec501ApplicationProblemPlusJSONResponse struct {
+	NaoSuportadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarRec501ApplicationProblemPlusJSONResponse) VisitCriarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(501)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarRecdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response CriarRecdefaultApplicationProblemPlusJSONResponse) VisitCriarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarRecRequestObject struct {
+	IdRec IdRecPath `json:"idRec"`
+}
+
+type ConsultarRecResponseObject interface {
+	VisitConsultarRecResponse(w http.ResponseWriter) error
+}
+
+type ConsultarRec200JSONResponse RecGerada
+
+func (response ConsultarRec200JSONResponse) VisitConsultarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarRec401ApplicationProblemPlusJSONResponse struct {
+	NaoAutenticadoApplicationProblemPlusJSONResponse
+}
+
+func (response ConsultarRec401ApplicationProblemPlusJSONResponse) VisitConsultarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarRec403ApplicationProblemPlusJSONResponse struct {
+	AcessoNegadoApplicationProblemPlusJSONResponse
+}
+
+func (response ConsultarRec403ApplicationProblemPlusJSONResponse) VisitConsultarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarRec404ApplicationProblemPlusJSONResponse struct {
+	NaoEncontradoApplicationProblemPlusJSONResponse
+}
+
+func (response ConsultarRec404ApplicationProblemPlusJSONResponse) VisitConsultarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ConsultarRecdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response ConsultarRecdefaultApplicationProblemPlusJSONResponse) VisitConsultarRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarSolicRecRequestObject struct {
+	Params CriarSolicRecParams
+	Body   *CriarSolicRecJSONRequestBody
+}
+
+type CriarSolicRecResponseObject interface {
+	VisitCriarSolicRecResponse(w http.ResponseWriter) error
+}
+
+type CriarSolicRec201JSONResponse SolicRecGerada
+
+func (response CriarSolicRec201JSONResponse) VisitCriarSolicRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarSolicRec400ApplicationProblemPlusJSONResponse struct {
+	RequisicaoInvalidaApplicationProblemPlusJSONResponse
+}
+
+func (response CriarSolicRec400ApplicationProblemPlusJSONResponse) VisitCriarSolicRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(400)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarSolicRec401ApplicationProblemPlusJSONResponse struct {
+	NaoAutenticadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarSolicRec401ApplicationProblemPlusJSONResponse) VisitCriarSolicRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarSolicRec403ApplicationProblemPlusJSONResponse struct {
+	AcessoNegadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarSolicRec403ApplicationProblemPlusJSONResponse) VisitCriarSolicRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(403)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarSolicRec404ApplicationProblemPlusJSONResponse struct {
+	NaoEncontradoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarSolicRec404ApplicationProblemPlusJSONResponse) VisitCriarSolicRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarSolicRec501ApplicationProblemPlusJSONResponse struct {
+	NaoSuportadoApplicationProblemPlusJSONResponse
+}
+
+func (response CriarSolicRec501ApplicationProblemPlusJSONResponse) VisitCriarSolicRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(501)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CriarSolicRecdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response CriarSolicRecdefaultApplicationProblemPlusJSONResponse) VisitCriarSolicRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type ReceberWebhookPixRequestObject struct {
 	ContaId ContaIdWebhook `json:"contaId"`
 	Token   TokenWebhook   `json:"token"`
@@ -2857,6 +3635,76 @@ func (response ReceberWebhookPixComSufixodefaultApplicationProblemPlusJSONRespon
 	return err
 }
 
+type ReceberWebhookRecRequestObject struct {
+	ContaId ContaIdWebhook `json:"contaId"`
+	Token   TokenWebhook   `json:"token"`
+	Body    *ReceberWebhookRecJSONRequestBody
+}
+
+type ReceberWebhookRecResponseObject interface {
+	VisitReceberWebhookRecResponse(w http.ResponseWriter) error
+}
+
+type ReceberWebhookRec200Response struct {
+}
+
+func (response ReceberWebhookRec200Response) VisitReceberWebhookRecResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type ReceberWebhookRecdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response ReceberWebhookRecdefaultApplicationProblemPlusJSONResponse) VisitReceberWebhookRecResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ReceberWebhookRecComSufixoRequestObject struct {
+	ContaId ContaIdWebhook `json:"contaId"`
+	Token   TokenWebhook   `json:"token"`
+	Body    *ReceberWebhookRecComSufixoJSONRequestBody
+}
+
+type ReceberWebhookRecComSufixoResponseObject interface {
+	VisitReceberWebhookRecComSufixoResponse(w http.ResponseWriter) error
+}
+
+type ReceberWebhookRecComSufixo200Response struct {
+}
+
+func (response ReceberWebhookRecComSufixo200Response) VisitReceberWebhookRecComSufixoResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type ReceberWebhookRecComSufixodefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problema
+	StatusCode int
+}
+
+func (response ReceberWebhookRecComSufixodefaultApplicationProblemPlusJSONResponse) VisitReceberWebhookRecComSufixoResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// ListarCobs Listar cobranças imediatas
@@ -2901,12 +3749,27 @@ type StrictServerInterface interface {
 	// DesativarConta Desativar conta
 	// (POST /lastro/v1/contas/{id}/desativar)
 	DesativarConta(ctx context.Context, request DesativarContaRequestObject) (DesativarContaResponseObject, error)
+	// CriarRec Criar recorrência de Pix Automático
+	// (POST /rec)
+	CriarRec(ctx context.Context, request CriarRecRequestObject) (CriarRecResponseObject, error)
+	// ConsultarRec Consultar recorrência
+	// (GET /rec/{idRec})
+	ConsultarRec(ctx context.Context, request ConsultarRecRequestObject) (ConsultarRecResponseObject, error)
+	// CriarSolicRec Pedir a confirmação da recorrência no app do pagador (jornada 1)
+	// (POST /solicrec)
+	CriarSolicRec(ctx context.Context, request CriarSolicRecRequestObject) (CriarSolicRecResponseObject, error)
 	// ReceberWebhookPix Aviso de Pix recebido, enviado pelo banco
 	// (POST /webhooks/pix/{contaId}/{token})
 	ReceberWebhookPix(ctx context.Context, request ReceberWebhookPixRequestObject) (ReceberWebhookPixResponseObject, error)
 	// ReceberWebhookPixComSufixo O mesmo aviso, com o /pix que a spec manda o banco acrescentar
 	// (POST /webhooks/pix/{contaId}/{token}/pix)
 	ReceberWebhookPixComSufixo(ctx context.Context, request ReceberWebhookPixComSufixoRequestObject) (ReceberWebhookPixComSufixoResponseObject, error)
+	// ReceberWebhookRec Aviso de mudança de recorrência (Pix Automático), enviado pelo banco
+	// (POST /webhooks/rec/{contaId}/{token})
+	ReceberWebhookRec(ctx context.Context, request ReceberWebhookRecRequestObject) (ReceberWebhookRecResponseObject, error)
+	// ReceberWebhookRecComSufixo O mesmo aviso, com o /rec que a spec manda o banco acrescentar
+	// (POST /webhooks/rec/{contaId}/{token}/rec)
+	ReceberWebhookRecComSufixo(ctx context.Context, request ReceberWebhookRecComSufixoRequestObject) (ReceberWebhookRecComSufixoResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -3352,6 +4215,98 @@ func (sh *strictHandler) DesativarConta(w http.ResponseWriter, r *http.Request, 
 	}
 }
 
+// CriarRec operation middleware
+func (sh *strictHandler) CriarRec(w http.ResponseWriter, r *http.Request, params CriarRecParams) {
+	var request CriarRecRequestObject
+
+	request.Params = params
+
+	var body CriarRecJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CriarRec(ctx, request.(CriarRecRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CriarRec")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CriarRecResponseObject); ok {
+		if err := validResponse.VisitCriarRecResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ConsultarRec operation middleware
+func (sh *strictHandler) ConsultarRec(w http.ResponseWriter, r *http.Request, idRec IdRecPath) {
+	var request ConsultarRecRequestObject
+
+	request.IdRec = idRec
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ConsultarRec(ctx, request.(ConsultarRecRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ConsultarRec")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ConsultarRecResponseObject); ok {
+		if err := validResponse.VisitConsultarRecResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CriarSolicRec operation middleware
+func (sh *strictHandler) CriarSolicRec(w http.ResponseWriter, r *http.Request, params CriarSolicRecParams) {
+	var request CriarSolicRecRequestObject
+
+	request.Params = params
+
+	var body CriarSolicRecJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CriarSolicRec(ctx, request.(CriarSolicRecRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CriarSolicRec")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CriarSolicRecResponseObject); ok {
+		if err := validResponse.VisitCriarSolicRecResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ReceberWebhookPix operation middleware
 func (sh *strictHandler) ReceberWebhookPix(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook) {
 	var request ReceberWebhookPixRequestObject
@@ -3420,94 +4375,180 @@ func (sh *strictHandler) ReceberWebhookPixComSufixo(w http.ResponseWriter, r *ht
 	}
 }
 
+// ReceberWebhookRec operation middleware
+func (sh *strictHandler) ReceberWebhookRec(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook) {
+	var request ReceberWebhookRecRequestObject
+
+	request.ContaId = contaId
+	request.Token = token
+
+	var body ReceberWebhookRecJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReceberWebhookRec(ctx, request.(ReceberWebhookRecRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReceberWebhookRec")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReceberWebhookRecResponseObject); ok {
+		if err := validResponse.VisitReceberWebhookRecResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ReceberWebhookRecComSufixo operation middleware
+func (sh *strictHandler) ReceberWebhookRecComSufixo(w http.ResponseWriter, r *http.Request, contaId ContaIdWebhook, token TokenWebhook) {
+	var request ReceberWebhookRecComSufixoRequestObject
+
+	request.ContaId = contaId
+	request.Token = token
+
+	var body ReceberWebhookRecComSufixoJSONRequestBody
+	if err := runtime.BindJSONBody(r, &body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ReceberWebhookRecComSufixo(ctx, request.(ReceberWebhookRecComSufixoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ReceberWebhookRecComSufixo")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ReceberWebhookRecComSufixoResponseObject); ok {
+		if err := validResponse.VisitReceberWebhookRecComSufixoResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Base64 encoded, compressed with deflate, json marshaled OpenAPI spec.
 // Stored as a slice of fixed-width chunks rather than one concatenated
 // const string: with thousands of chunks the chained `+` fold is several
 // times slower for the Go compiler than parsing a slice literal.
 var swaggerSpec = []string{
-	"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",
+	"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",
 }
 
 // decodeSpec returns the embedded OpenAPI spec as raw JSON bytes,

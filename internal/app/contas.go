@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/lastrohq/lastro/internal/domain"
@@ -93,6 +94,52 @@ func (s Contas) lerCertificado(cred domain.Credenciais) (domain.Certificado, err
 }
 
 var _ ports.Credenciais = Contas{}
+
+// PreencherCertificados grava os dados públicos do certificado das contas que
+// têm certificado nas credenciais mas não têm os dados na conta: as cadastradas
+// antes do v0.3.0, quando o certificado não era lido no cadastro (#79). Sem os
+// dados, a conta não recebe o aviso de vencimento nem entra na regra de ambiente.
+//
+// Certificado vencido é gravado mesmo assim, para o aviso sair. Certificado
+// ilegível gera um aviso no log com o id e o motivo, sem nada do conteúdo, e não
+// impede as outras contas. Conta já preenchida não é tocada: rodar de novo não
+// refaz nada. Devolve quantas contas foram preenchidas.
+func (s Contas) PreencherCertificados(ctx context.Context) (int, error) {
+	if s.Certificados == nil {
+		return 0, errors.New("contas: Certificados é obrigatório para preencher os certificados")
+	}
+	lista, err := s.Store.Contas().Listar(ctx)
+	if err != nil {
+		return 0, err
+	}
+	preenchidas := 0
+	for _, c := range lista {
+		if c.Certificado != nil {
+			continue
+		}
+		cred, err := s.Credenciais(ctx, c.ID)
+		if errors.Is(err, ports.ErrNaoEncontrado) {
+			continue // conta sem credenciais, como a do sandbox
+		}
+		if err != nil {
+			slog.WarnContext(ctx, "certificado da conta não pôde ser lido: credenciais ilegíveis", "conta", c.ID, "erro", err)
+			continue
+		}
+		if len(cred.Certificado) == 0 {
+			continue
+		}
+		cert, err := s.Certificados.Ler(cred.Certificado, cred.SenhaCertificado)
+		if err != nil {
+			slog.WarnContext(ctx, "certificado da conta não pôde ser lido; recadastre a conta com um certificado válido", "conta", c.ID, "erro", err)
+			continue
+		}
+		if err := s.Store.Contas().AtualizarCertificado(ctx, c.ID, cert); err != nil {
+			return preenchidas, fmt.Errorf("gravando o certificado da conta %s: %w", c.ID, err)
+		}
+		preenchidas++
+	}
+	return preenchidas, nil
+}
 
 // Desativar impede novas cobranças na conta; as existentes continuam valendo.
 func (s Contas) Desativar(ctx context.Context, id string) error {

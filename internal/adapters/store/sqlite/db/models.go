@@ -125,6 +125,37 @@ type PixRecebido struct {
 	PagadorNome      sql.NullString
 }
 
+type Recorrencia struct {
+	ID               string
+	ContaID          string
+	Status           string
+	Contrato         string
+	Objeto           string
+	DevedorDocumento string
+	DevedorNome      string
+	DataInicial      string
+	DataFinal        sql.NullString
+	Periodicidade    string
+	ValorFixo        int64
+	PisoValorMaximo  int64
+	Politica         string
+	MotivoRejeicao   string
+	CriadaEm         int64
+	Revisao          int64
+}
+
+type SolicitacoesRecorrencium struct {
+	ID            string
+	RecorrenciaID string
+	ContaID       string
+	Status        string
+	Ispb          string
+	Agencia       string
+	Conta         string
+	ExpiraEm      int64
+	CriadaEm      int64
+}
+
 type Txid struct {
 	Txid string
 	Tipo string

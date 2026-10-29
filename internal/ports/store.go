@@ -27,8 +27,36 @@ type Store interface {
 	Idempotencia() IdempotenciaRepo
 	Destinos() DestinoRepo
 	Entregas() EntregaRepo
+	Recorrencias() RecorrenciaRepo
+	Solicitacoes() SolicitacaoRepo
 	// WithTx executa fn numa transação: erro em fn desfaz tudo.
 	WithTx(ctx context.Context, fn func(Store) error) error
+}
+
+// RecorrenciaRepo guarda as recorrências de Pix Automático (RN-40). O idRec,
+// gerado pelo PSP, é único na instância.
+type RecorrenciaRepo interface {
+	// Criar falha com ErrJaExiste se o idRec já existir.
+	Criar(ctx context.Context, r domain.Recorrencia) error
+	Buscar(ctx context.Context, id string) (domain.Recorrencia, error)
+	// Atualizar grava status e motivo de rejeição se r.Revisao for a revisão
+	// atual, e a incrementa; senão falha com ErrConflito.
+	Atualizar(ctx context.Context, r *domain.Recorrencia) error
+	// Abertas devolve as recorrências da conta que ainda podem mudar (CRIADA e
+	// APROVADA), em ordem de criação, para a conciliação.
+	Abertas(ctx context.Context, contaID string) ([]domain.Recorrencia, error)
+}
+
+// SolicitacaoRepo guarda as solicitações de confirmação de recorrência (RN-41).
+type SolicitacaoRepo interface {
+	// Criar falha com ErrJaExiste se o idSolicRec já existir, e com
+	// ErrNaoEncontrado se a recorrência não existir.
+	Criar(ctx context.Context, s domain.SolicitacaoRecorrencia) error
+	Buscar(ctx context.Context, id string) (domain.SolicitacaoRecorrencia, error)
+	// AtualizarStatus grava o novo status. ErrNaoEncontrado se não existir.
+	AtualizarStatus(ctx context.Context, id string, status domain.StatusSolicitacao) error
+	// DaRecorrencia devolve as solicitações da recorrência, em ordem de criação.
+	DaRecorrencia(ctx context.Context, idRec string) ([]domain.SolicitacaoRecorrencia, error)
 }
 
 // ContaRepo guarda as contas recebedoras e as credenciais delas, já cifradas.
@@ -42,6 +70,10 @@ type ContaRepo interface {
 	Atualizar(ctx context.Context, c domain.Conta) error
 	// SalvarCredenciais grava o blob cifrado pelo Vault; o Store nunca vê o segredo em claro.
 	SalvarCredenciais(ctx context.Context, contaID string, cifrado []byte) error
+	// AtualizarCertificado grava os dados públicos do certificado da conta.
+	// Trocar a impressão digital zera o aviso de vencimento. ErrNaoEncontrado se
+	// a conta não existir.
+	AtualizarCertificado(ctx context.Context, contaID string, c domain.Certificado) error
 	// MarcarVencimentoAvisado registra que o vencimento do certificado com essa
 	// impressão digital já foi avisado. ErrNaoEncontrado se a conta não existir ou
 	// tiver outro certificado.

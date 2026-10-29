@@ -168,18 +168,72 @@ CRIADA ──▶ APROVADA ──▶ CANCELADA
    └──▶ EXPIRADA
 ```
 
-- Uma recorrência tem periodicidade, valor (fixo ou máximo) e vigência.
+- Os status são os da API Pix do BCB (`RecStatus`, 2.10.0): `CRIADA`, `APROVADA`,
+  `REJEITADA`, `EXPIRADA`, `CANCELADA`.
+- Uma recorrência tem periodicidade (semanal, mensal, trimestral, semestral ou
+  anual), valor, vigência e política de retentativa
+  (`NAO_PERMITE` ou `PERMITE_3R_7D`), definida só pelo recebedor (RN-42).
+- **Valor:** fixo (`valorRec`, igual em todo ciclo) ou variável. No variável, o
+  **pagador** define um valor máximo na autorização, e o recebedor pode exigir
+  um **piso para esse máximo** (`valorMinimoRecebedor`): com piso de R$ 50,00,
+  o pagador não autoriza um máximo de R$ 30,00. Fixo e piso são excludentes.
 - Só gera cobrança (`cobr`) quando `APROVADA`.
+- **Pela API, a recorrência é criada com uma API key restrita a uma conta.** É
+  ela que identifica o recebedor, como a credencial do cliente na spec do BCB;
+  key irrestrita responde 400. Consultar e pedir confirmação seguem a RN-60:
+  recorrência de outra conta responde 404.
+- Rejeição pelo pagador vem com motivo; o Lastro guarda o motivo (código e
+  descrição do encerramento).
+- **Mudanças chegam pelo webhook de recorrência** (`/webhooks/rec/{conta}/{token}`,
+  com ou sem o `/rec` que a spec manda acrescentar), registrado por
+  `lastro conta webhook` com o mesmo token do aviso de Pix. Cada mudança grava a
+  recorrência, encerra as solicitações pendentes dela (RN-41) e publica
+  `recorrencia.atualizada`, numa transação só. Aviso repetido não muda nada;
+  aviso fora da RN-40 (uma volta de `APROVADA` para `CRIADA`, por exemplo) é
+  ignorado com registro no log; recorrência desconhecida é ignorada, para o banco
+  não reenviar para sempre.
+- **Aviso perdido não trava a recorrência:** a conciliação (RN-31) também consulta
+  no banco as recorrências abertas (`CRIADA` e `APROVADA`) e aplica o que mudou
+  pelo mesmo caminho do webhook.
+- A autorização é dada por uma de quatro **jornadas** do BCB: (1) notificação no
+  app do pagador, sem QR Code (`/solicrec`); (2) QR Code só com a recorrência;
+  (3) QR Code com primeiro pagamento imediato e recorrência; (4) QR Code de fatura
+  com a recorrência. O PSP do recebedor oferece ao menos uma; o adapter declara
+  quais (RN-50).
 
 ### RN-41 · Solicitação de confirmação (`/solicrec`)
 
-É o pedido de autorização enviado ao pagador. Aprovação e rejeição chegam por
-webhook de recorrência (`/webhookrec`) e movem a recorrência (RN-40).
+É o pedido de autorização enviado ao app do pagador (jornada 1). Tem estados
+próprios, separados dos da recorrência (`SolicRecStatus`, 2.10.0):
+
+```
+CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
+   │          │           ├────────▶ REJEITADA
+   │          │           └────────▶ EXPIRADA
+   └──────────┴───────────────────▶ CANCELADA
+```
+
+- A spec lista os status, não as transições: o diagrama segue a ordem dos nomes
+  e precisa ser conferido no *Manual de Fluxos* do BCB ao implementar (#31).
+- `ACEITA` leva a recorrência a `APROVADA`; `REJEITADA`, a `REJEITADA` (RN-40).
+- Fica pendente no app do pagador por **no máximo 30 dias**; o recebedor pode
+  definir menos. Passado o prazo, expira.
+- O recebedor só cancela (`PATCH` com `CANCELADA`).
+- Mudanças chegam por webhook de recorrência (`/webhookrec`).
 
 ### RN-42 · Cobrança recorrente (`/cobr`)
 
-- Agendada com a antecedência mínima do normativo vigente.
-- Tentativas e retentativas seguem o normativo vigente.
+- Status da API Pix (`CobRStatus`, 2.10.0): `CRIADA`, `ATIVA`, `CONCLUIDA`,
+  `EXPIRADA`, `REJEITADA`, `CANCELADA`. O recebedor só cancela.
+- **Antecedência:** a instrução de pagamento chega ao PSP do pagador **de 2 a 10
+  dias corridos** antes da data prevista de liquidação. O Lastro recusa enviar
+  fora dessa janela, em vez de deixar o banco recusar.
+- **Retentativa** (`POST /cobr/{txid}/retentativa/{data}`), só se a recorrência
+  for `PERMITE_3R_7D`: no máximo **3 datas** diferentes, em até **7 dias corridos**
+  da data original, sem passar do início do ciclo seguinte (ou do fim da
+  recorrência), com **o mesmo valor**, pedida até **23h59 do dia anterior** à nova data.
+- Mudanças chegam por webhook de cobrança recorrente (`/webhookcobr`), separado
+  do de recorrência.
 
 ### RN-43 · Prazos versionados
 
@@ -187,6 +241,16 @@ Antecedência, janelas de retentativa e afins **não são constantes no código*
 Ficam numa tabela de parâmetros com **data do normativo** de origem, para que
 cada mudança do BCB vire um commit pequeno, revisável e com fonte — e um
 release com nota.
+
+Valores de partida, do *Guia de implementação do Pix Automático* v1.3
+(BCB, 19/08/2026), conferidos pelo estudo #1:
+
+| Parâmetro | Valor | Onde |
+|---|---|---|
+| Pendência máxima da solicitação de confirmação | 30 dias | Guia, seção 3.2 |
+| Antecedência da instrução de pagamento | 2 a 10 dias corridos | Guia, agendamento |
+| Retentativas pós-vencimento | até 3 datas, em até 7 dias corridos, mesmo valor | Guia, novas tentativas |
+| Prazo para pedir a retentativa | até 23h59 do dia anterior | Guia, novas tentativas |
 
 ---
 
@@ -223,6 +287,11 @@ deslizante e registra todo Pix que não chegou por webhook, pelo mesmo caminho d
 webhook (RN-30): deduplicado por `endToEndId`, concluindo a cobrança e publicando
 `pix.recebido`. **Nenhum Pix some** porque o banco falhou em avisar.
 
+Nas contas cujo banco faz Pix Automático, a mesma rodada consulta as
+recorrências abertas (`CRIADA` e `APROVADA`) e aplica as mudanças sem aviso
+pelo caminho do webhook de recorrência (RN-40). Uma recorrência que falha não
+impede as outras, e as recorrências não dependem de a consulta de Pix dar certo.
+
 - Padrão: a cada **5 min**, olhando as últimas **2 h**
   (`LASTRO_CONCILIACAO_INTERVALO`, `LASTRO_CONCILIACAO_JANELA`). Intervalo `0`
   desliga, com aviso no log; janela zero é recusada.
@@ -243,7 +312,9 @@ webhook (RN-30): deduplicado por `endToEndId`, concluindo a cobrança e publican
   para assinar). https obrigatório (http só para localhost).
 - **Eventos:** `cobranca.criada`, `cobranca.revisada`, `cobranca.concluida`,
   `cobranca.removida`, `pix.recebido` (com `divergente` quando o valor pago
-  difere do cobrado) e `certificado.expirando` (RN-62). O corpo é o envelope do Standard Webhooks:
+  difere do cobrado), `certificado.expirando` (RN-62) e, do Pix Automático,
+  `recorrencia.criada`, `recorrencia.atualizada` e `recorrencia.solicitacao`
+  (RN-40, RN-41). O corpo é o envelope do Standard Webhooks:
   `{"type": ..., "timestamp": ..., "data": {...}}`, normalizado, igual para
   qualquer banco.
 - **Assinatura** no padrão [Standard Webhooks](https://www.standardwebhooks.com/):
@@ -315,6 +386,10 @@ escrito em log — nem mascarado parcialmente.
     (`LASTRO_CERTIFICADO_INTERVALO`; `0` desliga). Como todo evento, sem destino
     cadastrado na hora o aviso é descartado e não se repete.
   - O alerta no painel entra com o painel (F8).
+  - **Contas cadastradas antes do v0.3.0**, quando o certificado não era lido
+    no cadastro, ganham os dados públicos ao subir o `serve`. O certificado é
+    lido do blob cifrado; vencido é gravado mesmo assim (e avisado), e ilegível
+    gera um aviso no log com o id da conta e o motivo, sem nada do conteúdo.
 - **Certificado de homologação não entra em conta de produção.** Nada no X.509
   diz o ambiente; para o Lastro, é de homologação o certificado (pela impressão
   digital) **já cadastrado numa conta de homologação**, mesmo que ela esteja

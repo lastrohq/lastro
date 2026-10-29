@@ -10,6 +10,30 @@ import (
 	"database/sql"
 )
 
+const atualizarCertificado = `-- name: AtualizarCertificado :execrows
+UPDATE contas SET cert_sujeito = ?, cert_impressao_digital = ?, cert_validade_s = ? WHERE id = ?
+`
+
+type AtualizarCertificadoParams struct {
+	CertSujeito          sql.NullString
+	CertImpressaoDigital sql.NullString
+	CertValidadeS        sql.NullInt64
+	ID                   string
+}
+
+func (q *Queries) AtualizarCertificado(ctx context.Context, arg AtualizarCertificadoParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, atualizarCertificado,
+		arg.CertSujeito,
+		arg.CertImpressaoDigital,
+		arg.CertValidadeS,
+		arg.ID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const atualizarConta = `-- name: AtualizarConta :execrows
 UPDATE contas SET nome = ?, chave_pix = ?, ambiente = ?, ativa = ? WHERE id = ?
 `

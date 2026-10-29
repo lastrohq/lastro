@@ -82,6 +82,22 @@ func (r contas) Atualizar(ctx context.Context, c domain.Conta) error {
 	return nil
 }
 
+func (r contas) AtualizarCertificado(ctx context.Context, id string, c domain.Certificado) error {
+	n, err := r.q.AtualizarCertificado(ctx, db.AtualizarCertificadoParams{
+		CertSujeito:          sql.NullString{String: c.Sujeito, Valid: true},
+		CertImpressaoDigital: sql.NullString{String: c.ImpressaoDigital, Valid: true},
+		CertValidadeS:        sql.NullInt64{Int64: c.Validade.Unix(), Valid: true},
+		ID:                   id,
+	})
+	if err != nil {
+		return traduzir(err, "conta "+id)
+	}
+	if n == 0 {
+		return fmt.Errorf("conta %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	return nil
+}
+
 func (r contas) MarcarVencimentoAvisado(ctx context.Context, id, impressao string) error {
 	n, err := r.q.MarcarVencimentoAvisado(ctx, db.MarcarVencimentoAvisadoParams{ID: id, CertImpressaoDigital: sql.NullString{String: impressao, Valid: true}})
 	if err != nil {
