@@ -34,6 +34,79 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 29/10/2026 — v0.3.0: o certificado é conferido antes de o banco reclamar
+
+A base dos adapters reais (F5), entregue antes de o primeiro banco entrar: o
+certificado do mTLS de cada conta é lido no cadastro, vigiado até vencer e
+preso ao ambiente certo; o token OAuth2 é reutilizado; e a regra de camadas
+virou check do CI. O BR Code saiu de `🧪 Em teste` com o teste manual em quatro apps.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#9](https://github.com/lastrohq/lastro/issues/9) | Gerar BR Code estático e dinâmico válido em qualquer app de banco | Core | M | Alta | [#67](https://github.com/lastrohq/lastro/pull/67) `832b45e` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 10:55 |
+| [#4](https://github.com/lastrohq/lastro/issues/4) | CI reprova importação proibida entre camadas (depguard) | Infra/CI | P | Média | [#68](https://github.com/lastrohq/lastro/pull/68) `c7fa073` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 11:08 |
+| [#26](https://github.com/lastrohq/lastro/issues/26) | Token OAuth2 dos bancos é reutilizado até expirar | Core | M | Alta | [#70](https://github.com/lastrohq/lastro/pull/70) `68ecaa7` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 11:53 |
+| [#71](https://github.com/lastrohq/lastro/issues/71) | Certificado do mTLS é conferido ao cadastrar e a validade fica visível | Segurança | M | Alta | [#74](https://github.com/lastrohq/lastro/pull/74) `d168f1a` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 12:11 |
+| [#73](https://github.com/lastrohq/lastro/issues/73) | Certificado de homologação é recusado em conta de produção | Segurança | P | Alta | [#75](https://github.com/lastrohq/lastro/pull/75) `cc1e36c` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 12:25 |
+| [#72](https://github.com/lastrohq/lastro/issues/72) | A aplicação é avisada 30 dias antes de o certificado vencer | Segurança | M | Alta | [#76](https://github.com/lastrohq/lastro/pull/76) `cfd6ba1` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 12:28 |
+
+> `develop` e `main` com o mesmo conteúdo depois do [#77](https://github.com/lastrohq/lastro/pull/77); release
+> [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) com 6 binários, checksums e imagem
+> `ghcr.io/lastrohq/lastro:0.3.0` (amd64 e arm64, digest `sha256:9fa67e6b…`). O binário linux/amd64
+> foi baixado, conferido contra o `checksums.txt` e respondeu `0.3.0`.
+>
+> **Ainda não ⚠️ — imagem privada**, a mesma pendência das levas anteriores.
+
+### Épico #25 — certificados e segredos
+
+**Era:** "certificados e segredos ficam cifrados e o painel avisa antes de
+vencerem". Metade já existia (vault, master key obrigatória); a outra metade
+dependia de uma coisa que não existia: o Lastro **ler** o certificado.
+
+**Virou** três issues, um PR cada: conferir no cadastro (#71), recusar
+homologação em produção (#73) e avisar a 30 dias (#72). O alerta no painel
+fica para a F8.
+
+**Decisões:** `go-pkcs12` da SSLMate, porque o `x/crypto/pkcs12` não lê .p12 com
+AES, que é o padrão do OpenSSL 3 ([ADR-006](./adr/006-certificado-conferido-no-cadastro.md)).
+"Certificado de homologação" passou a ser **o já cadastrado numa conta de
+homologação**, pela impressão digital, porque nada no X.509 marca o ambiente.
+O aviso é guardado pela impressão digital, para que trocar o certificado o zere
+sem código extra.
+
+**Ensinou:** a validade de certificado pode ser 9999-12-31, que não cabe em
+nanossegundos `int64`. Por isso essa coluna é a única em segundos.
+
+### Teste que só passa por sorte não é teste
+
+Repetir a suíte 15 vezes antes de abrir o #74 revelou um teste antigo que falhava
+1 vez em 64: ele "invalidava" o token trocando o último caractere por `x`, e
+às vezes o token já terminava em `x`. Corrigido em commit separado. Ficou a regra:
+**teste novo roda em laço antes do PR.**
+
+### O `-race` achou o que já estava lá
+
+O job de certificado, o primeiro ligado por padrão no teste que sobe o `serve`,
+expôs que o `serve` nunca esperou os jobs antes de fechar o store. Conciliação e
+entrega sempre tiveram o defeito; o teste os desligava. O `fix:` foi junto do #76.
+
+### Prova de regra de lint precisa de import de verdade
+
+O PR descartável que provou o depguard (#69) falhou pela razão errada duas vezes:
+primeiro um ciclo de import, depois um import em branco que o `revive` reclamou na
+mesma linha — e o golangci-lint mostra um problema por linha. Só com um import
+usado de verdade o depguard apareceu.
+
+### Ficou aberto
+
+- [#27](https://github.com/lastrohq/lastro/issues/27) — adapter do Efí, que usa tudo o que entrou aqui; espera acesso à homologação.
+- [#21](https://github.com/lastrohq/lastro/issues/21) — conformidade espera as fixtures do primeiro banco real.
+- [#64](https://github.com/lastrohq/lastro/issues/64) — sandbox ainda esquece as cobranças ao reiniciar.
+- [#1](https://github.com/lastrohq/lastro/issues/1) — estudo de quais bancos expõem Pix Automático, que destrava a F6.
+- Contas cadastradas antes do v0.3.0 não têm os dados públicos do certificado e não recebem o aviso de vencimento (sem issue ainda).
+
+---
+
 ## Leva de 28/10/2026 (noite) — v0.2.0: nenhum Pix some
 
 A F4 inteira numa leva: o Lastro passou a **saber** do pagamento (webhook do
