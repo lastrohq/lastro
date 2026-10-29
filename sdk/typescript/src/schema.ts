@@ -314,6 +314,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/lastro/v1/webhooks/entregas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Listar entregas de webhook
+         * @description Exige o escopo `webhook:admin`. Lista as entregas de eventos aos destinos,
+         *     pela ordem da próxima tentativa. Chave restrita a uma conta só vê as
+         *     entregas dela.
+         */
+        get: operations["listarEntregas"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/lastro/v1/webhooks/entregas/{eventoId}/reenviar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventoId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Reenviar entregas que estão na DLQ
+         * @description Exige o escopo `webhook:admin`. Devolve à fila as entregas do evento que
+         *     desistiram, com as tentativas zeradas; o worker tenta de novo na hora.
+         *     404 se o evento não tiver entrega na DLQ que a chave enxergue.
+         */
+        post: operations["reenviarEntregas"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/webhooks/pix/{contaId}/{token}": {
         parameters: {
             query?: never;
@@ -467,6 +513,27 @@ export interface components {
             ambiente: "homologacao" | "producao";
             ativa: boolean;
             certificado?: components["schemas"]["ContaCertificado"];
+        };
+        /** @description Uma entrega de evento a um destino (Standard Webhooks, com outbox e DLQ). */
+        EntregaWebhook: {
+            eventoId: string;
+            destinoId: string;
+            contaId: string;
+            /** @example cobranca.concluida */
+            tipo: string;
+            /** @enum {string} */
+            status: "pendente" | "entregue" | "dlq";
+            /** @description Tentativas feitas desde a criação ou o último reenvio. */
+            tentativas: number;
+            /** @description Status HTTP da última tentativa; ausente se não houve resposta. */
+            ultimoHttp?: number;
+            ultimoErro?: string;
+            /** Format: date-time */
+            criadaEm: string;
+            /** Format: date-time */
+            proximaEm: string;
+            /** Format: date-time */
+            atualizadaEm: string;
         };
         /** @description Dados públicos do certificado do mTLS, conferido no cadastro (RN-62). O certificado e a chave privada nunca saem do Lastro. Ausente se a conta não tiver certificado. */
         ContaCertificado: {
@@ -1707,6 +1774,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Conta"];
+                };
+            };
+            default: components["responses"]["Erro"];
+        };
+    };
+    listarEntregas: {
+        parameters: {
+            query?: {
+                status?: "pendente" | "entregue" | "dlq";
+                limite?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entregas encontradas. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        entregas: components["schemas"]["EntregaWebhook"][];
+                    };
+                };
+            };
+            default: components["responses"]["Erro"];
+        };
+    };
+    reenviarEntregas: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                eventoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Entregas devolvidas à fila. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        reenviadas: number;
+                    };
                 };
             };
             default: components["responses"]["Erro"];
