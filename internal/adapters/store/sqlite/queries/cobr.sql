@@ -19,3 +19,8 @@ SELECT COUNT(*) FROM cobrancas_recorrentes WHERE txid = ?;
 SELECT txid, recorrencia_id, conta_id, status, valor, vencimento, ajuste_dia_util, info_adicional,
        tentativas, motivo_encerramento, criada_em, revisao
 FROM cobrancas_recorrentes WHERE recorrencia_id = ? ORDER BY vencimento, criada_em, txid;
+
+-- name: CobrsAbertas :many
+SELECT txid, recorrencia_id, conta_id, status, valor, vencimento, ajuste_dia_util, info_adicional,
+       tentativas, motivo_encerramento, criada_em, revisao
+FROM cobrancas_recorrentes WHERE conta_id = ? AND status IN ('CRIADA', 'ATIVA') ORDER BY criada_em, txid;

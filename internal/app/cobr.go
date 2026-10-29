@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/lastrohq/lastro/internal/domain"
 	"github.com/lastrohq/lastro/internal/ports"
@@ -165,7 +166,9 @@ func (s CobrancasRecorrentes) cicloLivre(ctx context.Context, rec domain.Recorre
 	return nil
 }
 
-// Consultar devolve a cobrança gravada. Acesso restrito a outra conta não a
+// Consultar devolve a cobrança. Se ela ainda pode mudar, pergunta ao PSP e
+// aplica o que ele sabe (RegistrarAtualizacao), como a consulta da cob. Se o
+// PSP falhar, devolve o que está gravado. Acesso restrito a outra conta não a
 // enxerga: responde ErrNaoEncontrado, sem revelar que ela existe.
 func (s CobrancasRecorrentes) Consultar(ctx context.Context, txid domain.Txid) (domain.CobrancaRecorrente, error) {
 	c, err := s.Store.CobrancasRecorrentes().BuscarPorTxid(ctx, txid)
@@ -175,7 +178,87 @@ func (s CobrancasRecorrentes) Consultar(ctx context.Context, txid domain.Txid) (
 	if !AcessoDe(ctx).enxerga(c.ContaID) {
 		return domain.CobrancaRecorrente{}, fmt.Errorf("cobrança recorrente %s: %w", txid, ports.ErrNaoEncontrado)
 	}
-	return c, nil
+	if domain.TransicoesCobrancaRecorrente.Terminal(c.Status) || s.PSPs == nil {
+		return c, nil
+	}
+	mudou, err := s.sincronizar(ctx, c)
+	if err != nil {
+		slog.WarnContext(ctx, "consulta da cobrança recorrente no PSP falhou; devolvendo a gravada", "txid", txid, "erro", err)
+		return c, nil
+	}
+	if !mudou {
+		return c, nil
+	}
+	return s.Store.CobrancasRecorrentes().BuscarPorTxid(ctx, txid)
+}
+
+// sincronizar pergunta ao PSP como a cobrança está e aplica o que mudou.
+func (s CobrancasRecorrentes) sincronizar(ctx context.Context, c domain.CobrancaRecorrente) (bool, error) {
+	conta, err := s.Store.Contas().Buscar(ctx, c.ContaID)
+	if err != nil {
+		return false, err
+	}
+	psp, err := pspCobr(s.PSPs, conta)
+	if err != nil {
+		return false, err
+	}
+	noBanco, err := psp.ConsultarCobr(ctx, conta, c.Txid)
+	if err != nil {
+		return false, err
+	}
+	return s.RegistrarAtualizacao(ctx, conta.ID, domain.AtualizacaoCobrancaRecorrente{
+		Txid: c.Txid, IDRec: c.RecorrenciaID, Status: noBanco.Status, Tentativas: noBanco.Tentativas, MotivoEncerramento: noBanco.MotivoEncerramento,
+	})
+}
+
+// RegistrarAtualizacao aplica o que o banco avisou sobre a cobrança (RN-42),
+// pelo webhook de cobrança recorrente, pela consulta ou pela conciliação:
+// grava e publica, numa transação só, cobranca_recorrente.tentativa para cada
+// tentativa nova ou que mudou e cobranca_recorrente.atualizada se o status
+// mudou. Devolve se algo mudou.
+//
+// Aviso repetido não muda nada. Aviso que a RN-42 não permite, como uma volta
+// de CONCLUIDA para ATIVA, é ignorado com registro no log. Cobrança de outra
+// conta é ErrNaoEncontrado.
+func (s CobrancasRecorrentes) RegistrarAtualizacao(ctx context.Context, contaID string, a domain.AtualizacaoCobrancaRecorrente) (bool, error) {
+	mudou := false
+	err := s.Store.WithTx(ctx, func(tx ports.Store) error {
+		c, err := tx.CobrancasRecorrentes().BuscarPorTxid(ctx, a.Txid)
+		if err != nil {
+			return err
+		}
+		if c.ContaID != contaID {
+			return fmt.Errorf("cobrança recorrente %s de outra conta: %w", a.Txid, ports.ErrNaoEncontrado)
+		}
+		antes := c
+		statusMudou, tentativas, err := c.Aplicar(a)
+		if errors.Is(err, domain.ErrTransicaoInvalida) {
+			slog.WarnContext(ctx, "aviso de cobrança recorrente ignorado: transição fora da RN-42", "txid", c.Txid, "de", antes.Status, "para", a.Status)
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		if !statusMudou && len(tentativas) == 0 && c.MotivoEncerramento == antes.MotivoEncerramento {
+			return nil
+		}
+		if err := tx.CobrancasRecorrentes().Atualizar(ctx, &c); err != nil {
+			return err
+		}
+		for i := range tentativas {
+			if err := tx.Outbox().Adicionar(ctx, s.evento(domain.EventoCobrRTentativa, c, &tentativas[i])); err != nil {
+				return err
+			}
+		}
+		if statusMudou {
+			if err := tx.Outbox().Adicionar(ctx, s.evento(domain.EventoCobrRAtualizada, c, nil)); err != nil {
+				return err
+			}
+		}
+		mudou = true
+		return nil
+	})
+	return mudou, err
 }
 
 // Cancelar leva a cobrança a CANCELADA no PSP e grava, com o evento

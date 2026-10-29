@@ -92,7 +92,11 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
   | outros | é paga no vencimento: `CONCLUIDA` |
 
   Cancelar (`PATCH /cobr/{txid}` com `CANCELADA`) congela a cobrança: nada é
-  liquidado depois. **O Lastro ainda não acompanha essas mudanças**: elas chegam
-  com o webhook de cobrança recorrente e a conciliação, que fecham a #32. Até lá,
-  o `GET /cobr/{txid}` mostra o que o Lastro gravou na criação, no cancelamento e
-  na retentativa.
+  liquidado depois. A cada passo, o sandbox avisa pelo webhook de cobrança
+  recorrente (`/webhooks/cobr/{conta}/{token}`), que `lastro conta webhook`
+  registra junto com os outros. O `GET /cobr/{txid}` também pergunta ao sandbox
+  enquanto a cobrança está aberta, e a conciliação confere as abertas.
+
+  ⚠️ Como na recorrência, a URL do webhook de cobrança recorrente fica **em
+  memória**: entre processos o aviso não chega, e a mudança aparece na consulta
+  ou na próxima conciliação.

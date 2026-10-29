@@ -62,6 +62,48 @@ func (q *Queries) BuscarCobr(ctx context.Context, txid string) (CobrancasRecorre
 	return i, err
 }
 
+const cobrsAbertas = `-- name: CobrsAbertas :many
+SELECT txid, recorrencia_id, conta_id, status, valor, vencimento, ajuste_dia_util, info_adicional,
+       tentativas, motivo_encerramento, criada_em, revisao
+FROM cobrancas_recorrentes WHERE conta_id = ? AND status IN ('CRIADA', 'ATIVA') ORDER BY criada_em, txid
+`
+
+func (q *Queries) CobrsAbertas(ctx context.Context, contaID string) ([]CobrancasRecorrente, error) {
+	rows, err := q.db.QueryContext(ctx, cobrsAbertas, contaID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CobrancasRecorrente
+	for rows.Next() {
+		var i CobrancasRecorrente
+		if err := rows.Scan(
+			&i.Txid,
+			&i.RecorrenciaID,
+			&i.ContaID,
+			&i.Status,
+			&i.Valor,
+			&i.Vencimento,
+			&i.AjusteDiaUtil,
+			&i.InfoAdicional,
+			&i.Tentativas,
+			&i.MotivoEncerramento,
+			&i.CriadaEm,
+			&i.Revisao,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const cobrsDaRecorrencia = `-- name: CobrsDaRecorrencia :many
 SELECT txid, recorrencia_id, conta_id, status, valor, vencimento, ajuste_dia_util, info_adicional,
        tentativas, motivo_encerramento, criada_em, revisao

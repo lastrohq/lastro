@@ -20,7 +20,9 @@ type Conciliacao struct {
 	Recebimentos Recebimentos
 	// Recorrencias vazia (Store nil) pula a conciliação de recorrências.
 	Recorrencias Recorrencias
-	Clock        ports.Clock
+	// CobrancasRecorrentes vazia (Store nil) pula a das cobranças recorrentes.
+	CobrancasRecorrentes CobrancasRecorrentes
+	Clock                ports.Clock
 	// Janela é quanto tempo para trás consultar; zero usa JanelaConciliacaoPadrao.
 	Janela time.Duration
 }
@@ -32,7 +34,9 @@ type ResultadoConciliacao struct {
 	Novos int
 	// Recorrencias são as recorrências que mudaram sem aviso.
 	Recorrencias int
-	Falhas       int
+	// CobrancasRecorrentes são as cobranças recorrentes que mudaram sem aviso.
+	CobrancasRecorrentes int
+	Falhas               int
 }
 
 // Rodar consulta GET /pix de cada conta na janela [agora-Janela, agora) e
@@ -62,6 +66,9 @@ func (s Conciliacao) Rodar(ctx context.Context) (ResultadoConciliacao, error) {
 		// As recorrências não dependem de a consulta de Pix dar certo.
 		mudaram, falhas := s.conciliarRecorrencias(ctx, conta)
 		r.Recorrencias += mudaram
+		r.Falhas += falhas
+		mudaram, falhas = s.conciliarCobrs(ctx, conta)
+		r.CobrancasRecorrentes += mudaram
 		r.Falhas += falhas
 		pixes, err := psp.ListarPix(ctx, conta, ports.Janela{Inicio: agora.Add(-janela), Fim: agora})
 		if err != nil {
@@ -123,6 +130,36 @@ func (s Conciliacao) conciliarRecorrencias(ctx context.Context, conta domain.Con
 		if mudou {
 			mudaram++
 			slog.InfoContext(ctx, "conciliação recuperou mudança de recorrência sem aviso", "conta", conta.ID, "idRec", rec.ID, "status", noBanco.Status)
+		}
+	}
+	return mudaram, falhas
+}
+
+// conciliarCobrs consulta no PSP cada cobrança recorrente aberta da conta e
+// aplica o que mudou pelo mesmo caminho do webhook de cobrança recorrente.
+// Conta cujo PSP não faz cobrança recorrente é pulada sem falha.
+func (s Conciliacao) conciliarCobrs(ctx context.Context, conta domain.Conta) (mudaram, falhas int) {
+	if s.CobrancasRecorrentes.Store == nil {
+		return 0, 0
+	}
+	if _, err := pspCobr(s.PSPs, conta); err != nil {
+		return 0, 0
+	}
+	abertas, err := s.Store.CobrancasRecorrentes().Abertas(ctx, conta.ID)
+	if err != nil {
+		slog.ErrorContext(ctx, "conciliação: leitura das cobranças recorrentes falhou", "conta", conta.ID, "erro", err)
+		return 0, 1
+	}
+	for _, c := range abertas {
+		mudou, err := s.CobrancasRecorrentes.sincronizar(ctx, c)
+		if err != nil {
+			falhas++
+			slog.WarnContext(ctx, "conciliação: cobrança recorrente não conferida", "conta", conta.ID, "txid", c.Txid, "erro", err)
+			continue
+		}
+		if mudou {
+			mudaram++
+			slog.InfoContext(ctx, "conciliação recuperou mudança de cobrança recorrente sem aviso", "conta", conta.ID, "txid", c.Txid)
 		}
 	}
 	return mudaram, falhas

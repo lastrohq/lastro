@@ -25,11 +25,15 @@ type pspCobr struct {
 	tentativaNoBanco domain.StatusTentativa
 	// antes roda antes de o PSP responder, para simular o aviso do banco chegando no meio.
 	antes func()
+	// noBanco é o que ConsultarCobr devolve; nil é ErrNaoEncontrado.
+	noBanco     *domain.CobrancaRecorrente
+	errConsulta error
+	webhookCobr string
 }
 
 func (p *pspCobr) Nome() string { return "banco-cobr" }
 func (p *pspCobr) Capabilities() ports.Capabilities {
-	return ports.Capabilities{ports.CapRec: true, ports.CapCobr: true}
+	return ports.Capabilities{ports.CapRec: true, ports.CapCobr: true, ports.CapWebhook: true}
 }
 
 func (p *pspCobr) ListarPix(context.Context, domain.Conta, ports.Janela) ([]domain.PixRecebido, error) {
@@ -55,7 +59,24 @@ func (p *pspCobr) CriarCobr(_ context.Context, _ domain.Conta, c domain.Cobranca
 }
 
 func (p *pspCobr) ConsultarCobr(context.Context, domain.Conta, domain.Txid) (domain.CobrancaRecorrente, error) {
-	return domain.CobrancaRecorrente{}, ports.ErrNaoEncontrado
+	if p.errConsulta != nil {
+		return domain.CobrancaRecorrente{}, p.errConsulta
+	}
+	if p.noBanco == nil {
+		return domain.CobrancaRecorrente{}, ports.ErrNaoEncontrado
+	}
+	return *p.noBanco, nil
+}
+
+func (p *pspCobr) ConfigurarWebhook(context.Context, domain.Conta, string) error { return nil }
+
+func (p *pspCobr) ConfigurarWebhookCobr(_ context.Context, _ domain.Conta, url string) error {
+	p.webhookCobr = url
+	return nil
+}
+
+func (p *pspCobr) InterpretarWebhookCobr(conta domain.Conta, corpo []byte) ([]domain.AtualizacaoCobrancaRecorrente, error) {
+	return psp.WebhookCobrBCB(conta, corpo)
 }
 
 func (p *pspCobr) CancelarCobr(_ context.Context, _ domain.Conta, txid domain.Txid) (domain.CobrancaRecorrente, error) {
@@ -397,4 +418,12 @@ func TestSolicitarRetentativa(t *testing.T) {
 			t.Fatalf("gravou a tentativa: %+v", c.Tentativas)
 		}
 	})
+}
+
+func (soRec) ListarPix(context.Context, domain.Conta, ports.Janela) ([]domain.PixRecebido, error) {
+	return nil, nil
+}
+
+func (declaraCobr) ListarPix(context.Context, domain.Conta, ports.Janela) ([]domain.PixRecebido, error) {
+	return nil, nil
 }

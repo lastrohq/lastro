@@ -97,6 +97,11 @@ type PSPCobrancaRecorrente interface {
 	// SolicitarRetentativa pede uma nova data de liquidação (POST
 	// /cobr/{txid}/retentativa/{data}) e devolve a cobrança com a tentativa nova.
 	SolicitarRetentativa(ctx context.Context, conta domain.Conta, txid domain.Txid, data domain.Data) (domain.CobrancaRecorrente, error)
+	// ConfigurarWebhookCobr registra a URL do webhook de cobrança recorrente (PUT /webhookcobr).
+	ConfigurarWebhookCobr(ctx context.Context, conta domain.Conta, url string) error
+	// InterpretarWebhookCobr lê o aviso de cobrança recorrente que o PSP
+	// enviou. Quem segue a spec usa psp.WebhookCobrBCB.
+	InterpretarWebhookCobr(conta domain.Conta, corpo []byte) ([]domain.AtualizacaoCobrancaRecorrente, error)
 }
 
 // Credenciais entrega a um adapter de PSP as credenciais decifradas de uma conta

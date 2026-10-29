@@ -257,8 +257,21 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
   Os dias são contados no fuso de Brasília. Os ciclos contam a partir da
   `dataInicial`; nos mensais, o dia que não existe no mês vira o último dia
   dele (31/01 → 28/02 → 31/03).
-- Mudanças chegam por webhook de cobrança recorrente (`/webhookcobr`), separado
-  do de recorrência.
+- **Mudanças chegam pelo webhook de cobrança recorrente**
+  (`/webhooks/cobr/{conta}/{token}`, com ou sem o `/cobr` que a spec manda
+  acrescentar), separado do de recorrência e registrado por `lastro conta
+  webhook` com o mesmo token. Cada aviso grava a cobrança e publica, numa
+  transação só, `cobranca_recorrente.tentativa` para cada tentativa nova ou que
+  mudou e `cobranca_recorrente.atualizada` se o status mudou. O banco é a fonte
+  da verdade sobre cada tentativa (identificada pela data e pelo tipo); a
+  retentativa que só o Lastro conhece continua até o banco avisar. Aviso
+  repetido não muda nada; aviso fora do diagrama (uma volta de `CONCLUIDA` para
+  `ATIVA`, por exemplo) é ignorado com registro no log; cobrança desconhecida é
+  ignorada, para o banco não reenviar para sempre.
+- **Sem aviso, a consulta e a conciliação acham a mudança:** `GET /cobr/{txid}`
+  pergunta ao PSP enquanto a cobrança está aberta (se o PSP falhar, devolve a
+  gravada), e `lastro conciliar` confere todas as abertas de cada conta pelo
+  mesmo caminho do webhook.
 
 ### RN-43 · Prazos versionados
 

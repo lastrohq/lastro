@@ -756,6 +756,46 @@ paths:
         "200":
           description: Avisos aplicados.
 
+  /webhooks/cobr/{contaId}/{token}:
+    parameters:
+      - $ref: "#/components/parameters/ContaIdWebhook"
+      - $ref: "#/components/parameters/TokenWebhook"
+    post:
+      tags: [Webhooks]
+      operationId: receberWebhookCobr
+      summary: Aviso de mudança de cobrança recorrente (Pix Automático), enviado pelo banco
+      description: |
+        Chamada pelo **banco**. A URL usa o mesmo token do aviso de Pix e é
+        registrada por `lastro conta webhook` quando o banco faz cobrança
+        recorrente. O corpo segue o callback da spec do BCB (`{"cobsr": [...]}`).
+        Aviso repetido ou fora de ordem não muda nada; cobrança desconhecida é
+        ignorada (RN-42).
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/WebhookCobr"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Avisos aplicados.
+
+  /webhooks/cobr/{contaId}/{token}/cobr:
+    parameters:
+      - $ref: "#/components/parameters/ContaIdWebhook"
+      - $ref: "#/components/parameters/TokenWebhook"
+    post:
+      tags: [Webhooks]
+      operationId: receberWebhookCobrComSufixo
+      summary: O mesmo aviso, com o /cobr que a spec manda o banco acrescentar
+      security: []
+      requestBody:
+        $ref: "#/components/requestBodies/WebhookCobr"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Avisos aplicados.
+
 components:
   securitySchemes:
     apiKey:
@@ -779,6 +819,14 @@ components:
           schema:
             type: object
             description: Callback de recorrência da spec do BCB. Aceito como objeto livre porque quem interpreta é o adapter do banco.
+
+    WebhookCobr:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            description: Callback de cobrança recorrente da spec do BCB. Aceito como objeto livre porque quem interpreta é o adapter do banco.
 
   parameters:
     ContaIdWebhook:
