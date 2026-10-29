@@ -4,7 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"testing"
+
+	"github.com/lastrohq/lastro/internal/ports"
 )
+
+var _ ports.Vault = (*AESGCM)(nil)
 
 func novo(t *testing.T) *AESGCM {
 	t.Helper()
