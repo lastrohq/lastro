@@ -26,10 +26,11 @@ func main() {
 	err := cli.Run(ctx, os.Args[1:], cli.Ambiente{
 		Saida:  os.Stdout,
 		Getenv: os.Getenv,
-		// Os bancos reais precisam das credenciais das contas, que só existem
-		// depois de abrir o store e o vault: a CLI monta o registry nessa hora.
-		MontarPSPs: func(credenciais ports.Credenciais) ports.Registry {
-			return psp.NewRegistry(sandbox.New(relogio), efi.New(credenciais, relogio))
+		// Os bancos reais precisam das credenciais das contas, e o sandbox do
+		// store, que só existem depois de abrir o store e o vault: a CLI monta o
+		// registry nessa hora.
+		MontarPSPs: func(f cli.Fontes) ports.Registry {
+			return psp.NewRegistry(sandbox.New(relogio, sandbox.ComStore(f.Store)), efi.New(f.Credenciais, relogio))
 		},
 		Clock:  relogio,
 		Versao: version,

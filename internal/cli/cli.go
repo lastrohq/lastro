@@ -26,15 +26,23 @@ import (
 	"github.com/lastrohq/lastro/internal/ports"
 )
 
+// Fontes é o que os adapters de PSP recebem ao serem montados.
+type Fontes struct {
+	// Credenciais decifra as credenciais de uma conta (ADR-007).
+	Credenciais ports.Credenciais
+	// Store é o store do Lastro; o sandbox o lê para lembrar das cobranças depois de reiniciar.
+	Store ports.Store
+}
+
 // Ambiente é o que a CLI recebe do processo; nos testes, tudo é falso.
 type Ambiente struct {
 	Saida  io.Writer
 	Getenv func(string) string
 	// PSPs é o registry usado quando MontarPSPs é nil (os testes).
 	PSPs ports.Registry
-	// MontarPSPs monta o registry com acesso às credenciais das contas, que só
-	// existem depois de abrir o store e o vault. Os adapters de banco real precisam dele.
-	MontarPSPs func(ports.Credenciais) ports.Registry
+	// MontarPSPs monta o registry com o que só existe depois de abrir o store e
+	// o vault: as credenciais das contas (bancos reais) e o próprio store (sandbox).
+	MontarPSPs func(Fontes) ports.Registry
 	Clock      ports.Clock
 	Versao     string
 }
@@ -128,7 +136,7 @@ func abrir(ctx context.Context, amb Ambiente) (app.Contas, func(), error) {
 	contas := app.Contas{Store: store, Vault: v, PSPs: amb.PSPs, Certificados: leitorCertificados{}, Clock: amb.Clock}
 	if amb.MontarPSPs != nil {
 		// Contas.Credenciais só usa Store e Vault, já prontos aqui.
-		contas.PSPs = amb.MontarPSPs(contas)
+		contas.PSPs = amb.MontarPSPs(Fontes{Credenciais: contas, Store: store})
 	}
 	return contas, func() { _ = store.Close() }, nil
 }
