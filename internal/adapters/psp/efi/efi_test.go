@@ -227,13 +227,10 @@ func TestTrocarCredenciaisMontaOutroCliente(t *testing.T) {
 
 func TestCapacidadesAindaNaoImplementadas(t *testing.T) {
 	c := novo(t)
-	if err := c.psp.Capabilities().Suporta(ports.CapCobv); !errors.Is(err, ports.ErrNaoSuportado) {
-		t.Fatalf("declara cobv antes de implementar: %v", err)
+	if err := c.psp.Capabilities().Suporta(ports.CapWebhook); !errors.Is(err, ports.ErrNaoSuportado) {
+		t.Fatalf("declara webhook antes de implementar: %v", err)
 	}
-	if _, err := c.psp.CriarCobv(context.Background(), c.conta, domain.CobrancaVencimento{}); !errors.Is(err, ports.ErrNaoSuportado) {
-		t.Fatalf("CriarCobv: %v", err)
-	}
-	if _, err := c.psp.ListarPix(context.Background(), c.conta, ports.Janela{}); !errors.Is(err, ports.ErrNaoSuportado) {
-		t.Fatalf("ListarPix: %v", err)
+	if err := c.psp.ConfigurarWebhook(context.Background(), c.conta, "https://x"); !errors.Is(err, ports.ErrNaoSuportado) {
+		t.Fatalf("ConfigurarWebhook: %v", err)
 	}
 }

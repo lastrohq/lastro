@@ -75,7 +75,7 @@ func (p *PSP) Nome() string { return "efi" }
 
 // Capabilities declara o que este adapter já implementa.
 func (p *PSP) Capabilities() ports.Capabilities {
-	return ports.Capabilities{ports.CapCob: true}
+	return ports.Capabilities{ports.CapCob: true, ports.CapCobv: true, ports.CapDevolucao: true}
 }
 
 // cliente é a ligação com o Efí de uma conta, com as credenciais de quando foi montado.

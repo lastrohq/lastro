@@ -103,12 +103,30 @@ var errosConhecidos = map[string]error{
 	"txid_duplicado":           ports.ErrJaExiste,
 	"cobranca_nao_encontrada":  ports.ErrNaoEncontrado,
 	"status_cobranca_invalido": domain.ErrTransicaoInvalida,
+	"pix_nao_encontrado":       ports.ErrNaoEncontrado,
+	"devolucao_id_duplicado":   errDevolucaoDuplicada,
 }
+
+// errDevolucaoDuplicada não sai do adapter: o Devolver a transforma em idempotência.
+var errDevolucaoDuplicada = errors.New("devolução com esse id já existe")
 
 // ErrEfi é a falha do Efí que não corresponde a um erro conhecido do port.
 var ErrEfi = errors.New("o Efí recusou")
 
+// erroHTTP guarda o status da resposta de erro, para quem precisa decidir por ele.
+type erroHTTP struct {
+	status int
+	err    error
+}
+
+func (e *erroHTTP) Error() string { return e.err.Error() }
+func (e *erroHTTP) Unwrap() error { return e.err }
+
 func erroDo(status int, corpo []byte) error {
+	return &erroHTTP{status: status, err: traduzir(status, corpo)}
+}
+
+func traduzir(status int, corpo []byte) error {
 	var e erroEfi
 	_ = json.Unmarshal(corpo, &e) // corpo fora do formato: fica só o status
 	nome, mensagem := e.Nome, e.Mensagem

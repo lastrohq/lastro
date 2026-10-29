@@ -138,14 +138,23 @@ func paraCobranca(conta domain.Conta, r cobEfi, base domain.Cobranca) (domain.Co
 			c.Expiracao = time.Duration(r.Calendario.Expiracao) * time.Second
 		}
 		if r.Calendario.Criacao != "" {
-			criada, err := time.Parse(time.RFC3339, r.Calendario.Criacao)
+			criada, err := parseHorario(r.Calendario.Criacao)
 			if err != nil {
-				return domain.Cobranca{}, fmt.Errorf("efi: calendario.criacao %q não é RFC 3339", r.Calendario.Criacao)
+				return domain.Cobranca{}, fmt.Errorf("efi: calendario.criacao: %w", err)
 			}
-			c.CriadaEm = criada.UTC()
+			c.CriadaEm = criada
 		}
 	}
 	return c, nil
+}
+
+// parseHorario lê os instantes do Efí (RFC 3339, com ou sem fração de segundo) em UTC.
+func parseHorario(s string) (time.Time, error) {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("%q não é RFC 3339", s)
+	}
+	return t.UTC(), nil
 }
 
 func caminhoCob(txid domain.Txid) string { return "/v2/cob/" + url.PathEscape(string(txid)) }
@@ -185,31 +194,6 @@ func (p *PSP) RevisarCob(ctx context.Context, conta domain.Conta, c domain.Cobra
 
 func naoImplementado(capacidade ports.Capacidade) error {
 	return fmt.Errorf("efi: %w: %s ainda não implementado neste adapter", ports.ErrNaoSuportado, capacidade)
-}
-
-// CriarCobv ainda não está implementado no adapter do Efí.
-func (p *PSP) CriarCobv(context.Context, domain.Conta, domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
-	return domain.CobrancaVencimento{}, naoImplementado(ports.CapCobv)
-}
-
-// ConsultarCobv ainda não está implementado no adapter do Efí.
-func (p *PSP) ConsultarCobv(context.Context, domain.Conta, domain.Txid) (domain.CobrancaVencimento, error) {
-	return domain.CobrancaVencimento{}, naoImplementado(ports.CapCobv)
-}
-
-// RevisarCobv ainda não está implementado no adapter do Efí.
-func (p *PSP) RevisarCobv(context.Context, domain.Conta, domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
-	return domain.CobrancaVencimento{}, naoImplementado(ports.CapCobv)
-}
-
-// ListarPix ainda não está implementado no adapter do Efí.
-func (p *PSP) ListarPix(context.Context, domain.Conta, ports.Janela) ([]domain.PixRecebido, error) {
-	return nil, fmt.Errorf("efi: %w: listar Pix ainda não implementado neste adapter", ports.ErrNaoSuportado)
-}
-
-// Devolver ainda não está implementado no adapter do Efí.
-func (p *PSP) Devolver(context.Context, domain.Conta, domain.Devolucao) (domain.Devolucao, error) {
-	return domain.Devolucao{}, naoImplementado(ports.CapDevolucao)
 }
 
 // ConfigurarWebhook ainda não está implementado no adapter do Efí.
