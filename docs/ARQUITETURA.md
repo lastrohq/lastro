@@ -47,7 +47,7 @@ comunidade sem medo.
 
 | Peça | Escolha | Por quê |
 |---|---|---|
-| Linguagem | Go 1.26+ | Binário único, imagem pequena, mTLS de primeira na stdlib |
+| Linguagem | Go 1.27+ | Binário único, imagem pequena, mTLS de primeira na stdlib |
 | HTTP | `net/http` com roteamento nativo | Sem framework para manter |
 | Contrato | OpenAPI-first + `oapi-codegen` | A spec do BCB já é OpenAPI — ver [ADR-003](./adr/003-openapi-first.md) |
 | Storage | SQLite (`modernc.org/sqlite`, sem CGO, WAL) | `docker run` sem dependência — ver [ADR-002](./adr/002-sqlite-por-padrao.md) |

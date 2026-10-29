@@ -20,7 +20,7 @@ make lint   # golangci-lint run
 make run    # sobe em :8080
 ```
 
-Requisitos: Go 1.26+, [golangci-lint](https://golangci-lint.run/) v2, Docker (para a imagem).
+Requisitos: Go 1.27+, [golangci-lint](https://golangci-lint.run/) v2, Docker (para a imagem).
 
 ## Fluxo
 
