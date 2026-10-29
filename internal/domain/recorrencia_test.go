@@ -99,7 +99,7 @@ func TestSolicitacaoValidar(t *testing.T) {
 		t.Fatal(err)
 	}
 	noLimite := base
-	noLimite.ExpiraEm = agora.Add(PendenciaMaximaSolicitacao)
+	noLimite.ExpiraEm = agora.Add(30 * 24 * time.Hour)
 	if err := noLimite.Validar(agora); err != nil {
 		t.Fatalf("exatamente 30 dias: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestSolicitacaoValidar(t *testing.T) {
 		"agência longa":    func(s *SolicitacaoRecorrencia) { s.Destinatario.Agencia = "00001" },
 		"expira agora":     func(s *SolicitacaoRecorrencia) { s.ExpiraEm = agora },
 		"expirou":          func(s *SolicitacaoRecorrencia) { s.ExpiraEm = agora.Add(-time.Minute) },
-		"passa de 30 dias": func(s *SolicitacaoRecorrencia) { s.ExpiraEm = agora.Add(PendenciaMaximaSolicitacao + time.Second) },
+		"passa de 30 dias": func(s *SolicitacaoRecorrencia) { s.ExpiraEm = agora.Add(30*24*time.Hour + time.Second) },
 	}
 	for nome, estraga := range casos {
 		t.Run(nome, func(t *testing.T) {

@@ -63,6 +63,22 @@ func TestTransicoesRecorrencia(t *testing.T) {
 	)
 }
 
+func TestTransicoesCobrancaRecorrente(t *testing.T) {
+	estados := []StatusCobrancaRecorrente{CobrCriada, CobrAtiva, CobrConcluida, CobrExpirada, CobrRejeitada, CobrCancelada}
+	conferirTodas(t, TransicoesCobrancaRecorrente, estados,
+		map[[2]StatusCobrancaRecorrente]bool{
+			{CobrCriada, CobrAtiva}:     true,
+			{CobrCriada, CobrRejeitada}: true,
+			{CobrCriada, CobrCancelada}: true,
+			{CobrAtiva, CobrConcluida}:  true,
+			{CobrAtiva, CobrExpirada}:   true,
+			{CobrAtiva, CobrRejeitada}:  true,
+			{CobrAtiva, CobrCancelada}:  true,
+		},
+		map[StatusCobrancaRecorrente]bool{CobrConcluida: true, CobrExpirada: true, CobrRejeitada: true, CobrCancelada: true},
+	)
+}
+
 func TestEstadoDesconhecidoNaoTransita(t *testing.T) {
 	if err := TransicoesCobranca.Validar("INVENTADO", CobrancaConcluida); !errors.Is(err, ErrTransicaoInvalida) {
 		t.Fatalf("estado desconhecido transitou: %v", err)

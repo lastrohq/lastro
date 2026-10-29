@@ -225,6 +225,20 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
 
 - Status da API Pix (`CobRStatus`, 2.10.0): `CRIADA`, `ATIVA`, `CONCLUIDA`,
   `EXPIRADA`, `REJEITADA`, `CANCELADA`. O recebedor só cancela.
+
+  ```
+  CRIADA ──▶ ATIVA ──▶ CONCLUIDA
+     │         ├─────▶ EXPIRADA
+     ├─────────┼─────▶ REJEITADA
+     └─────────┴─────▶ CANCELADA
+  ```
+
+  `CRIADA` é a cobrança registrada no PSP do recebedor; `ATIVA`, a instrução
+  aceita pelo PSP do pagador. Ela **continua `ATIVA` durante as retentativas**,
+  como no exemplo da spec. A spec lista os status, não as transições: o
+  diagrama precisa ser conferido no *Manual de Fluxos*, como o da RN-41.
+- **Só nasce de recorrência `APROVADA`**, com o vencimento dentro da vigência
+  dela e, se a recorrência tem valor fixo, **com esse valor**.
 - **Antecedência:** a instrução de pagamento chega ao PSP do pagador **de 2 a 10
   dias corridos** antes da data prevista de liquidação. O Lastro recusa enviar
   fora dessa janela, em vez de deixar o banco recusar.
@@ -232,6 +246,9 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
   for `PERMITE_3R_7D`: no máximo **3 datas** diferentes, em até **7 dias corridos**
   da data original, sem passar do início do ciclo seguinte (ou do fim da
   recorrência), com **o mesmo valor**, pedida até **23h59 do dia anterior** à nova data.
+  Os dias são contados no fuso de Brasília. Os ciclos contam a partir da
+  `dataInicial`; nos mensais, o dia que não existe no mês vira o último dia
+  dele (31/01 → 28/02 → 31/03).
 - Mudanças chegam por webhook de cobrança recorrente (`/webhookcobr`), separado
   do de recorrência.
 
@@ -240,7 +257,9 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
 Antecedência, janelas de retentativa e afins **não são constantes no código**.
 Ficam numa tabela de parâmetros com **data do normativo** de origem, para que
 cada mudança do BCB vire um commit pequeno, revisável e com fonte — e um
-release com nota.
+release com nota. A tabela fica em `internal/domain/parametros.go`: cada linha
+tem a fonte e a data a partir da qual vale, e uma linha que já vale nunca é
+editada; mudança entra como linha nova.
 
 Valores de partida, do *Guia de implementação do Pix Automático* v1.3
 (BCB, 19/08/2026), conferidos pelo estudo #1:
