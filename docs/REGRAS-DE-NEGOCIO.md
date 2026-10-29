@@ -315,6 +315,10 @@ escrito em log — nem mascarado parcialmente.
     (`LASTRO_CERTIFICADO_INTERVALO`; `0` desliga). Como todo evento, sem destino
     cadastrado na hora o aviso é descartado e não se repete.
   - O alerta no painel entra com o painel (F8).
+  - **Contas cadastradas antes do v0.3.0**, quando o certificado não era lido
+    no cadastro, ganham os dados públicos ao subir o `serve`. O certificado é
+    lido do blob cifrado; vencido é gravado mesmo assim (e avisado), e ilegível
+    gera um aviso no log com o id da conta e o motivo, sem nada do conteúdo.
 - **Certificado de homologação não entra em conta de produção.** Nada no X.509
   diz o ambiente; para o Lastro, é de homologação o certificado (pela impressão
   digital) **já cadastrado numa conta de homologação**, mesmo que ela esteja

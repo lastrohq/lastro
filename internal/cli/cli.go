@@ -291,6 +291,13 @@ func serve(ctx context.Context, amb Ambiente) error {
 	defer fechar()
 	// Os jobs param e terminam antes de o store fechar: o defer abaixo roda antes
 	// do fechar() acima, inclusive quando o servidor nem chega a subir.
+	// Contas de antes do v0.3.0 ganham os dados públicos do certificado antes de
+	// os jobs rodarem, para o aviso de vencimento já as enxergar (#79).
+	if n, err := contas.PreencherCertificados(ctx); err != nil {
+		return err
+	} else if n > 0 {
+		slog.InfoContext(ctx, "dados do certificado preenchidos em contas antigas", "contas", n)
+	}
 	ctxJobs, pararJobs := context.WithCancel(ctx)
 	var rodando sync.WaitGroup
 	defer func() {

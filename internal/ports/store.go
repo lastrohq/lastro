@@ -42,6 +42,10 @@ type ContaRepo interface {
 	Atualizar(ctx context.Context, c domain.Conta) error
 	// SalvarCredenciais grava o blob cifrado pelo Vault; o Store nunca vê o segredo em claro.
 	SalvarCredenciais(ctx context.Context, contaID string, cifrado []byte) error
+	// AtualizarCertificado grava os dados públicos do certificado da conta.
+	// Trocar a impressão digital zera o aviso de vencimento. ErrNaoEncontrado se
+	// a conta não existir.
+	AtualizarCertificado(ctx context.Context, contaID string, c domain.Certificado) error
 	// MarcarVencimentoAvisado registra que o vencimento do certificado com essa
 	// impressão digital já foi avisado. ErrNaoEncontrado se a conta não existir ou
 	// tiver outro certificado.

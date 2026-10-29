@@ -27,3 +27,6 @@ SELECT webhook_token_hash FROM contas WHERE id = ?;
 
 -- name: MarcarVencimentoAvisado :execrows
 UPDATE contas SET cert_avisado_impressao = cert_impressao_digital WHERE id = ? AND cert_impressao_digital = ?;
+
+-- name: AtualizarCertificado :execrows
+UPDATE contas SET cert_sujeito = ?, cert_impressao_digital = ?, cert_validade_s = ? WHERE id = ?;
