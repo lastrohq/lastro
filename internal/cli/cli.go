@@ -50,6 +50,7 @@ type Ambiente struct {
 const uso = `uso: lastro <comando>
 
   serve                          sobe a API (padrão)
+  sandbox                        sobe a API pronta para testar, sem banco nem configuração
   version                        imprime a versão
   chave gerar                    gera uma LASTRO_MASTER_KEY nova
   conta criar  [flags]           cadastra uma conta recebedora
@@ -88,6 +89,8 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 		return err
 	case "serve":
 		return serve(ctx, amb)
+	case "sandbox":
+		return sandboxCmd(ctx, amb)
 	case "chave":
 		if len(args) < 2 || args[1] != "gerar" {
 			return errors.New("use: lastro chave gerar")
