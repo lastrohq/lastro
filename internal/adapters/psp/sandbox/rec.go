@@ -55,7 +55,9 @@ func (p *PSP) CriarRecorrencia(_ context.Context, conta domain.Conta, r domain.R
 }
 
 // ConsultarRecorrencia devolve a recorrência da memória ou, depois de um
-// restart, a que o Lastro gravou.
+// restart, a que o Lastro gravou. Recorrência CRIADA com solicitação há mais
+// que o atraso já tem a resposta do pagador: o sandbox a calcula pelo horário
+// da solicitação, então ela vale entre processos e depois de reiniciar.
 func (p *PSP) ConsultarRecorrencia(ctx context.Context, conta domain.Conta, id string) (domain.Recorrencia, error) {
 	p.mu.Lock()
 	r, ok := p.recs[id]
@@ -71,7 +73,46 @@ func (p *PSP) ConsultarRecorrencia(ctx context.Context, conta domain.Conta, id s
 	if !ok || r.ContaID != conta.ID {
 		return domain.Recorrencia{}, fmt.Errorf("sandbox: recorrência %s: %w", id, ports.ErrNaoEncontrado)
 	}
+	if r.Status == domain.RecorrenciaCriada {
+		solicitada, err := p.solicitadaEm(ctx, r.ID)
+		if err != nil {
+			return domain.Recorrencia{}, err
+		}
+		if !solicitada.IsZero() && !p.clock.Now().Before(solicitada.Add(p.atraso)) {
+			r.Status, r.MotivoRejeicao = desfecho(r)
+		}
+	}
 	return r, nil
+}
+
+// desfecho é a resposta simulada do pagador, pelo valor fixo (valores mágicos).
+func desfecho(r domain.Recorrencia) (domain.StatusRecorrencia, string) {
+	switch r.ValorFixo {
+	case ValorRecRejeitada:
+		return domain.RecorrenciaRejeitada, "AP13"
+	case ValorRecExpirada:
+		return domain.RecorrenciaExpirada, ""
+	}
+	return domain.RecorrenciaAprovada, ""
+}
+
+// solicitadaEm é quando a confirmação da recorrência foi pedida pela primeira
+// vez: da memória ou, depois de um restart, das solicitações que o Lastro gravou.
+func (p *PSP) solicitadaEm(ctx context.Context, idRec string) (time.Time, error) {
+	p.mu.Lock()
+	t, ok := p.solicitadas[idRec]
+	p.mu.Unlock()
+	if ok || p.store == nil {
+		return t, nil
+	}
+	sols, err := p.store.Solicitacoes().DaRecorrencia(ctx, idRec)
+	if err != nil {
+		return time.Time{}, fmt.Errorf("sandbox: lembrando a solicitação de %s: %w", idRec, err)
+	}
+	if len(sols) == 0 {
+		return time.Time{}, nil
+	}
+	return sols[0].CriadaEm, nil
 }
 
 // SolicitarConfirmacao registra a solicitação como ENVIADA ao app do pagador.
@@ -80,13 +121,16 @@ func (p *PSP) SolicitarConfirmacao(ctx context.Context, conta domain.Conta, s do
 	if err != nil {
 		return domain.SolicitacaoRecorrencia{}, err
 	}
-	p.mu.Lock()
-	p.recs[rec.ID] = rec // depois de um restart, volta para a memória
-	p.mu.Unlock()
-	p.responder(conta, rec)
 	if s.CriadaEm.IsZero() {
 		s.CriadaEm = p.clock.Now()
 	}
+	p.mu.Lock()
+	p.recs[rec.ID] = rec // depois de um restart, volta para a memória
+	if _, ja := p.solicitadas[rec.ID]; !ja {
+		p.solicitadas[rec.ID] = s.CriadaEm
+	}
+	p.mu.Unlock()
+	p.avisar(conta, rec)
 	s.ID = "SC" + ispbSandbox + s.CriadaEm.UTC().Format("20060102") + sufixo11()
 	s.ContaID, s.Status = conta.ID, domain.SolicitacaoEnviada
 	return s, nil
@@ -141,21 +185,13 @@ func (p *PSP) InterpretarWebhookRec(conta domain.Conta, corpo []byte) ([]domain.
 	return psp.WebhookRecBCB(conta, corpo)
 }
 
-// responder simula a resposta do pagador à solicitação, depois do atraso:
-// atualiza a recorrência e avisa pelo webhook, se a conta tiver um.
-func (p *PSP) responder(conta domain.Conta, r domain.Recorrencia) {
-	status, motivo := domain.RecorrenciaAprovada, ""
-	switch r.ValorFixo {
-	case ValorRecRejeitada:
-		status, motivo = domain.RecorrenciaRejeitada, "AP13"
-	case ValorRecExpirada:
-		status = domain.RecorrenciaExpirada
-	}
+// avisar entrega, depois do atraso, o aviso da resposta do pagador pelo webhook
+// de recorrência, se a conta tiver um neste processo. Sem webhook, a
+// conciliação encontra a resposta pelo ConsultarRecorrencia.
+func (p *PSP) avisar(conta domain.Conta, r domain.Recorrencia) {
+	status, motivo := desfecho(r)
 	time.AfterFunc(p.atraso, func() {
 		p.mu.Lock()
-		atual := p.recs[r.ID]
-		atual.Status, atual.MotivoRejeicao = status, motivo
-		p.recs[r.ID] = atual
 		url := p.webhooksRec[conta.ID]
 		p.mu.Unlock()
 		if url == "" {

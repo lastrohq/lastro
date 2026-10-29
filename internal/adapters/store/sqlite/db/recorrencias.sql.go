@@ -193,6 +193,33 @@ func (q *Queries) ExisteRecorrencia(ctx context.Context, id string) (int64, erro
 	return count, err
 }
 
+const recorrenciasAbertas = `-- name: RecorrenciasAbertas :many
+SELECT id FROM recorrencias WHERE conta_id = ? AND status IN ('CRIADA', 'APROVADA') ORDER BY criada_em, id
+`
+
+func (q *Queries) RecorrenciasAbertas(ctx context.Context, contaID string) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, recorrenciasAbertas, contaID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const solicitacoesDaRecorrencia = `-- name: SolicitacoesDaRecorrencia :many
 SELECT id, recorrencia_id, conta_id, status, ispb, agencia, conta, expira_em, criada_em
 FROM solicitacoes_recorrencia WHERE recorrencia_id = ? ORDER BY criada_em, id

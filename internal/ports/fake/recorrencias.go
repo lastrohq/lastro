@@ -106,3 +106,16 @@ func (r solicitacoes) DaRecorrencia(_ context.Context, idRec string) ([]domain.S
 	slices.SortFunc(out, func(a, b domain.SolicitacaoRecorrencia) int { return a.CriadaEm.Compare(b.CriadaEm) })
 	return out, nil
 }
+
+func (r recorrencias) Abertas(_ context.Context, contaID string) ([]domain.Recorrencia, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	var out []domain.Recorrencia
+	for _, rec := range r.s.d.recs {
+		if rec.ContaID == contaID && !domain.TransicoesRecorrencia.Terminal(rec.Status) {
+			out = append(out, rec)
+		}
+	}
+	slices.SortFunc(out, func(a, b domain.Recorrencia) int { return a.CriadaEm.Compare(b.CriadaEm) })
+	return out, nil
+}

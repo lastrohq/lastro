@@ -24,6 +24,10 @@ type pspRec struct {
 	err        error
 	chamadas   int
 	webhookRec string
+	// noBanco é o status que ConsultarRecorrencia devolve; vazio é ErrNaoEncontrado.
+	noBanco       domain.StatusRecorrencia
+	motivoNoBanco string
+	errConsulta   error
 }
 
 func (p *pspRec) Nome() string                                                  { return p.nome }
@@ -39,8 +43,18 @@ func (p *pspRec) CriarRecorrencia(_ context.Context, _ domain.Conta, r domain.Re
 	return r, nil
 }
 
-func (p *pspRec) ConsultarRecorrencia(context.Context, domain.Conta, string) (domain.Recorrencia, error) {
-	return domain.Recorrencia{}, ports.ErrNaoEncontrado
+func (p *pspRec) ConsultarRecorrencia(_ context.Context, _ domain.Conta, id string) (domain.Recorrencia, error) {
+	if p.errConsulta != nil {
+		return domain.Recorrencia{}, p.errConsulta
+	}
+	if p.noBanco == "" {
+		return domain.Recorrencia{}, ports.ErrNaoEncontrado
+	}
+	return domain.Recorrencia{ID: id, Status: p.noBanco, MotivoRejeicao: p.motivoNoBanco}, nil
+}
+
+func (p *pspRec) ListarPix(context.Context, domain.Conta, ports.Janela) ([]domain.PixRecebido, error) {
+	return nil, nil
 }
 
 func (p *pspRec) SolicitarConfirmacao(_ context.Context, _ domain.Conta, s domain.SolicitacaoRecorrencia) (domain.SolicitacaoRecorrencia, error) {
@@ -67,11 +81,19 @@ type soCob struct{ ports.PSP }
 func (soCob) Nome() string                     { return "so-cob" }
 func (soCob) Capabilities() ports.Capabilities { return ports.Capabilities{ports.CapCob: true} }
 
+func (soCob) ListarPix(context.Context, domain.Conta, ports.Janela) ([]domain.PixRecebido, error) {
+	return nil, nil
+}
+
 // semRec declara rec mas não implementa a interface opcional.
 type semRec struct{ ports.PSP }
 
 func (semRec) Nome() string                     { return "declara-sem-implementar" }
 func (semRec) Capabilities() ports.Capabilities { return ports.Capabilities{ports.CapRec: true} }
+
+func (semRec) ListarPix(context.Context, domain.Conta, ports.Janela) ([]domain.PixRecebido, error) {
+	return nil, nil
+}
 
 const (
 	idRecPSP      = "RR1234567820261029abcDEF00001"
@@ -254,4 +276,14 @@ func TestRecorrenciaDeOutraContaNaoAparece(t *testing.T) {
 	if _, err := svc.Consultar(app.ComAcesso(ctx, app.Acesso{ContaID: "loja"}), idRecPSP); err != nil {
 		t.Fatalf("a própria conta não enxerga: %v", err)
 	}
+}
+
+// pspDaLoja devolve o PSP falso da conta loja, para mudar o que ele responde.
+func pspDaLoja(t *testing.T, svc app.Recorrencias) *pspRec {
+	t.Helper()
+	p, err := svc.PSPs.PSP("banco-rec")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return p.(*pspRec)
 }

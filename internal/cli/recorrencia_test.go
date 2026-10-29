@@ -24,7 +24,8 @@ import (
 // entrada, e a transição gravada. Também rejeição e expiração.
 //
 // O sandbox é um só nos três comandos porque guarda a URL do webhook em
-// memória: entre processos de verdade ela se perde (limite registrado na #93).
+// memória: entre processos de verdade ela se perde, e quem resolve é a
+// conciliação (TestRecorrenciaAprovadaEntreProcessosPelaConciliacao, #93).
 func TestRecorrenciaAprovadaPeloWebhookNoSandbox(t *testing.T) {
 	l, err := (&net.ListenConfig{}).Listen(t.Context(), "tcp", "127.0.0.1:0")
 	if err != nil {

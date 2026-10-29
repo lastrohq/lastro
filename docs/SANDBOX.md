@@ -66,9 +66,10 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
   | R$ 0,88 | não responde: a solicitação expira |
   | outros (e valor variável) | aprova |
 
-  ⚠️ O sandbox guarda a URL do webhook de recorrência **em memória**: o aviso só
-  chega se `lastro conta webhook` e o `serve` rodarem no mesmo processo. Entre
-  processos, a recorrência fica `CRIADA` até a conciliação de recorrências (#93).
+  O aviso pelo webhook só chega quando `lastro conta webhook` e o `serve` rodam
+  no mesmo processo, porque o sandbox guarda a URL em memória. Entre processos,
+  que é o caso normal, a **conciliação** encontra a resposta na rodada seguinte
+  (5 min por padrão, ou `lastro conciliar` na hora), e o resultado é o mesmo.
 - **Estado:** o sandbox lembra das cobranças depois de reiniciar o Lastro. Ele
   reconstrói a partir das cobranças que o próprio Lastro gravou no SQLite: uma
   cobrança criada antes do restart é paga no horário de sempre, e os valores

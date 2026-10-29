@@ -81,6 +81,22 @@ func (r recorrencias) Atualizar(ctx context.Context, rec *domain.Recorrencia) er
 	return nil
 }
 
+func (r recorrencias) Abertas(ctx context.Context, contaID string) ([]domain.Recorrencia, error) {
+	ids, err := r.q.RecorrenciasAbertas(ctx, contaID)
+	if err != nil {
+		return nil, traduzir(err, "recorrências da conta "+contaID)
+	}
+	out := make([]domain.Recorrencia, 0, len(ids))
+	for _, id := range ids {
+		rec, err := r.Buscar(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, rec)
+	}
+	return out, nil
+}
+
 type solicitacoes struct{ q *db.Queries }
 
 func (r solicitacoes) Criar(ctx context.Context, s domain.SolicitacaoRecorrencia) error {
