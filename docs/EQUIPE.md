@@ -185,5 +185,19 @@ schema, rode `make generate` — o CI reprova se o código do `sqlc` ficar defas
 **Versão** — SemVer. Antes da `v1.0.0`, minor pode quebrar contrato — e quebra
 sempre vem anotada no release.
 
+**Publicar um release**
+
+1. PR `develop` → `main` com o título `release: vX.Y.Z` e, no corpo, as issues que entram.
+2. Com o CI verde, merge na `main`.
+3. Tag na `main`: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`.
+4. O workflow `Release` roda o goreleaser: binários (linux, darwin e windows, amd64 e
+   arm64), checksums, changelog agrupado pelos prefixos dos commits e a imagem
+   `ghcr.io/lastrohq/lastro:X.Y.Z` multi-arch. `latest` só se move em versão estável.
+5. Conferir: `docker run --rm ghcr.io/lastrohq/lastro:X.Y.Z version`.
+6. Registrar a leva no [arquivo do board](./ARQUIVO-DO-BOARD.md) e mover os cards de
+   `🚀 Aguardando release` para `✅ Concluído`.
+
+Testar a configuração sem publicar nada: `goreleaser release --snapshot --clean`.
+
 **Releases amarrados a eventos regulatórios** — normativo novo do BCB sobre Pix
 vira issue (com link da norma), release e nota.

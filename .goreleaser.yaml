@@ -1,0 +1,91 @@
+# Release do Lastro: acionado por tag vX.Y.Z na main (.github/workflows/release.yml).
+# Testar local: go run github.com/goreleaser/goreleaser/v2@latest release --snapshot --clean
+version: 2
+
+project_name: lastro
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: lastro
+    main: ./cmd/lastro
+    binary: lastro
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: lastro
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - LICENSE
+      - README.md
+      - README.pt-BR.md
+
+checksum:
+  name_template: checksums.txt
+
+# Imagem multi-arch (amd64 e arm64) num manifesto só. latest só para versão
+# estável: pré-release (v0.2.0-rc.1) não move o latest.
+dockers_v2:
+  - id: lastro
+    images:
+      - ghcr.io/lastrohq/lastro
+    tags:
+      - "{{ .Version }}"
+      - "{{ if not .Prerelease }}latest{{ end }}"
+    dockerfile: deploy/docker/Dockerfile.release
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.source: https://github.com/lastrohq/lastro
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.licenses: Apache-2.0
+      org.opencontainers.image.description: "Pix sem gateway: gateway Pix self-hosted e multi-banco"
+
+changelog:
+  sort: asc
+  use: git
+  filters:
+    exclude:
+      - "^Merge "
+      - "^chore: commit inicial"
+  groups:
+    - title: Funcionalidades
+      regexp: '^feat(\(.+\))?!?:'
+      order: 0
+    - title: Correções
+      regexp: '^fix(\(.+\))?!?:'
+      order: 1
+    - title: Documentação
+      regexp: '^docs(\(.+\))?:'
+      order: 2
+    - title: Outros
+      order: 999
+
+release:
+  github:
+    owner: lastrohq
+    name: lastro
+  prerelease: auto
+  footer: |
+    ## Rodar
+
+    ```bash
+    docker run --rm ghcr.io/lastrohq/lastro:{{ .Version }} version
+    ```
+
+    Passo a passo com o sandbox (sem conta PJ): [docs/SANDBOX.md](https://github.com/lastrohq/lastro/blob/{{ .Tag }}/docs/SANDBOX.md).
