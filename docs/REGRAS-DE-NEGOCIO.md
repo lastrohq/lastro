@@ -171,8 +171,12 @@ CRIADA ──▶ APROVADA ──▶ CANCELADA
 - Os status são os da API Pix do BCB (`RecStatus`, 2.10.0): `CRIADA`, `APROVADA`,
   `REJEITADA`, `EXPIRADA`, `CANCELADA`.
 - Uma recorrência tem periodicidade (semanal, mensal, trimestral, semestral ou
-  anual), valor (fixo ou máximo), vigência e política de retentativa
+  anual), valor, vigência e política de retentativa
   (`NAO_PERMITE` ou `PERMITE_3R_7D`), definida só pelo recebedor (RN-42).
+- **Valor:** fixo (`valorRec`, igual em todo ciclo) ou variável. No variável, o
+  **pagador** define um valor máximo na autorização, e o recebedor pode exigir
+  um **piso para esse máximo** (`valorMinimoRecebedor`): com piso de R$ 50,00,
+  o pagador não autoriza um máximo de R$ 30,00. Fixo e piso são excludentes.
 - Só gera cobrança (`cobr`) quando `APROVADA`.
 - Rejeição pelo pagador vem com motivo; o Lastro guarda o motivo.
 - A autorização é dada por uma de quatro **jornadas** do BCB: (1) notificação no
