@@ -211,3 +211,13 @@ func TestDestinoRemovidoVaiParaDLQ(t *testing.T) {
 		t.Fatalf("resultado: %+v", r)
 	}
 }
+
+// TestAssinarBateComOSDK fixa o vetor que sdk/typescript/test/webhook.test.mjs
+// usa: se a assinatura do servidor mudar, o SDK precisa mudar junto.
+func TestAssinarBateComOSDK(t *testing.T) {
+	corpo := `{"type":"cobranca.paga","timestamp":"2026-10-29T12:00:00Z","data":{"txid":"abc"}}`
+	h := app.Assinar([]byte("chave-de-teste-do-lastro-32bytes"), "msg_1", time.Unix(1793300400, 0), []byte(corpo))
+	if h["webhook-signature"] != "v1,uYfx++wcj86kg41EcTQl+oKOa6l+fLvHdIoZsrwhaEg=" || h["webhook-timestamp"] != "1793300400" {
+		t.Fatalf("cabeçalhos: %v", h)
+	}
+}

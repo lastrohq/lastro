@@ -44,6 +44,19 @@ Qualquer cliente MCP funciona igual: rode `lastro mcp` por stdio com
 `LASTRO_URL` (padrão `http://localhost:8080`), `LASTRO_TOKEN` e, se quiser,
 `LASTRO_CHAVE_PIX`.
 
+## Use com TypeScript
+
+```ts
+import { Lastro } from "@lastrohq/sdk";
+
+const lastro = new Lastro({ url: "http://localhost:8080", token: process.env.LASTRO_TOKEN! });
+const cob = await lastro.cob.criar({ calendario: { expiracao: 3600 }, valor: { original: "49.90" }, chave: "sandbox@lastro.dev" });
+console.log(cob.pixCopiaECola);
+```
+
+Tipado a partir do OpenAPI, sem dependências, com verificação da assinatura dos
+webhooks. Veja [`sdk/typescript`](./sdk/typescript).
+
 ## Por quê
 
 Gateways cobram cerca de 1% por Pix, e ainda são mais uma empresa entre você e
