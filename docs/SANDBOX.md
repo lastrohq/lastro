@@ -33,8 +33,8 @@ ela vira `CONCLUIDA` antes de os webhooks existirem (F4).
 
 ## Como ele se comporta
 
-Toda cobrança é **paga 5 segundos depois de criada**, desde que não tenha
-expirado antes. O pagamento aparece na consulta da cobrança (`CONCLUIDA`) e em
+Toda cobrança (cob ou cobv) é **paga 5 segundos depois de criada**, desde que
+não tenha expirado antes. O pagamento aparece na consulta da cobrança (`CONCLUIDA`) e em
 `GET /pix`.
 
 ## Valores mágicos
@@ -54,4 +54,6 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
 - **Webhook:** a URL é aceita, mas o aviso de pagamento só passa a ser entregue
   com a F4 (#22, #23). Até lá, consulte a cobrança ou `GET /pix`.
 - **Estado:** fica em memória. Reiniciar o Lastro esquece as cobranças do sandbox.
-- **cobv e Pix Automático:** entram com as fases deles.
+- **Valor da cobv:** o sandbox paga o valor **original**. Multa, juros e desconto
+  são calculados pelo banco de verdade.
+- **Pix Automático:** entra com a fase dele.

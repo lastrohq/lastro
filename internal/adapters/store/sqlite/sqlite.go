@@ -93,6 +93,9 @@ func (s *Store) APIKeys() ports.APIKeyRepo { return apikeys{s.q} }
 // Idempotencia devolve o repositório do Idempotency-Key.
 func (s *Store) Idempotencia() ports.IdempotenciaRepo { return idem{s.q} }
 
+// CobrancasV devolve o repositório de cobranças com vencimento.
+func (s *Store) CobrancasV() ports.CobrancaVRepo { return cobvs{s.q} }
+
 // Outbox devolve o repositório do outbox.
 func (s *Store) Outbox() ports.OutboxRepo { return outbox{s.q} }
 

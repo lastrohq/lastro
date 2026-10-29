@@ -19,6 +19,8 @@ type dados struct {
 	creds     map[string][]byte
 	cobrancas map[string]domain.Cobranca // chave: contaID + "/" + txid
 	ordem     []string                   // chaves de cobrança em ordem de criação
+	cobvs     map[domain.Txid]domain.CobrancaVencimento
+	ordemV    []domain.Txid
 	outbox    []domain.Evento
 	apikeys   map[string]domain.APIKey
 	idem      map[[2]string]domain.RegistroIdempotencia
@@ -30,6 +32,8 @@ func (d *dados) clonar() *dados {
 		creds:     maps.Clone(d.creds),
 		cobrancas: maps.Clone(d.cobrancas),
 		ordem:     slices.Clone(d.ordem),
+		cobvs:     maps.Clone(d.cobvs),
+		ordemV:    slices.Clone(d.ordemV),
 		outbox:    slices.Clone(d.outbox),
 		apikeys:   maps.Clone(d.apikeys),
 		idem:      maps.Clone(d.idem),
@@ -48,7 +52,7 @@ var _ ports.Store = (*Store)(nil)
 
 // NewStore cria um Store vazio.
 func NewStore() *Store {
-	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, idem: map[[2]string]domain.RegistroIdempotencia{}}}
+	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, cobvs: map[domain.Txid]domain.CobrancaVencimento{}, idem: map[[2]string]domain.RegistroIdempotencia{}}}
 }
 
 // Eventos devolve o que foi publicado no outbox, para asserções.
@@ -96,6 +100,9 @@ func (s *Store) APIKeys() ports.APIKeyRepo { return apikeys{s} }
 
 // Idempotencia devolve o repositório do Idempotency-Key.
 func (s *Store) Idempotencia() ports.IdempotenciaRepo { return idem{s} }
+
+// CobrancasV devolve o repositório de cobranças com vencimento.
+func (s *Store) CobrancasV() ports.CobrancaVRepo { return cobvs{s} }
 
 // Outbox devolve o repositório do outbox.
 func (s *Store) Outbox() ports.OutboxRepo { return outbox{s} }
@@ -186,10 +193,8 @@ func (r cobrancas) Criar(_ context.Context, c domain.Cobranca) error {
 	r.s.lock()
 	defer r.s.unlock()
 	k := chave(c.ContaID, c.Txid)
-	for _, outra := range r.s.d.cobrancas {
-		if outra.Txid == c.Txid {
-			return fmt.Errorf("cobrança %s: %w", c.Txid, ports.ErrJaExiste)
-		}
+	if r.s.d.txidUsado(c.Txid) {
+		return fmt.Errorf("cobrança %s: %w", c.Txid, ports.ErrJaExiste)
 	}
 	c.Revisao = 0
 	r.s.d.cobrancas[k] = c
@@ -383,4 +388,105 @@ func (r idem) Remover(_ context.Context, dono, chave string) error {
 	defer r.s.unlock()
 	delete(r.s.d.idem, [2]string{dono, chave})
 	return nil
+}
+
+// txidUsado confere cobs e cobvs: o txid é único na instância (RN-10).
+func (d *dados) txidUsado(txid domain.Txid) bool {
+	if _, ok := d.cobvs[txid]; ok {
+		return true
+	}
+	for _, c := range d.cobrancas {
+		if c.Txid == txid {
+			return true
+		}
+	}
+	return false
+}
+
+type cobvs struct{ s *Store }
+
+func (r cobvs) Criar(_ context.Context, c domain.CobrancaVencimento) error {
+	r.s.lock()
+	defer r.s.unlock()
+	if r.s.d.txidUsado(c.Txid) {
+		return fmt.Errorf("cobrança %s: %w", c.Txid, ports.ErrJaExiste)
+	}
+	if _, ok := r.s.d.contas[c.ContaID]; !ok {
+		return fmt.Errorf("conta %s: %w", c.ContaID, ports.ErrNaoEncontrado)
+	}
+	c.Revisao = 0
+	r.s.d.cobvs[c.Txid] = c
+	r.s.d.ordemV = append(r.s.d.ordemV, c.Txid)
+	return nil
+}
+
+func (r cobvs) BuscarPorTxid(_ context.Context, txid domain.Txid) (domain.CobrancaVencimento, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	c, ok := r.s.d.cobvs[txid]
+	if !ok {
+		return c, fmt.Errorf("cobrança %s: %w", txid, ports.ErrNaoEncontrado)
+	}
+	return c, nil
+}
+
+func (r cobvs) Atualizar(_ context.Context, c *domain.CobrancaVencimento) error {
+	r.s.lock()
+	defer r.s.unlock()
+	atual, ok := r.s.d.cobvs[c.Txid]
+	if !ok {
+		return fmt.Errorf("cobrança %s: %w", c.Txid, ports.ErrNaoEncontrado)
+	}
+	if atual.Revisao != c.Revisao {
+		return fmt.Errorf("cobrança %s na revisão %d, gravando sobre %d: %w", c.Txid, atual.Revisao, c.Revisao, ports.ErrConflito)
+	}
+	c.Revisao++
+	r.s.d.cobvs[c.Txid] = *c
+	return nil
+}
+
+func (r cobvs) filtrar(f ports.FiltroCobrancas) []domain.CobrancaVencimento {
+	var out []domain.CobrancaVencimento
+	for _, tx := range r.s.d.ordemV {
+		c := r.s.d.cobvs[tx]
+		casa := combina(domain.Cobranca{ContaID: c.ContaID, Status: c.Status, CriadaEm: c.CriadaEm, Devedor: &c.Devedor.Devedor}, f)
+		if casa {
+			out = append(out, c)
+		}
+	}
+	return out
+}
+
+func (r cobvs) Listar(_ context.Context, f ports.FiltroCobrancas) ([]domain.CobrancaVencimento, string, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	todas := r.filtrar(f)
+	inicio := 0
+	if f.Cursor != "" {
+		n, err := strconv.Atoi(f.Cursor)
+		if err != nil || n < 0 {
+			return nil, "", fmt.Errorf("cursor inválido %q", f.Cursor)
+		}
+		inicio = n
+	}
+	inicio += f.Pular
+	if inicio >= len(todas) {
+		return nil, "", nil
+	}
+	limite := f.Limite
+	if limite <= 0 {
+		limite = 100
+	}
+	fim := min(inicio+limite, len(todas))
+	prox := ""
+	if fim < len(todas) {
+		prox = strconv.Itoa(fim)
+	}
+	return slices.Clone(todas[inicio:fim]), prox, nil
+}
+
+func (r cobvs) Contar(_ context.Context, f ports.FiltroCobrancas) (int, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	return len(r.filtrar(f)), nil
 }

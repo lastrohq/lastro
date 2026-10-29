@@ -99,6 +99,55 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		}
 	})
 
+	t.Run("cobv: criar, consultar, revisar e remover", func(t *testing.T) {
+		a := novo(t)
+		exigir(t, a, ports.CapCobv)
+		ctx := context.Background()
+		v := novaCobv(a, "conformidadev000000000000001")
+		c, err := a.PSP.CriarCobv(ctx, a.Conta, v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c.Status != domain.CobrancaAtiva || c.Location == "" || c.Vencimento != v.Vencimento {
+			t.Fatalf("criada: %+v", c)
+		}
+		if p, err := brcode.Decode(c.BRCode); err != nil || p.URL != c.Location {
+			t.Fatalf("BR Code: %+v, %v", p, err)
+		}
+		if _, err := a.PSP.CriarCobv(ctx, a.Conta, v); !errors.Is(err, ports.ErrJaExiste) {
+			t.Fatalf("txid repetido: err = %v", err)
+		}
+		if _, err := a.PSP.ConsultarCobv(ctx, a.Conta, "conformidadevinexistente0001"); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("inexistente: err = %v", err)
+		}
+		c.Valor = 20000
+		rev, err := a.PSP.RevisarCobv(ctx, a.Conta, c)
+		if err != nil || rev.Valor != 20000 {
+			t.Fatalf("revisão: %+v, %v", rev, err)
+		}
+		rev.Status = domain.CobrancaRemovidaPeloUsuarioRecebedor
+		if rev, err = a.PSP.RevisarCobv(ctx, a.Conta, rev); err != nil || rev.Status != domain.CobrancaRemovidaPeloUsuarioRecebedor {
+			t.Fatalf("remoção: %+v, %v", rev, err)
+		}
+	})
+
+	t.Run("pagamento: cobv paga dentro da validade vira CONCLUIDA", func(t *testing.T) {
+		a := novo(t)
+		exigir(t, a, ports.CapCobv)
+		if a.Pagar == nil {
+			t.Skip("alvo não simula pagamento")
+		}
+		ctx := context.Background()
+		c, err := a.PSP.CriarCobv(ctx, a.Conta, novaCobv(a, "conformidadev000000000000002"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		a.Pagar(t, c.Txid)
+		if got, err := a.PSP.ConsultarCobv(ctx, a.Conta, c.Txid); err != nil || got.Status != domain.CobrancaConcluida {
+			t.Fatalf("depois de pagar: %s, %v", got.Status, err)
+		}
+	})
+
 	t.Run("pagamento: cob removida não é paga", func(t *testing.T) {
 		a := novo(t)
 		exigir(t, a, ports.CapCob)
@@ -184,6 +233,15 @@ func exigir(t *testing.T, a Alvo, c ports.Capacidade) {
 	t.Helper()
 	if err := a.PSP.Capabilities().Suporta(c); err != nil {
 		t.Skipf("adapter não declara %s", c)
+	}
+}
+
+func novaCobv(a Alvo, txid string) domain.CobrancaVencimento {
+	return domain.CobrancaVencimento{
+		Txid: domain.Txid(txid), ContaID: a.Conta.ID, Valor: 15000, Vencimento: domain.DataDe(a.Agora()).SomarDias(10),
+		ValidadeAposVencimento: 30, CriadaEm: a.Agora(),
+		Devedor: domain.DevedorCompleto{Devedor: domain.Devedor{Documento: "11222333000181", Nome: "Empresa de Teste"}},
+		Multa:   &domain.ValorModalidade{Modalidade: 2, ValorPerc: 200},
 	}
 }
 

@@ -55,6 +55,11 @@ type PSP interface {
 	// RevisarCob envia o novo estado da cobrança (valor, devedor, expiração,
 	// solicitação ou remoção pelo recebedor) e devolve o que o PSP gravou.
 	RevisarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error)
+	// Cobrança com vencimento: só se Capabilities()[CapCobv].
+	CriarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error)
+	ConsultarCobv(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.CobrancaVencimento, error)
+	RevisarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error)
+
 	ListarPix(ctx context.Context, conta domain.Conta, j Janela) ([]domain.PixRecebido, error)
 	Devolver(ctx context.Context, conta domain.Conta, d domain.Devolucao) (domain.Devolucao, error)
 	ConfigurarWebhook(ctx context.Context, conta domain.Conta, url string) error

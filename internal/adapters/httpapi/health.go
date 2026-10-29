@@ -18,10 +18,11 @@ var errNaoImplementado = errors.New("rota ainda não implementada")
 
 // Opcoes são as dependências do servidor HTTP.
 type Opcoes struct {
-	Versao    string
-	Cobrancas app.Cobrancas
-	Contas    app.Contas
-	APIKeys   app.APIKeys
+	Versao     string
+	Cobrancas  app.Cobrancas
+	CobrancasV app.CobrancasV
+	Contas     app.Contas
+	APIKeys    app.APIKeys
 	// Idempotencia vazia (Store nil) desliga o Idempotency-Key.
 	Idempotencia app.Idempotencia
 	Clock        ports.Clock
@@ -29,17 +30,18 @@ type Opcoes struct {
 
 // Server implementa gen.StrictServerInterface.
 type Server struct {
-	version   string
-	cobrancas app.Cobrancas
-	contas    app.Contas
-	clock     ports.Clock
+	version    string
+	cobrancas  app.Cobrancas
+	cobrancasV app.CobrancasV
+	contas     app.Contas
+	clock      ports.Clock
 }
 
 var _ gen.StrictServerInterface = (*Server)(nil)
 
 // NewRouter monta o roteador HTTP a partir do contrato gerado.
 func NewRouter(o Opcoes) http.Handler {
-	s := &Server{version: o.Versao, cobrancas: o.Cobrancas, contas: o.Contas, clock: o.Clock}
+	s := &Server{version: o.Versao, cobrancas: o.Cobrancas, cobrancasV: o.CobrancasV, contas: o.Contas, clock: o.Clock}
 	strict := gen.NewStrictHandlerWithOptions(s, nil, gen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			escreverProblema(w, gen.Problema{Status: http.StatusBadRequest, Type: tipoErro("RequisicaoInvalida"), Title: "Requisição inválida", Detail: ptr(err.Error())})

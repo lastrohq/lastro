@@ -46,6 +46,7 @@ type PSP struct {
 
 	mu         sync.Mutex
 	cobs       map[string]domain.Cobranca // chave: contaID/txid
+	cobvs      map[string]domain.CobrancaVencimento
 	devolucoes map[string][]domain.Devolucao
 	webhooks   map[string]string
 	locSeq     int
@@ -61,7 +62,7 @@ func ComAtraso(d time.Duration) Opcao { return func(p *PSP) { p.atraso = d } }
 
 // New cria o sandbox com o relógio dado.
 func New(clock ports.Clock, opcoes ...Opcao) *PSP {
-	p := &PSP{clock: clock, atraso: AtrasoPadrao, cobs: map[string]domain.Cobranca{}, devolucoes: map[string][]domain.Devolucao{}, webhooks: map[string]string{}}
+	p := &PSP{clock: clock, atraso: AtrasoPadrao, cobs: map[string]domain.Cobranca{}, cobvs: map[string]domain.CobrancaVencimento{}, devolucoes: map[string][]domain.Devolucao{}, webhooks: map[string]string{}}
 	for _, o := range opcoes {
 		o(p)
 	}
@@ -73,7 +74,7 @@ func (p *PSP) Nome() string { return "sandbox" }
 
 // Capabilities declara tudo o que o sandbox simula hoje.
 func (p *PSP) Capabilities() ports.Capabilities {
-	return ports.Capabilities{ports.CapCob: true, ports.CapDevolucao: true, ports.CapWebhook: true}
+	return ports.Capabilities{ports.CapCob: true, ports.CapCobv: true, ports.CapDevolucao: true, ports.CapWebhook: true}
 }
 
 func chave(contaID string, txid domain.Txid) string { return contaID + "/" + string(txid) }
@@ -151,6 +152,81 @@ func (p *PSP) RevisarCob(_ context.Context, conta domain.Conta, c domain.Cobranc
 	return atual, nil
 }
 
+// CriarCobv registra a cobrança com vencimento e devolve location e BR Code.
+func (p *PSP) CriarCobv(_ context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
+	if c.Valor == ValorRecusado {
+		return domain.CobrancaVencimento{}, ErrRecusado
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	k := chave(conta.ID, c.Txid)
+	if _, ok := p.cobvs[k]; ok {
+		return domain.CobrancaVencimento{}, fmt.Errorf("sandbox: txid %s: %w", c.Txid, ports.ErrJaExiste)
+	}
+	p.locSeq++
+	c.ContaID, c.Status = conta.ID, domain.CobrancaAtiva
+	c.Location = fmt.Sprintf("sandbox.lastro.dev/qr/v2/cobv/%s/%d", conta.ID, p.locSeq)
+	if c.CriadaEm.IsZero() {
+		c.CriadaEm = p.clock.Now()
+	}
+	code, err := brcode.Encode(brcode.Pix{URL: c.Location, Nome: nomeBRCode(conta.Nome), Cidade: "SANDBOX"})
+	if err != nil {
+		return domain.CobrancaVencimento{}, fmt.Errorf("sandbox: gerando BR Code: %w", err)
+	}
+	c.BRCode = code
+	p.cobvs[k] = c
+	return c, nil
+}
+
+// ConsultarCobv devolve a cobv, CONCLUIDA se o atraso passou dentro da validade.
+func (p *PSP) ConsultarCobv(_ context.Context, conta domain.Conta, txid domain.Txid) (domain.CobrancaVencimento, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	c, ok := p.cobvs[chave(conta.ID, txid)]
+	if !ok {
+		return domain.CobrancaVencimento{}, fmt.Errorf("sandbox: txid %s: %w", txid, ports.ErrNaoEncontrado)
+	}
+	if p.pagaV(c) {
+		c.Status = domain.CobrancaConcluida
+	}
+	return c, nil
+}
+
+// RevisarCobv aplica a revisão; cobv paga ou removida não muda mais.
+func (p *PSP) RevisarCobv(_ context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	k := chave(conta.ID, c.Txid)
+	atual, ok := p.cobvs[k]
+	if !ok {
+		return domain.CobrancaVencimento{}, fmt.Errorf("sandbox: txid %s: %w", c.Txid, ports.ErrNaoEncontrado)
+	}
+	if p.pagaV(atual) {
+		atual.Status = domain.CobrancaConcluida
+	}
+	if c.Status != atual.Status {
+		if err := atual.Transitar(c.Status); err != nil {
+			return domain.CobrancaVencimento{}, fmt.Errorf("sandbox: %w", err)
+		}
+	} else if atual.Status != domain.CobrancaAtiva {
+		return domain.CobrancaVencimento{}, fmt.Errorf("sandbox: cobrança %s está %s: %w", c.Txid, atual.Status, domain.ErrTransicaoInvalida)
+	}
+	status, location, code, criada := atual.Status, atual.Location, atual.BRCode, atual.CriadaEm
+	atual = c
+	atual.ContaID, atual.Status, atual.Location, atual.BRCode, atual.CriadaEm = conta.ID, status, location, code, criada
+	p.cobvs[k] = atual
+	return atual, nil
+}
+
+// pagaV diz se a cobv já foi paga: depois do atraso e até o último dia para pagar.
+func (p *PSP) pagaV(c domain.CobrancaVencimento) bool {
+	if c.Valor == ValorNuncaPaga || c.Status != domain.CobrancaAtiva {
+		return false
+	}
+	pagoEm := c.CriadaEm.Add(p.atraso)
+	return !p.clock.Now().Before(pagoEm) && !domain.DataDe(pagoEm).Depois(c.UltimoDiaParaPagar())
+}
+
 // paga diz se a cobrança já foi "paga" no instante atual do relógio.
 func (p *PSP) paga(c domain.Cobranca) bool {
 	if c.Valor == ValorNuncaPaga || c.Status != domain.CobrancaAtiva {
@@ -185,6 +261,17 @@ func (p *PSP) ListarPix(_ context.Context, conta domain.Conta, j ports.Janela) (
 		for range vezes {
 			out = append(out, pix)
 		}
+	}
+	for _, c := range p.cobvs {
+		if c.ContaID != conta.ID || !p.pagaV(c) {
+			continue
+		}
+		horario := c.CriadaEm.Add(p.atraso)
+		if horario.Before(j.Inicio) || !horario.Before(j.Fim) {
+			continue
+		}
+		// O sandbox paga o valor original: multa, juros e desconto são calculados pelo banco de verdade.
+		out = append(out, domain.PixRecebido{EndToEndID: endToEndID(horario, c.Txid), ContaID: conta.ID, Txid: c.Txid, Valor: c.Valor, Horario: horario, Pagador: &c.Devedor.Devedor})
 	}
 	return out, nil
 }

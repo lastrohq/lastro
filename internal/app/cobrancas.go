@@ -49,6 +49,8 @@ type RevisaoCob struct {
 
 // DadosCobranca é o payload normalizado dos eventos de cobrança (RN-32).
 type DadosCobranca struct {
+	// Tipo é "cob" ou "cobv".
+	Tipo    string `json:"tipo"`
 	Txid    string `json:"txid"`
 	ContaID string `json:"contaId"`
 	Status  string `json:"status"`
@@ -262,6 +264,29 @@ type PaginaCobs struct {
 
 // Listar devolve uma página das cobranças criadas em [Inicio, Fim).
 func (s Cobrancas) Listar(ctx context.Context, q ConsultaCobs) (PaginaCobs, error) {
+	if err := validarConsulta(&q); err != nil {
+		return PaginaCobs{}, err
+	}
+	f := ports.FiltroCobrancas{ContaID: AcessoDe(ctx).ContaID, Status: q.Status, Documento: q.Documento, Janela: ports.Janela{Inicio: q.Inicio, Fim: q.Fim}}
+	total, err := s.Store.Cobrancas().Contar(ctx, f)
+	if err != nil {
+		return PaginaCobs{}, err
+	}
+	f.Limite, f.Pular = q.ItensPagina, q.Pagina*q.ItensPagina
+	cobs, _, err := s.Store.Cobrancas().Listar(ctx, f)
+	if err != nil {
+		return PaginaCobs{}, err
+	}
+	return PaginaCobs{Cobs: cobs, Pagina: q.Pagina, ItensPagina: q.ItensPagina, TotalPaginas: totalPaginas(total, q.ItensPagina), TotalItens: total}, nil
+}
+
+// totalPaginas arredonda para cima; a spec exige quantidadeDePaginas >= 1.
+func totalPaginas(total, itens int) int {
+	return max((total+itens-1)/itens, 1)
+}
+
+// validarConsulta confere janela e paginação, aplicando o default de 100 itens.
+func validarConsulta(q *ConsultaCobs) error {
 	var v validacao
 	if q.Inicio.IsZero() || q.Fim.IsZero() || !q.Inicio.Before(q.Fim) {
 		v.add("inicio", "inicio e fim são obrigatórios, com inicio antes de fim", "")
@@ -275,28 +300,16 @@ func (s Cobrancas) Listar(ctx context.Context, q ConsultaCobs) (PaginaCobs, erro
 	if q.Pagina < 0 {
 		v.add("paginacao.paginaAtual", "não pode ser negativa", fmt.Sprint(q.Pagina))
 	}
-	if err := v.err(); err != nil {
-		return PaginaCobs{}, err
-	}
-	f := ports.FiltroCobrancas{ContaID: AcessoDe(ctx).ContaID, Status: q.Status, Documento: q.Documento, Janela: ports.Janela{Inicio: q.Inicio, Fim: q.Fim}}
-	total, err := s.Store.Cobrancas().Contar(ctx, f)
-	if err != nil {
-		return PaginaCobs{}, err
-	}
-	f.Limite, f.Pular = q.ItensPagina, q.Pagina*q.ItensPagina
-	cobs, _, err := s.Store.Cobrancas().Listar(ctx, f)
-	if err != nil {
-		return PaginaCobs{}, err
-	}
-	paginas := (total + q.ItensPagina - 1) / q.ItensPagina
-	if paginas == 0 {
-		paginas = 1 // a spec exige quantidadeDePaginas >= 1
-	}
-	return PaginaCobs{Cobs: cobs, Pagina: q.Pagina, ItensPagina: q.ItensPagina, TotalPaginas: paginas, TotalItens: total}, nil
+	return v.err()
 }
 
 func (s Cobrancas) psp(conta domain.Conta, c ports.Capacidade) (ports.PSP, error) {
-	psp, err := s.PSPs.PSP(conta.PSP)
+	return pspDe(s.PSPs, conta, c)
+}
+
+// pspDe encontra o adapter da conta e confere a capacidade.
+func pspDe(r ports.Registry, conta domain.Conta, c ports.Capacidade) (ports.PSP, error) {
+	psp, err := r.PSP(conta.PSP)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +322,7 @@ func (s Cobrancas) psp(conta domain.Conta, c ports.Capacidade) (ports.PSP, error
 func (s Cobrancas) evento(tipo domain.TipoEvento, c domain.Cobranca) domain.Evento {
 	return domain.Evento{
 		ID: novoID(), Tipo: tipo, ContaID: c.ContaID, OcorridoEm: s.Clock.Now(),
-		Dados: DadosCobranca{Txid: string(c.Txid), ContaID: c.ContaID, Status: string(c.Status), Valor: c.Valor.String(), Revisao: c.Revisao},
+		Dados: DadosCobranca{Tipo: "cob", Txid: string(c.Txid), ContaID: c.ContaID, Status: string(c.Status), Valor: c.Valor.String(), Revisao: c.Revisao},
 	}
 }
 
