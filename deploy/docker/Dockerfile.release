@@ -1,0 +1,8 @@
+# Usado pelo goreleaser (dockers_v2): o binário já vem compilado em
+# $TARGETPLATFORM/lastro, então não há RUN e o build arm64 não precisa de emulação.
+FROM gcr.io/distroless/static-debian12:nonroot
+ARG TARGETPLATFORM
+COPY $TARGETPLATFORM/lastro /lastro
+EXPOSE 8080
+ENTRYPOINT ["/lastro"]
+CMD ["serve"]
