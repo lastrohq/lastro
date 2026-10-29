@@ -10,6 +10,11 @@
 //	R$ 1,01  é paga com valor diferente (R$ 1,00), para testar divergência
 //	R$ 2,02  é paga duas vezes (webhook duplicado)
 //	outros   é paga integralmente depois do atraso configurado
+//
+// Com ComStore, o sandbox lembra das cobranças depois de reiniciar: o que não
+// está na memória é reconstruído das cobranças que o Lastro gravou, que são o
+// espelho do que o sandbox sabia (valor, location e criação bastam para os
+// valores mágicos). As devoluções continuam só na memória até o Lastro gravá-las (F7).
 package sandbox
 
 import (
@@ -44,6 +49,7 @@ const AtrasoPadrao = 5 * time.Second
 type PSP struct {
 	clock  ports.Clock
 	atraso time.Duration
+	store  ports.Store // opcional: de onde reconstruir as cobranças depois de reiniciar
 
 	mu         sync.Mutex
 	cobs       map[string]domain.Cobranca // chave: contaID/txid
@@ -57,6 +63,10 @@ var _ ports.PSP = (*PSP)(nil)
 
 // Opcao configura o sandbox.
 type Opcao func(*PSP)
+
+// ComStore faz o sandbox buscar no store do Lastro as cobranças que não estão
+// na memória, para que um restart não as esqueça.
+func ComStore(s ports.Store) Opcao { return func(p *PSP) { p.store = s } }
 
 // ComAtraso define em quanto tempo a cobrança é paga.
 func ComAtraso(d time.Duration) Opcao { return func(p *PSP) { p.atraso = d } }
@@ -81,9 +91,12 @@ func (p *PSP) Capabilities() ports.Capabilities {
 func chave(contaID string, txid domain.Txid) string { return contaID + "/" + string(txid) }
 
 // CriarCob registra a cobrança e devolve location e BR Code dinâmico.
-func (p *PSP) CriarCob(_ context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
+func (p *PSP) CriarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
 	if c.Valor == ValorRecusado {
 		return domain.Cobranca{}, ErrRecusado
+	}
+	if err := p.lembrarCob(ctx, conta.ID, c.Txid); err != nil {
+		return domain.Cobranca{}, err
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -108,7 +121,10 @@ func (p *PSP) CriarCob(_ context.Context, conta domain.Conta, c domain.Cobranca)
 }
 
 // ConsultarCob devolve a cobrança, já CONCLUIDA se o atraso passou.
-func (p *PSP) ConsultarCob(_ context.Context, conta domain.Conta, txid domain.Txid) (domain.Cobranca, error) {
+func (p *PSP) ConsultarCob(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.Cobranca, error) {
+	if err := p.lembrarCob(ctx, conta.ID, txid); err != nil {
+		return domain.Cobranca{}, err
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	c, ok := p.cobs[chave(conta.ID, txid)]
@@ -122,7 +138,10 @@ func (p *PSP) ConsultarCob(_ context.Context, conta domain.Conta, txid domain.Tx
 }
 
 // RevisarCob aplica a revisão. Cobrança já paga ou removida não muda mais.
-func (p *PSP) RevisarCob(_ context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
+func (p *PSP) RevisarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {
+	if err := p.lembrarCob(ctx, conta.ID, c.Txid); err != nil {
+		return domain.Cobranca{}, err
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	k := chave(conta.ID, c.Txid)
@@ -154,9 +173,12 @@ func (p *PSP) RevisarCob(_ context.Context, conta domain.Conta, c domain.Cobranc
 }
 
 // CriarCobv registra a cobrança com vencimento e devolve location e BR Code.
-func (p *PSP) CriarCobv(_ context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
+func (p *PSP) CriarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
 	if c.Valor == ValorRecusado {
 		return domain.CobrancaVencimento{}, ErrRecusado
+	}
+	if err := p.lembrarCobv(ctx, conta.ID, c.Txid); err != nil {
+		return domain.CobrancaVencimento{}, err
 	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
@@ -180,7 +202,10 @@ func (p *PSP) CriarCobv(_ context.Context, conta domain.Conta, c domain.Cobranca
 }
 
 // ConsultarCobv devolve a cobv, CONCLUIDA se o atraso passou dentro da validade.
-func (p *PSP) ConsultarCobv(_ context.Context, conta domain.Conta, txid domain.Txid) (domain.CobrancaVencimento, error) {
+func (p *PSP) ConsultarCobv(ctx context.Context, conta domain.Conta, txid domain.Txid) (domain.CobrancaVencimento, error) {
+	if err := p.lembrarCobv(ctx, conta.ID, txid); err != nil {
+		return domain.CobrancaVencimento{}, err
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	c, ok := p.cobvs[chave(conta.ID, txid)]
@@ -194,7 +219,10 @@ func (p *PSP) ConsultarCobv(_ context.Context, conta domain.Conta, txid domain.T
 }
 
 // RevisarCobv aplica a revisão; cobv paga ou removida não muda mais.
-func (p *PSP) RevisarCobv(_ context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
+func (p *PSP) RevisarCobv(ctx context.Context, conta domain.Conta, c domain.CobrancaVencimento) (domain.CobrancaVencimento, error) {
+	if err := p.lembrarCobv(ctx, conta.ID, c.Txid); err != nil {
+		return domain.CobrancaVencimento{}, err
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	k := chave(conta.ID, c.Txid)
@@ -238,7 +266,10 @@ func (p *PSP) paga(c domain.Cobranca) bool {
 }
 
 // ListarPix devolve os pagamentos simulados cujo horário cai na janela.
-func (p *PSP) ListarPix(_ context.Context, conta domain.Conta, j ports.Janela) ([]domain.PixRecebido, error) {
+func (p *PSP) ListarPix(ctx context.Context, conta domain.Conta, j ports.Janela) ([]domain.PixRecebido, error) {
+	if err := p.lembrarJanela(ctx, conta.ID, j); err != nil {
+		return nil, err
+	}
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	var out []domain.PixRecebido
@@ -344,4 +375,106 @@ func nomeBRCode(nome string) string {
 		return "LASTRO SANDBOX"
 	}
 	return nome
+}
+
+// lembrar põe na memória as cobranças do store que o sandbox ainda não conhece.
+// No store, a cobrança paga está CONCLUIDA; no sandbox ela fica ATIVA e o
+// pagamento é calculado pelo horário, como antes do restart.
+func (p *PSP) lembrarCob(ctx context.Context, contaID string, txid domain.Txid) error {
+	p.mu.Lock()
+	_, ok := p.cobs[chave(contaID, txid)]
+	p.mu.Unlock()
+	if ok || p.store == nil {
+		return nil
+	}
+	c, err := p.store.Cobrancas().Buscar(ctx, contaID, txid)
+	if errors.Is(err, ports.ErrNaoEncontrado) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("sandbox: lembrando a cobrança %s: %w", txid, err)
+	}
+	p.guardarCob(c)
+	return nil
+}
+
+func (p *PSP) lembrarCobv(ctx context.Context, contaID string, txid domain.Txid) error {
+	p.mu.Lock()
+	_, ok := p.cobvs[chave(contaID, txid)]
+	p.mu.Unlock()
+	if ok || p.store == nil {
+		return nil
+	}
+	c, err := p.store.CobrancasV().BuscarPorTxid(ctx, txid)
+	if errors.Is(err, ports.ErrNaoEncontrado) || (err == nil && c.ContaID != contaID) {
+		return nil
+	}
+	if err != nil {
+		return fmt.Errorf("sandbox: lembrando a cobv %s: %w", txid, err)
+	}
+	p.guardarCobv(c)
+	return nil
+}
+
+func (p *PSP) guardarCob(c domain.Cobranca) {
+	if c.Status == domain.CobrancaConcluida {
+		c.Status = domain.CobrancaAtiva
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if _, ok := p.cobs[chave(c.ContaID, c.Txid)]; !ok {
+		p.cobs[chave(c.ContaID, c.Txid)] = c
+	}
+}
+
+func (p *PSP) guardarCobv(c domain.CobrancaVencimento) {
+	if c.Status == domain.CobrancaConcluida {
+		c.Status = domain.CobrancaAtiva
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if _, ok := p.cobvs[chave(c.ContaID, c.Txid)]; !ok {
+		p.cobvs[chave(c.ContaID, c.Txid)] = c
+	}
+}
+
+// lembrarJanela traz do store as cobranças da conta cujo pagamento simulado cai
+// na janela, para o ListarPix depois de reiniciar.
+func (p *PSP) lembrarJanela(ctx context.Context, contaID string, j ports.Janela) error {
+	if p.store == nil {
+		return nil
+	}
+	// O Pix cai em CriadaEm + atraso: a criação fica em [Inicio-atraso, Fim-atraso).
+	criacao := ports.Janela{Inicio: j.Inicio.Add(-p.atraso), Fim: j.Fim.Add(-p.atraso)}
+	if j.Inicio.IsZero() {
+		criacao.Inicio = time.Time{}
+	}
+	f := ports.FiltroCobrancas{ContaID: contaID, Janela: criacao, Limite: 500}
+	for {
+		cobs, cursor, err := p.store.Cobrancas().Listar(ctx, f)
+		if err != nil {
+			return fmt.Errorf("sandbox: lembrando cobranças: %w", err)
+		}
+		for _, c := range cobs {
+			p.guardarCob(c)
+		}
+		if cursor == "" {
+			break
+		}
+		f.Cursor = cursor
+	}
+	f.Cursor = ""
+	for {
+		cobvs, cursor, err := p.store.CobrancasV().Listar(ctx, f)
+		if err != nil {
+			return fmt.Errorf("sandbox: lembrando cobvs: %w", err)
+		}
+		for _, c := range cobvs {
+			p.guardarCobv(c)
+		}
+		if cursor == "" {
+			return nil
+		}
+		f.Cursor = cursor
+	}
 }

@@ -34,6 +34,14 @@ and your app talks to **one** API no matter which bank receives the money.
 - **Single binary** — `docker run` and go; SQLite by default.
 - **Use it from your agent** — built-in MCP server.
 
+## Banks
+
+| Bank | `--psp` | cob | cobv | Refund | Webhook | Status |
+|---|---|---|---|---|---|---|
+| Lastro sandbox | `sandbox` | ✅ | ✅ | ✅ | ✅ | For testing without a business account ([guide, pt-BR](./docs/SANDBOX.md)) |
+| Efí | `efi` | ✅ | ✅ | ✅ | ✅ | **Not yet tested against Efí's homologation environment** ([guide, pt-BR](./docs/EFI.md)) |
+| Inter, Sicoob, Banco do Brasil | — | | | | | Planned |
+
 ## Non-custodial
 
 Lastro never holds or moves money. It runs with **your** credentials against

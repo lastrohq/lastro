@@ -26,7 +26,7 @@ comunidade sem medo.
 | `internal/cli` | Comandos (`serve`, `conta`, `chave`, `version`...), testáveis sem processo; monta as peças | tudo, menos `cmd` |
 | `internal/domain` | Entidades, máquinas de estado, `Money`, `Txid` | só stdlib |
 | `internal/app` | Casos de uso (`CriarCobranca`, `Devolver`, `CriarRecorrencia`...) | `domain`, `ports` |
-| `internal/ports` | Interfaces `PSP`, `Store`, `Notifier`, `Vault`, `Certificados`, `Clock` | `domain` |
+| `internal/ports` | Interfaces `PSP`, `Store`, `Notifier`, `Vault`, `Certificados`, `Credenciais`, `Clock` | `domain` |
 | `internal/adapters/httpapi` | API BCB-compatível, admin, webhooks de entrada | `app`, `ports`, `domain` |
 | `internal/adapters/psp/*` | Um pacote por banco + `sandbox` | `ports`, `domain`, `platform`, o registry `adapters/psp`, `pkg` |
 | `internal/adapters/store/*` | `sqlite` (padrão), `postgres` (v0.3) | `ports`, `domain` |
@@ -95,6 +95,7 @@ Definidos em `internal/ports` (#11):
 | `Clock` | Fonte de tempo injetável |
 | `Vault` | Cifrar/decifrar segredos em repouso (RN-61) |
 | `Certificados` | Ler o certificado do mTLS (.p12/PEM) e devolver os dados públicos dele (RN-62). Implementado sobre `platform/certificado`, montado na CLI |
+| `Credenciais` | Entregar ao adapter de PSP as credenciais decifradas de uma conta. Implementado por `app.Contas`; o registry é montado depois do vault ([ADR-007](./adr/007-credenciais-chegam-ao-adapter-por-port.md)) |
 
 Fakes em memória ficam em `internal/ports/fake`. **`internal/ports/storetest` é a suíte de
 contrato do Store**: o fake passa nela hoje, e o SQLite (#12) e o Postgres precisam passar nos

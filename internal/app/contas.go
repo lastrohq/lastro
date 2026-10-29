@@ -92,6 +92,8 @@ func (s Contas) lerCertificado(cred domain.Credenciais) (domain.Certificado, err
 	return cert, nil
 }
 
+var _ ports.Credenciais = Contas{}
+
 // Desativar impede novas cobranças na conta; as existentes continuam valendo.
 func (s Contas) Desativar(ctx context.Context, id string) error {
 	return s.Store.WithTx(ctx, func(tx ports.Store) error {

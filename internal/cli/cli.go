@@ -26,13 +26,25 @@ import (
 	"github.com/lastrohq/lastro/internal/ports"
 )
 
+// Fontes é o que os adapters de PSP recebem ao serem montados.
+type Fontes struct {
+	// Credenciais decifra as credenciais de uma conta (ADR-007).
+	Credenciais ports.Credenciais
+	// Store é o store do Lastro; o sandbox o lê para lembrar das cobranças depois de reiniciar.
+	Store ports.Store
+}
+
 // Ambiente é o que a CLI recebe do processo; nos testes, tudo é falso.
 type Ambiente struct {
 	Saida  io.Writer
 	Getenv func(string) string
-	PSPs   ports.Registry
-	Clock  ports.Clock
-	Versao string
+	// PSPs é o registry usado quando MontarPSPs é nil (os testes).
+	PSPs ports.Registry
+	// MontarPSPs monta o registry com o que só existe depois de abrir o store e
+	// o vault: as credenciais das contas (bancos reais) e o próprio store (sandbox).
+	MontarPSPs func(Fontes) ports.Registry
+	Clock      ports.Clock
+	Versao     string
 }
 
 const uso = `uso: lastro <comando>
@@ -121,7 +133,12 @@ func abrir(ctx context.Context, amb Ambiente) (app.Contas, func(), error) {
 	if err != nil {
 		return app.Contas{}, nil, err
 	}
-	return app.Contas{Store: store, Vault: v, PSPs: amb.PSPs, Certificados: leitorCertificados{}, Clock: amb.Clock}, func() { _ = store.Close() }, nil
+	contas := app.Contas{Store: store, Vault: v, PSPs: amb.PSPs, Certificados: leitorCertificados{}, Clock: amb.Clock}
+	if amb.MontarPSPs != nil {
+		// Contas.Credenciais só usa Store e Vault, já prontos aqui.
+		contas.PSPs = amb.MontarPSPs(Fontes{Credenciais: contas, Store: store})
+	}
+	return contas, func() { _ = store.Close() }, nil
 }
 
 func conta(ctx context.Context, args []string, amb Ambiente) error {
@@ -162,7 +179,7 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 		if err := fs.Parse(args[2:]); err != nil {
 			return err
 		}
-		wh := app.Webhooks{Store: contas.Store, PSPs: amb.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock}}
+		wh := app.Webhooks{Store: contas.Store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: contas.Store, Clock: amb.Clock}}
 		endereco, err := wh.Configurar(ctx, args[1], *urlPublica)
 		if err != nil {
 			return err
@@ -281,7 +298,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 		rodando.Wait()
 	}()
 	store := contas.Store
-	conc.Store, conc.Recebimentos.Store = store, store
+	conc.Store, conc.Recebimentos.Store, conc.PSPs = store, store, contas.PSPs
 	if intervalo > 0 {
 		rodando.Go(func() {
 			jobs.Periodico(ctxJobs, "conciliação", intervalo, func(ctx context.Context) error {
@@ -324,10 +341,10 @@ func serve(ctx context.Context, amb Ambiente) error {
 		Addr: addr,
 		Handler: httpapi.NewRouter(httpapi.Opcoes{
 			Versao:       amb.Versao,
-			Cobrancas:    app.Cobrancas{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
-			CobrancasV:   app.CobrancasV{Store: store, PSPs: amb.PSPs, Clock: amb.Clock},
+			Cobrancas:    app.Cobrancas{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+			CobrancasV:   app.CobrancasV{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
 			Contas:       contas,
-			Webhooks:     app.Webhooks{Store: store, PSPs: amb.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock}},
+			Webhooks:     app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock}},
 			APIKeys:      app.APIKeys{Store: store, Clock: amb.Clock},
 			Idempotencia: app.Idempotencia{Store: store, Clock: amb.Clock},
 			Clock:        amb.Clock,
@@ -440,7 +457,7 @@ func conciliacao(amb Ambiente) (app.Conciliacao, error) {
 	if janela == 0 {
 		return app.Conciliacao{}, errors.New("LASTRO_CONCILIACAO_JANELA não pode ser zero")
 	}
-	return app.Conciliacao{PSPs: amb.PSPs, Recebimentos: app.Recebimentos{Clock: amb.Clock}, Clock: amb.Clock, Janela: janela}, nil
+	return app.Conciliacao{Recebimentos: app.Recebimentos{Clock: amb.Clock}, Clock: amb.Clock, Janela: janela}, nil
 }
 
 func conciliar(ctx context.Context, amb Ambiente) error {
@@ -453,7 +470,7 @@ func conciliar(ctx context.Context, amb Ambiente) error {
 		return err
 	}
 	defer fechar()
-	conc.Store, conc.Recebimentos.Store = contas.Store, contas.Store
+	conc.Store, conc.Recebimentos.Store, conc.PSPs = contas.Store, contas.Store, contas.PSPs
 	r, err := conc.Rodar(ctx)
 	if err != nil {
 		return err

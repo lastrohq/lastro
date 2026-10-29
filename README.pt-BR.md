@@ -34,6 +34,14 @@ e a sua aplicação fala com **uma** API só, qualquer que seja o banco que rece
 - **Binário único** — `docker run` e pronto; SQLite por padrão.
 - **Use com seu agente** — servidor MCP embutido.
 
+## Bancos
+
+| Banco | `--psp` | cob | cobv | Devolução | Webhook | Situação |
+|---|---|---|---|---|---|---|
+| Sandbox do Lastro | `sandbox` | ✅ | ✅ | ✅ | ✅ | Para testar sem conta PJ ([guia](./docs/SANDBOX.md)) |
+| Efí | `efi` | ✅ | ✅ | ✅ | ✅ | **Ainda não testado na homologação do Efí** ([guia](./docs/EFI.md)) |
+| Inter, Sicoob, Banco do Brasil | — | | | | | Planejado |
+
 ## Não custodial
 
 O Lastro nunca guarda nem movimenta dinheiro. Ele roda com as **suas**
@@ -47,6 +55,7 @@ regulatório.
 | [Regras de negócio](./docs/REGRAS-DE-NEGOCIO.md) | O que o Lastro garante e o que recusa |
 | [Arquitetura](./docs/ARQUITETURA.md) | Hexagonal, pastas, padrões, testes |
 | [Sandbox](./docs/SANDBOX.md) | Testar sem conta PJ, com valores mágicos |
+| [Efí](./docs/EFI.md) | Ligar uma conta Efí: credenciais, certificado e webhook |
 | [Design system](./docs/DESIGN-SYSTEM.md) | Tokens, componentes e telas do painel |
 | [Manual do projeto](./docs/EQUIPE.md) | Board, fluxo, DoR e DoD |
 | [ADRs](./docs/adr/) | Decisões registradas e o porquê |
