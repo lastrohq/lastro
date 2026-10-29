@@ -1,0 +1,33 @@
+{
+  "agora": "2026-10-29T21:41:10Z",
+  "rodada": "10292141",
+  "dados": {
+    "chave": "01760505-8604-472c-bb11-f4fb4b15103d",
+    "webhook": ""
+  },
+  "interacoes": [
+    {
+      "metodo": "POST",
+      "url": "/oauth/token",
+      "corpo": {
+        "grant_type": "client_credentials"
+      },
+      "status": 200,
+      "resposta": {
+        "access_token": "gravado",
+        "expires_in": 3600,
+        "scope": "cob.read cob.write cobv.read cobv.write pix.read pix.write webhook.write",
+        "token_type": "Bearer"
+      }
+    },
+    {
+      "metodo": "GET",
+      "url": "/v2/cob/conformidadeinexistente0001",
+      "status": 400,
+      "resposta": {
+        "mensagem": "Nenhuma cobrança encontrada para o txid informado",
+        "nome": "cobranca_nao_encontrada"
+      }
+    }
+  ]
+}

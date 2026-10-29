@@ -37,11 +37,53 @@ Requisitos: Go 1.27+, [golangci-lint](https://golangci-lint.run/) v2, Docker (pa
 4. Trate **dentro do adapter** todo desvio do banco em relação à spec do BCB, com um comentário dizendo qual desvio e a fonte (link da doc do banco).
    - **Credenciais e mTLS:** o adapter recebe um `ports.Credenciais` no construtor e pede as credenciais da conta a cada chamada ([ADR-007](docs/adr/007-credenciais-chegam-ao-adapter-por-port.md)). O par do mTLS sai de `certificado.TLS` (`internal/platform/certificado`), que lê .p12 e PEM. O adapter `efi` é a referência.
    - **Token OAuth2:** não peça token a cada chamada. Escreva só a função que busca o token no banco (o formato muda de banco para banco; `oauth.LerResposta` lê a resposta padrão) e use o `oauth.Transport` de `internal/platform/oauth` no `http.Client`, com o transporte mTLS da conta como `Base`. Ele guarda o token por conta, faz uma só busca com chamadas concorrentes, renova antes de expirar e tenta de novo uma vez com token novo se o banco responder 401.
-5. Grave fixtures da homologação do banco em `test/fixtures/<banco>/` — **sem segredo e sem dado real** (o gravador mascara headers de autenticação; confira mesmo assim).
-6. Rode a suíte de conformidade: `go test ./test/conformance -run <Banco>`.
-7. Atualize a tabela de bancos suportados no README.
+5. Rode a [suíte de conformidade](#suíte-de-conformidade) contra um servidor falso do banco e, quando tiver acesso à homologação, grave as fitas.
+6. Atualize a tabela de bancos suportados no README.
 
-Adapter só entra se passar na suíte de conformidade.
+Adapter só entra se passar na suíte de conformidade (RN-51).
+
+## Suíte de conformidade
+
+`test/conformance` é a régua única: os mesmos cenários rodam contra todo
+adapter, para que nenhum deles interprete a spec do BCB do seu jeito e o domínio
+nunca precise de um `if banco == ...`. Os cenários são agrupados por
+capacidade; o que o adapter não declara em `Capabilities()` é pulado, e um
+cenário próprio confere que o não declarado responde `ports.ErrNaoSuportado`.
+
+O adapter roda a suíte a partir do próprio pacote de teste:
+
+```go
+func TestConformidade(t *testing.T) {
+	conformance.Run(t, func(t *testing.T) conformance.Alvo {
+		// Um adapter novo a cada cenário, apontando para o servidor falso do banco.
+		return conformance.Alvo{PSP: p, Conta: conta, Agora: relogio.Now, Pagar: pagar}
+	})
+}
+```
+
+- **`Pagar`** faz uma cobrança ser paga. Só dá para fazer contra o sandbox ou o servidor falso; com `nil`, os cenários de pagamento e devolução são pulados.
+- **Servidor falso:** escreva um em `internal/adapters/psp/<banco>/<banco>test`, seguindo os exemplos da documentação do banco (veja `efi/efitest`). É ele que roda no CI a cada PR.
+- **Sandbox:** precisa passar a suíte inteira, sem nada pulado.
+
+### Fitas da homologação
+
+O servidor falso mostra o que *você* entendeu da documentação. A fita mostra o que
+o banco *de fato* responde. O pacote `test/conformance/fita` grava as chamadas
+HTTP feitas contra a homologação e depois as reproduz no CI, sem rede e sem
+credencial:
+
+```go
+f := fita.Abrir(t, fita.Arquivo("../../../../test/fixtures/<banco>", t.Name()), gravar)
+p := banco.New(cred, fake.NewClock(f.Agora), banco.ComTransporte(f.Envolver))
+return conformance.Alvo{PSP: p, Conta: conta, Agora: relogio.Now, Rodada: f.Rodada}
+```
+
+- O adapter precisa de uma opção que envolva o transporte mTLS, token incluído (`efi.ComTransporte`).
+- Na reprodução, o adapter tem que fazer as mesmas chamadas, na mesma ordem e com os mesmos corpos JSON. Se ele mudar o que envia, grave de novo.
+- `Rodada` muda a cada gravação, porque o banco lembra os txids da anterior.
+- A fita não guarda cabeçalhos, troca o `access_token` por `"gravado"` e troca `recebedor` e `pagador` (nome, CPF/CNPJ, endereço) por dados fictícios. Mesmo assim, **abra os JSON antes do commit** e confira se não sobrou dado real (use uma chave Pix aleatória). Se o teste falhar gravando, a fita fica num `.falha` ignorado pelo git, só para diagnóstico.
+- Se o banco testar a URL do webhook antes de aceitar (o Efí testa), passe uma URL pública em `URLWebhook`; sem ela, o cenário é pulado.
+- O `TestConformidadeGravada` do Efí é o modelo, com o comando de gravação no comentário.
 
 ## O que não entra
 
