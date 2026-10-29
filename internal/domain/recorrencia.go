@@ -151,10 +151,6 @@ var TransicoesSolicitacao = Transicoes[StatusSolicitacao]{
 	SolicitacaoRecebida: {SolicitacaoAceita, SolicitacaoRejeitada, SolicitacaoExpirada, SolicitacaoCancelada},
 }
 
-// PendenciaMaximaSolicitacao é quanto a solicitação pode ficar no app do
-// pagador antes de expirar (Guia do Pix Automático v1.3, seção 3.2; RN-43).
-const PendenciaMaximaSolicitacao = 30 * 24 * time.Hour
-
 // ContaPagador é a conta do pagador para onde vai a solicitação (jornada 1).
 type ContaPagador struct {
 	ISPB    string // do participante do pagador, 8 caracteres
@@ -176,11 +172,12 @@ type SolicitacaoRecorrencia struct {
 var ispb = regexp.MustCompile(`^[0-9A-Z]{8}$`)
 
 // Validar confere a solicitação no instante agora: a expiração tem que estar
-// no futuro e dentro da pendência máxima.
+// no futuro e dentro da pendência máxima que vale hoje (RN-43).
 func (s SolicitacaoRecorrencia) Validar(agora time.Time) error {
 	falha := func(format string, args ...any) error {
 		return fmt.Errorf("%w: solicitação: "+format, append([]any{ErrRecorrenciaInvalida}, args...)...)
 	}
+	pendencia := ParametrosEm(DataDe(agora)).PendenciaMaximaSolicitacao
 	switch {
 	case s.RecorrenciaID == "":
 		return falha("idRec é obrigatório")
@@ -192,8 +189,8 @@ func (s SolicitacaoRecorrencia) Validar(agora time.Time) error {
 		return falha("agência tem até 4 caracteres")
 	case !s.ExpiraEm.After(agora):
 		return falha("dataExpiracaoSolicitacao precisa estar no futuro")
-	case s.ExpiraEm.Sub(agora) > PendenciaMaximaSolicitacao:
-		return falha("dataExpiracaoSolicitacao passa da pendência máxima de 30 dias")
+	case s.ExpiraEm.Sub(agora) > pendencia:
+		return falha("dataExpiracaoSolicitacao passa da pendência máxima de %d dias", int(pendencia/(24*time.Hour)))
 	}
 	return nil
 }
