@@ -15,3 +15,9 @@ type Vault interface {
 	Cifrar(ctx context.Context, segredo []byte) ([]byte, error)
 	Decifrar(ctx context.Context, cifrado []byte) ([]byte, error)
 }
+
+// Enviador faz o POST de um webhook de saída e devolve o status HTTP. Erro só
+// quando nem houve resposta (DNS, conexão, timeout).
+type Enviador interface {
+	Enviar(ctx context.Context, url string, cabecalhos map[string]string, corpo []byte) (status int, err error)
+}

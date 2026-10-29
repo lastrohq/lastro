@@ -237,13 +237,31 @@ webhook (RN-30): deduplicado por `endToEndId`, concluindo a cobrança e publican
 
 ### RN-32 · Saída (Lastro → aplicação do cliente)
 
-- Payload **normalizado**: o mesmo formato, seja qual for o banco.
-- Assinado conforme [Standard Webhooks](https://www.standardwebhooks.com/)
-  (`webhook-id`, `webhook-timestamp`, `webhook-signature` HMAC-SHA256).
-- Entrega *at-least-once*: o cliente deve deduplicar pelo `webhook-id`.
-- Retry com backoff exponencial e jitter por até **24 h**; depois disso o evento
-  vai para a **DLQ**, visível no painel e reenviável manualmente.
-- Registro de cada tentativa (status, latência, corpo da resposta truncado).
+- **Destinos:** `lastro destino criar --url https://... [--conta ID]`. Sem `--conta`,
+  o destino recebe os eventos de todas as contas. O segredo `whsec_...` aparece
+  **uma vez**, na criação, e fica cifrado pelo Vault (é preciso tê-lo em claro
+  para assinar). https obrigatório (http só para localhost).
+- **Eventos:** `cobranca.criada`, `cobranca.revisada`, `cobranca.concluida`,
+  `cobranca.removida` e `pix.recebido` (com `divergente` quando o valor pago
+  difere do cobrado). O corpo é o envelope do Standard Webhooks:
+  `{"type": ..., "timestamp": ..., "data": {...}}`, normalizado, igual para
+  qualquer banco.
+- **Assinatura** no padrão [Standard Webhooks](https://www.standardwebhooks.com/):
+  `webhook-id` (o id do evento), `webhook-timestamp` e `webhook-signature`
+  (`v1,` + HMAC-SHA256). Verificável com as bibliotecas oficiais — o teste usa a
+  de Go para conferir o que o Lastro envia.
+- **Entrega *at-least-once*:** o cliente deve deduplicar pelo `webhook-id`, que é
+  o mesmo em todas as tentativas. O corpo também é o mesmo, byte a byte.
+- **Distribuição:** cada evento do outbox vira uma entrega por destino que casa
+  com a conta. Evento sem destino na hora é descartado: destino criado depois não
+  recebe o passado.
+- **Retry:** sucesso é qualquer 2xx; redirecionamento não é seguido (conta como
+  falha). Esperas de 5 s, 30 s, 2 min, 10 min, 30 min, 1 h, 2 h e depois 4 h, com
+  até 10% de jitter, até **24 h** depois do evento; então a entrega vai para a
+  **DLQ** (`lastro dlq listar`) e volta à fila com `lastro dlq reenviar <evento>`.
+- Até 8 entregas em paralelo e 10 s de timeout por tentativa: um destino lento não
+  trava os outros. O job roda a cada 2 s (`LASTRO_WEBHOOK_INTERVALO`; `0` desliga).
+- Destino removido com entregas pendentes: elas vão para a DLQ.
 
 ---
 

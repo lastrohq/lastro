@@ -173,3 +173,29 @@ func TestConciliarEValidaDuracoes(t *testing.T) {
 		t.Fatal("aceitou janela zero")
 	}
 }
+
+func TestDestinoEDLQ(t *testing.T) {
+	amb, out := ambiente(t, envComBanco(t))
+	ctx := context.Background()
+	if err := Run(ctx, []string{"destino", "criar", "--url", "https://app.example.com/webhooks/lastro"}, amb); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "whsec_") {
+		t.Fatalf("o segredo não apareceu: %s", out)
+	}
+	id := strings.Fields(out.String())[1]
+	out.Reset()
+	_ = Run(ctx, []string{"destino", "listar"}, amb)
+	if !strings.Contains(out.String(), id) || !strings.Contains(out.String(), "(todas)") || strings.Contains(out.String(), "whsec_") {
+		t.Fatalf("listar: %s", out)
+	}
+	if err := Run(ctx, []string{"destino", "criar", "--url", "http://app.example.com"}, amb); err == nil {
+		t.Fatal("aceitou http fora de localhost")
+	}
+	if err := Run(ctx, []string{"dlq", "reenviar", "evt_inexistente"}, amb); err == nil || !strings.Contains(err.Error(), "DLQ") {
+		t.Fatalf("reenviar sem nada na DLQ: err = %v", err)
+	}
+	if err := Run(ctx, []string{"destino", "remover", id}, amb); err != nil {
+		t.Fatal(err)
+	}
+}
