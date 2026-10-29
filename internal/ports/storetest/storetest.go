@@ -84,6 +84,35 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		}
 	})
 
+	t.Run("conta: marca o vencimento do certificado como avisado", func(t *testing.T) {
+		s, ctx := novo(t), context.Background()
+		c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true,
+			Certificado: &domain.Certificado{Sujeito: "CN=loja", ImpressaoDigital: "ab12", Validade: base.Add(24 * time.Hour)}}
+		sem := domain.Conta{ID: "c2", Nome: "Sem", PSP: "sandbox", ChavePix: "y@example.com", Ambiente: domain.Producao, Ativa: true}
+		for _, conta := range []domain.Conta{c, sem} {
+			if err := s.Contas().Criar(ctx, conta); err != nil {
+				t.Fatal(err)
+			}
+		}
+		if got, _ := s.Contas().Buscar(ctx, "c1"); got.Certificado.VencimentoAvisado {
+			t.Fatal("conta nova já nasce avisada")
+		}
+		for nome, args := range map[string][2]string{"outro certificado": {"c1", "cd34"}, "sem certificado": {"c2", "ab12"}, "conta inexistente": {"nada", "ab12"}} {
+			if err := s.Contas().MarcarVencimentoAvisado(ctx, args[0], args[1]); !errors.Is(err, ports.ErrNaoEncontrado) {
+				t.Fatalf("%s: err = %v; quer ErrNaoEncontrado", nome, err)
+			}
+		}
+		if err := s.Contas().MarcarVencimentoAvisado(ctx, "c1", "ab12"); err != nil {
+			t.Fatal(err)
+		}
+		if got, _ := s.Contas().Buscar(ctx, "c1"); !got.Certificado.VencimentoAvisado {
+			t.Fatal("o aviso não ficou gravado")
+		}
+		if lista, _ := s.Contas().Listar(ctx); !lista[0].Certificado.VencimentoAvisado {
+			t.Fatal("Listar não mostra o aviso")
+		}
+	})
+
 	t.Run("conta: cria, busca e recusa duplicada", func(t *testing.T) {
 		s, ctx := novo(t), context.Background()
 		c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Homologacao, Ativa: true}

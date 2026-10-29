@@ -62,6 +62,8 @@ func paraConta(r db.BuscarContaRow) domain.Conta {
 			Sujeito:          r.CertSujeito.String,
 			ImpressaoDigital: r.CertImpressaoDigital.String,
 			Validade:         time.Unix(r.CertValidadeS.Int64, 0).UTC(),
+			// O aviso vale só para o certificado que foi avisado.
+			VencimentoAvisado: r.CertAvisadoImpressao.Valid && r.CertAvisadoImpressao.String == r.CertImpressaoDigital.String,
 		}
 	}
 	return c
@@ -76,6 +78,17 @@ func (r contas) Atualizar(ctx context.Context, c domain.Conta) error {
 	}
 	if n == 0 {
 		return fmt.Errorf("conta %s: %w", c.ID, ports.ErrNaoEncontrado)
+	}
+	return nil
+}
+
+func (r contas) MarcarVencimentoAvisado(ctx context.Context, id, impressao string) error {
+	n, err := r.q.MarcarVencimentoAvisado(ctx, db.MarcarVencimentoAvisadoParams{ID: id, CertImpressaoDigital: sql.NullString{String: impressao, Valid: true}})
+	if err != nil {
+		return traduzir(err, "conta "+id)
+	}
+	if n == 0 {
+		return fmt.Errorf("conta %s com o certificado %s: %w", id, impressao, ports.ErrNaoEncontrado)
 	}
 	return nil
 }

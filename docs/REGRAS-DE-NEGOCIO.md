@@ -242,8 +242,8 @@ webhook (RN-30): deduplicado por `endToEndId`, concluindo a cobrança e publican
   **uma vez**, na criação, e fica cifrado pelo Vault (é preciso tê-lo em claro
   para assinar). https obrigatório (http só para localhost).
 - **Eventos:** `cobranca.criada`, `cobranca.revisada`, `cobranca.concluida`,
-  `cobranca.removida` e `pix.recebido` (com `divergente` quando o valor pago
-  difere do cobrado). O corpo é o envelope do Standard Webhooks:
+  `cobranca.removida`, `pix.recebido` (com `divergente` quando o valor pago
+  difere do cobrado) e `certificado.expirando` (RN-62). O corpo é o envelope do Standard Webhooks:
   `{"type": ..., "timestamp": ..., "data": {...}}`, normalizado, igual para
   qualquer banco.
 - **Assinatura** no padrão [Standard Webhooks](https://www.standardwebhooks.com/):
@@ -300,7 +300,21 @@ escrito em log — nem mascarado parcialmente.
 - Sujeito, impressão digital (SHA-256) e validade ficam visíveis na conta
   (`conta listar`, `GET /lastro/v1/contas`). São dados públicos do certificado;
   o certificado e a chave continuam cifrados (RN-61).
-- Alerta (painel e webhook `certificado.expirando`) a **30 dias** do vencimento.
+- **Aviso de vencimento a 30 dias:** o evento `certificado.expirando` sai pelo
+  mesmo caminho dos outros webhooks de saída (RN-32), assinado e com retry,
+  quando faltam 30 dias ou menos para o certificado de uma conta **ativa**
+  vencer. Sai também para certificado que já venceu sem ter sido avisado, caso
+  o Lastro tenha ficado desligado durante a janela.
+  - **Uma vez por certificado:** o aviso é guardado pela impressão digital, na
+    mesma transação do evento. Rodar de novo não repete; trocar o certificado
+    zera o aviso.
+  - Payload: `contaId`, `sujeito`, `impressaoDigital`, `validade`,
+    `diasRestantes` (arredondado para cima; zero ou negativo depois de vencer)
+    e `vencido`. Nunca leva o certificado.
+  - A verificação roda ao subir e depois a cada hora
+    (`LASTRO_CERTIFICADO_INTERVALO`; `0` desliga). Como todo evento, sem destino
+    cadastrado na hora o aviso é descartado e não se repete.
+  - O alerta no painel entra com o painel (F8).
 - **Certificado de homologação não entra em conta de produção.** Nada no X.509
   diz o ambiente; para o Lastro, é de homologação o certificado (pela impressão
   digital) **já cadastrado numa conta de homologação**, mesmo que ela esteja

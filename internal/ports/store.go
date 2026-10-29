@@ -42,6 +42,10 @@ type ContaRepo interface {
 	Atualizar(ctx context.Context, c domain.Conta) error
 	// SalvarCredenciais grava o blob cifrado pelo Vault; o Store nunca vê o segredo em claro.
 	SalvarCredenciais(ctx context.Context, contaID string, cifrado []byte) error
+	// MarcarVencimentoAvisado registra que o vencimento do certificado com essa
+	// impressão digital já foi avisado. ErrNaoEncontrado se a conta não existir ou
+	// tiver outro certificado.
+	MarcarVencimentoAvisado(ctx context.Context, contaID, impressaoDigital string) error
 	// BuscarCredenciais devolve o blob cifrado, ou ErrNaoEncontrado se a conta não tiver credenciais.
 	BuscarCredenciais(ctx context.Context, contaID string) ([]byte, error)
 	// SalvarTokenWebhook grava o hash do token da URL de webhook da conta.
