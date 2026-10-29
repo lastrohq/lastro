@@ -55,15 +55,16 @@ func novaAPI(t *testing.T) *api {
 	webhooks := app.Webhooks{Store: store, PSPs: registry, Recebimentos: app.Recebimentos{Store: store, Clock: clock},
 		Recorrencias: app.Recorrencias{Store: store, PSPs: registry, Clock: clock}}
 	h := NewRouter(Opcoes{
-		Versao:       "v-test",
-		Cobrancas:    app.Cobrancas{Store: store, PSPs: registry, Clock: clock},
-		CobrancasV:   app.CobrancasV{Store: store, PSPs: registry, Clock: clock},
-		Contas:       app.Contas{Store: store, Vault: v, PSPs: registry, Certificados: certs, Clock: clock},
-		Webhooks:     webhooks,
-		Recorrencias: app.Recorrencias{Store: store, PSPs: registry, Clock: clock},
-		APIKeys:      keys,
-		Idempotencia: app.Idempotencia{Store: store, Clock: clock},
-		Clock:        clock,
+		Versao:               "v-test",
+		Cobrancas:            app.Cobrancas{Store: store, PSPs: registry, Clock: clock},
+		CobrancasV:           app.CobrancasV{Store: store, PSPs: registry, Clock: clock},
+		Contas:               app.Contas{Store: store, Vault: v, PSPs: registry, Certificados: certs, Clock: clock},
+		Webhooks:             webhooks,
+		Recorrencias:         app.Recorrencias{Store: store, PSPs: registry, Clock: clock},
+		CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: registry, Clock: clock},
+		APIKeys:              keys,
+		Idempotencia:         app.Idempotencia{Store: store, Clock: clock},
+		Clock:                clock,
 	})
 	_, r := carregarContrato(t)
 	_, token, err := keys.Criar(context.Background(), "testes", domain.TodosEscopos, "")

@@ -24,6 +24,8 @@ const (
 	EscopoDevolucaoWrite Escopo = "devolucao:write"
 	EscopoRecRead        Escopo = "rec:read"
 	EscopoRecWrite       Escopo = "rec:write"
+	EscopoCobrRead       Escopo = "cobr:read"
+	EscopoCobrWrite      Escopo = "cobr:write"
 	EscopoWebhookAdmin   Escopo = "webhook:admin"
 	EscopoContaAdmin     Escopo = "conta:admin"
 )
@@ -31,7 +33,7 @@ const (
 // TodosEscopos lista os escopos válidos, em ordem estável.
 var TodosEscopos = []Escopo{
 	EscopoCobRead, EscopoCobWrite, EscopoCobvRead, EscopoCobvWrite, EscopoPixRead,
-	EscopoDevolucaoWrite, EscopoRecRead, EscopoRecWrite, EscopoWebhookAdmin, EscopoContaAdmin,
+	EscopoDevolucaoWrite, EscopoRecRead, EscopoRecWrite, EscopoCobrRead, EscopoCobrWrite, EscopoWebhookAdmin, EscopoContaAdmin,
 }
 
 var (

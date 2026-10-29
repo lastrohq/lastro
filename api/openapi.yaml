@@ -37,6 +37,10 @@ tags:
       Pix Automático: recorrência e solicitação de confirmação (RN-40, RN-41). A API
       key precisa ser restrita a uma conta: ela identifica o recebedor, como a
       credencial do cliente na spec do BCB.
+  - name: CobR
+    description: >-
+      Pix Automático: cobrança recorrente de uma recorrência aprovada (RN-42). O
+      recebedor é a conta da recorrência, então o corpo não traz recebedor.
   - name: Lastro
     description: Rotas do Lastro, fora da spec do BCB.
   - name: Webhooks
@@ -205,6 +209,168 @@ paths:
           $ref: "#/components/responses/AcessoNegado"
         "404":
           $ref: "#/components/responses/NaoEncontrado"
+
+  /cobr:
+    post:
+      tags: [CobR]
+      operationId: criarCobr
+      summary: Criar cobrança recorrente com txid gerado pelo Lastro
+      description: >-
+        A recorrência precisa estar APROVADA e o vencimento, de 2 a 10 dias corridos
+        à frente (RN-42). Um ciclo tem uma cobrança só.
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobRSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Cobrança recorrente criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobRGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+
+  /cobr/{txid}:
+    parameters:
+      - $ref: "#/components/parameters/TxidPath"
+    put:
+      tags: [CobR]
+      operationId: criarCobrComTxid
+      summary: Criar cobrança recorrente com txid definido pelo cliente
+      description: O txid já identifica a criação, então `Idempotency-Key` é opcional aqui (RN-11).
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKeyOpcional"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobRSolicitada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Cobrança recorrente criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobRGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "409":
+          $ref: "#/components/responses/Conflito"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+    get:
+      tags: [CobR]
+      operationId: consultarCobr
+      summary: Consultar cobrança recorrente
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Cobrança recorrente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobRGerada"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+    patch:
+      tags: [CobR]
+      operationId: cancelarCobr
+      summary: Cancelar cobrança recorrente
+      description: O recebedor só cancela (RN-42).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CobRRevisada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Cobrança recorrente cancelada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobRGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+
+  /cobr/{txid}/retentativa/{data}:
+    parameters:
+      - $ref: "#/components/parameters/TxidPath"
+      - name: data
+        in: path
+        required: true
+        description: Nova data prevista de liquidação.
+        schema:
+          type: string
+          format: date
+    post:
+      tags: [CobR]
+      operationId: retentativaCobr
+      summary: Pedir uma nova data de liquidação
+      description: >-
+        Só com a política PERMITE_3R_7D: até 3 datas, em até 7 dias corridos do
+        vencimento, antes do ciclo seguinte, pedida até o dia anterior (RN-42).
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "201":
+          description: Cobrança recorrente com a tentativa nova.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CobRGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
 
   /solicrec:
     post:
@@ -946,6 +1112,75 @@ components:
             status:
               type: string
               enum: [CRIADA, ENVIADA, RECEBIDA, ACEITA, REJEITADA, EXPIRADA, CANCELADA]
+    CobRSolicitada:
+      type: object
+      required: [idRec, calendario, valor]
+      properties:
+        idRec:
+          $ref: "#/components/schemas/IdRec"
+        calendario:
+          type: object
+          required: [dataDeVencimento]
+          properties:
+            dataDeVencimento:
+              type: string
+              format: date
+              description: Data prevista de liquidação, de 2 a 10 dias corridos à frente (RN-42).
+        valor:
+          type: object
+          required: [original]
+          properties:
+            original:
+              $ref: "#/components/schemas/Valor"
+        ajusteDiaUtil:
+          type: boolean
+          default: true
+          description: Leva a liquidação para o próximo dia útil se o vencimento cair num dia não útil.
+        infoAdicional:
+          type: string
+          maxLength: 140
+    CobRTentativa:
+      type: object
+      required: [dataLiquidacao, tipo, status]
+      properties:
+        dataLiquidacao:
+          type: string
+          format: date
+        tipo:
+          type: string
+          enum: [AGND, NTAG, RIFL]
+        status:
+          type: string
+          enum: [SOLICITADA, AGENDADA, PAGA, CANCELADA, REJEITADA, EXPIRADA]
+        endToEndId:
+          type: string
+        motivoRejeicao:
+          type: string
+    CobRGerada:
+      allOf:
+        - $ref: "#/components/schemas/CobRSolicitada"
+        - type: object
+          required: [txid, status, ajusteDiaUtil, tentativas]
+          properties:
+            txid:
+              $ref: "#/components/schemas/Txid"
+            status:
+              type: string
+              enum: [CRIADA, ATIVA, CONCLUIDA, EXPIRADA, REJEITADA, CANCELADA]
+            tentativas:
+              type: array
+              items:
+                $ref: "#/components/schemas/CobRTentativa"
+            motivoEncerramento:
+              type: string
+              description: Código e descrição da rejeição ou do cancelamento.
+    CobRRevisada:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [CANCELADA]
     Txid:
       type: string
       pattern: "^[a-zA-Z0-9]{26,35}$"
