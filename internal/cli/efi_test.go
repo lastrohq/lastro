@@ -23,8 +23,8 @@ func TestContaEfiDePontaAPonta(t *testing.T) {
 	amb, out := ambiente(t, envComBanco(t))
 	relogio := fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC))
 	amb.Clock = relogio
-	amb.MontarPSPs = func(c ports.Credenciais) ports.Registry {
-		return psp.NewRegistry(efi.New(c, relogio, efi.ComURLs("https://producao.invalid", srv.URL), efi.ComRaizes(srv.Raizes)))
+	amb.MontarPSPs = func(f Fontes) ports.Registry {
+		return psp.NewRegistry(efi.New(f.Credenciais, relogio, efi.ComURLs("https://producao.invalid", srv.URL), efi.ComRaizes(srv.Raizes)))
 	}
 	ctx := context.Background()
 

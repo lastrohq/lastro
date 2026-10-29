@@ -205,8 +205,8 @@ func TestDestinoEDLQ(t *testing.T) {
 func TestMontarPSPsRecebeAsCredenciaisDasContas(t *testing.T) {
 	amb, _ := ambiente(t, envComBanco(t))
 	var recebido ports.Credenciais
-	amb.MontarPSPs = func(c ports.Credenciais) ports.Registry {
-		recebido = c
+	amb.MontarPSPs = func(f Fontes) ports.Registry {
+		recebido = f.Credenciais
 		return psp.NewRegistry(pspFalso{})
 	}
 	ctx := context.Background()
