@@ -61,6 +61,7 @@ func sandboxCmd(ctx context.Context, amb Ambiente) error {
 🧪 Lastro em modo sandbox: nenhum banco e nenhum dinheiro de verdade.
 
   API       %[1]s
+  Painel    %[1]s/painel/ (entre com a API key abaixo)
   Conta     %[2]s (chave Pix %[3]s)
   API key   %[4]s
   Dados     %[5]s

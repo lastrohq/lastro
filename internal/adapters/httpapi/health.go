@@ -32,7 +32,9 @@ type Opcoes struct {
 	APIKeys    app.APIKeys
 	// Idempotencia vazia (Store nil) desliga o Idempotency-Key.
 	Idempotencia app.Idempotencia
-	Clock        ports.Clock
+	// Saida dá às rotas de entregas de webhook a DLQ e o reenvio.
+	Saida app.Saida
+	Clock ports.Clock
 }
 
 // Server implementa gen.StrictServerInterface.
@@ -45,6 +47,7 @@ type Server struct {
 	recorrencias app.Recorrencias
 	cobrs        app.CobrancasRecorrentes
 	devolucoes   app.Devolucoes
+	saida        app.Saida
 	clock        ports.Clock
 }
 
@@ -52,7 +55,7 @@ var _ gen.StrictServerInterface = (*Server)(nil)
 
 // NewRouter monta o roteador HTTP a partir do contrato gerado.
 func NewRouter(o Opcoes) http.Handler {
-	s := &Server{version: o.Versao, cobrancas: o.Cobrancas, cobrancasV: o.CobrancasV, contas: o.Contas, webhooks: o.Webhooks, recorrencias: o.Recorrencias, cobrs: o.CobrancasRecorrentes, devolucoes: o.Devolucoes, clock: o.Clock}
+	s := &Server{version: o.Versao, cobrancas: o.Cobrancas, cobrancasV: o.CobrancasV, contas: o.Contas, webhooks: o.Webhooks, recorrencias: o.Recorrencias, cobrs: o.CobrancasRecorrentes, devolucoes: o.Devolucoes, saida: o.Saida, clock: o.Clock}
 	strict := gen.NewStrictHandlerWithOptions(s, nil, gen.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, _ *http.Request, err error) {
 			escreverProblema(w, gen.Problema{Status: http.StatusBadRequest, Type: tipoErro("RequisicaoInvalida"), Title: "Requisição inválida", Detail: ptr(err.Error())})

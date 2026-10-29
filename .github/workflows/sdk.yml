@@ -1,0 +1,70 @@
+name: SDK TypeScript
+
+on:
+  pull_request:
+    paths: ["sdk/typescript/**", "api/openapi.yaml", "internal/**", ".github/workflows/sdk.yml"]
+  push:
+    branches: [main, develop]
+    paths: ["sdk/typescript/**", "api/openapi.yaml", ".github/workflows/sdk.yml"]
+    tags: ["sdk-v*"]
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: sdk/typescript
+
+jobs:
+  test:
+    name: Testes contra o sandbox
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.27.x"
+          check-latest: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: sdk/typescript/package-lock.json
+      - run: npm ci
+      - name: Tipos gerados do openapi.yaml estão em dia
+        run: |
+          npm run gerar
+          git diff --exit-code -- src/schema.ts
+      - name: Sobe o lastro sandbox
+        working-directory: .
+        run: |
+          go build -o /tmp/lastro ./cmd/lastro
+          (cd /tmp && exec env LASTRO_ADDR=127.0.0.1:8080 ./lastro sandbox > banner.txt 2>&1) &
+          for _ in $(seq 50); do curl -sf localhost:8080/health >/dev/null && break; sleep 0.2; done
+          echo "LASTRO_TOKEN=$(grep -o 'lst_[^ ]*' /tmp/banner.txt | head -1)" >> "$GITHUB_ENV"
+      - name: Testes (inclui o exemplo do README)
+        run: npm test
+        env:
+          LASTRO_URL: http://127.0.0.1:8080
+
+  publicar:
+    name: Publica no npm
+    if: startsWith(github.ref, 'refs/tags/sdk-v')
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          registry-url: https://registry.npmjs.org
+      - run: npm ci
+      - name: A tag bate com a versão do package.json
+        run: test "sdk-v$(node -p 'require("./package.json").version')" = "${GITHUB_REF_NAME}"
+      - run: npm run build
+      - run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

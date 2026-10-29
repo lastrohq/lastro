@@ -24,6 +24,7 @@ import (
 	"github.com/lastrohq/lastro/internal/domain"
 	"github.com/lastrohq/lastro/internal/platform/vault"
 	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/lastrohq/lastro/web"
 )
 
 // Fontes é o que os adapters de PSP recebem ao serem montados.
@@ -51,6 +52,8 @@ const uso = `uso: lastro <comando>
 
   serve                          sobe a API (padrão)
   sandbox                        sobe a API pronta para testar, sem banco nem configuração
+  mcp                            servidor MCP para agentes de IA (stdio), sobre a API
+                                 em LASTRO_URL com a API key de LASTRO_TOKEN
   version                        imprime a versão
   chave gerar                    gera uma LASTRO_MASTER_KEY nova
   conta criar  [flags]           cadastra uma conta recebedora
@@ -91,6 +94,8 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 		return serve(ctx, amb)
 	case "sandbox":
 		return sandboxCmd(ctx, amb)
+	case "mcp":
+		return mcpCmd(ctx, amb)
 	case "chave":
 		if len(args) < 2 || args[1] != "gerar" {
 			return errors.New("use: lastro chave gerar")
@@ -351,23 +356,28 @@ func serve(ctx context.Context, amb Ambiente) error {
 	} else {
 		slog.Warn("aviso de vencimento de certificado desligado: ninguém será avisado antes de o certificado vencer")
 	}
-	srv := &http.Server{
-		Addr: addr,
-		Handler: httpapi.NewRouter(httpapi.Opcoes{
-			Versao:     amb.Versao,
-			Cobrancas:  app.Cobrancas{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			CobrancasV: app.CobrancasV{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			Contas:     contas,
-			Webhooks: app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock},
-				Recorrencias:         app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-				CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}},
+	rotas := http.NewServeMux()
+	rotas.Handle("/painel/", web.Painel())
+	rotas.Handle("GET /painel", http.RedirectHandler("/painel/", http.StatusMovedPermanently))
+	rotas.Handle("/", httpapi.NewRouter(httpapi.Opcoes{
+		Versao:     amb.Versao,
+		Cobrancas:  app.Cobrancas{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+		CobrancasV: app.CobrancasV{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+		Contas:     contas,
+		Webhooks: app.Webhooks{Store: store, PSPs: contas.PSPs, Recebimentos: app.Recebimentos{Store: store, Clock: amb.Clock},
 			Recorrencias:         app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			Devolucoes:           app.Devolucoes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
-			APIKeys:              app.APIKeys{Store: store, Clock: amb.Clock},
-			Idempotencia:         app.Idempotencia{Store: store, Clock: amb.Clock},
-			Clock:                amb.Clock,
-		}),
+			CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock}},
+		Recorrencias:         app.Recorrencias{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+		CobrancasRecorrentes: app.CobrancasRecorrentes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+		Devolucoes:           app.Devolucoes{Store: store, PSPs: contas.PSPs, Clock: amb.Clock},
+		APIKeys:              app.APIKeys{Store: store, Clock: amb.Clock},
+		Idempotencia:         app.Idempotencia{Store: store, Clock: amb.Clock},
+		Saida:                saida,
+		Clock:                amb.Clock,
+	}))
+	srv := &http.Server{
+		Addr:              addr,
+		Handler:           rotas,
 		ReadHeaderTimeout: 10 * time.Second,
 		BaseContext:       func(net.Listener) context.Context { return ctx },
 	}

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"net/url"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -202,6 +203,41 @@ func Assinar(chave []byte, id string, quando time.Time, corpo []byte) map[string
 // Reenviar devolve à fila as entregas do evento que estão na DLQ.
 func (s Saida) Reenviar(ctx context.Context, eventoID string) (int, error) {
 	return s.Store.Entregas().Reenviar(ctx, eventoID, s.Clock.Now())
+}
+
+// Entregas lista as entregas no status pedido que o acesso do contexto enxerga
+// (chave restrita a uma conta só vê as dela).
+func (s Saida) Entregas(ctx context.Context, status domain.StatusEntrega, limite int) ([]domain.Entrega, error) {
+	acesso := AcessoDe(ctx)
+	busca := limite
+	if acesso.ContaID != "" {
+		busca = 500 // as de outras contas são descartadas abaixo
+	}
+	todas, err := s.Store.Entregas().Listar(ctx, status, busca)
+	if err != nil {
+		return nil, err
+	}
+	visiveis := make([]domain.Entrega, 0, len(todas))
+	for _, e := range todas {
+		if acesso.enxerga(e.ContaID) && len(visiveis) < limite {
+			visiveis = append(visiveis, e)
+		}
+	}
+	return visiveis, nil
+}
+
+// ReenviarVisivel é o Reenviar para quem chega pela API: só reenvia se o
+// evento tiver entrega na DLQ que o acesso do contexto enxergue; senão,
+// ErrNaoEncontrado.
+func (s Saida) ReenviarVisivel(ctx context.Context, eventoID string) (int, error) {
+	dlq, err := s.Entregas(ctx, domain.EntregaDLQ, 500)
+	if err != nil {
+		return 0, err
+	}
+	if !slices.ContainsFunc(dlq, func(e domain.Entrega) bool { return e.EventoID == eventoID }) {
+		return 0, fmt.Errorf("evento %s sem entrega na DLQ: %w", eventoID, ports.ErrNaoEncontrado)
+	}
+	return s.Reenviar(ctx, eventoID)
 }
 
 // DLQ lista as entregas que desistiram.

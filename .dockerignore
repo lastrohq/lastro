@@ -1,0 +1,8 @@
+**/node_modules
+.git
+bin
+*.p12
+.env
+.env.*
+web/dist/painel
+sdk/typescript/dist

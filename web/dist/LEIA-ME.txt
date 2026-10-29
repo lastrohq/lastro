@@ -1,0 +1,3 @@
+O build do painel (npm run build em web/) vai para dist/painel/ e é embutido no
+binário pelo web/embed.go. Este arquivo existe para a pasta nunca faltar: sem o
+build, o binário sobe e o /painel/ explica como gerar.

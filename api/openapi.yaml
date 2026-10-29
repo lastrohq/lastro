@@ -740,6 +740,78 @@ paths:
               schema:
                 $ref: "#/components/schemas/Conta"
 
+  /lastro/v1/webhooks/entregas:
+    get:
+      tags: [Lastro]
+      operationId: listarEntregas
+      summary: Listar entregas de webhook
+      description: |
+        Exige o escopo `webhook:admin`. Lista as entregas de eventos aos destinos,
+        pela ordem da próxima tentativa. Chave restrita a uma conta só vê as
+        entregas dela.
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pendente, entregue, dlq]
+            default: dlq
+        - name: limite
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Entregas encontradas.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entregas]
+                properties:
+                  entregas:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/EntregaWebhook"
+
+  /lastro/v1/webhooks/entregas/{eventoId}/reenviar:
+    parameters:
+      - name: eventoId
+        in: path
+        required: true
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 64
+    post:
+      tags: [Lastro]
+      operationId: reenviarEntregas
+      summary: Reenviar entregas que estão na DLQ
+      description: |
+        Exige o escopo `webhook:admin`. Devolve à fila as entregas do evento que
+        desistiram, com as tentativas zeradas; o worker tenta de novo na hora.
+        404 se o evento não tiver entrega na DLQ que a chave enxergue.
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Entregas devolvidas à fila.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [reenviadas]
+                properties:
+                  reenviadas:
+                    type: integer
+
   /webhooks/pix/{contaId}/{token}:
     parameters:
       - $ref: "#/components/parameters/ContaIdWebhook"
@@ -1067,6 +1139,40 @@ components:
           type: boolean
         certificado:
           $ref: "#/components/schemas/ContaCertificado"
+    EntregaWebhook:
+      type: object
+      description: Uma entrega de evento a um destino (Standard Webhooks, com outbox e DLQ).
+      required: [eventoId, destinoId, contaId, tipo, status, tentativas, criadaEm, proximaEm, atualizadaEm]
+      properties:
+        eventoId:
+          type: string
+        destinoId:
+          type: string
+        contaId:
+          type: string
+        tipo:
+          type: string
+          example: cobranca.concluida
+        status:
+          type: string
+          enum: [pendente, entregue, dlq]
+        tentativas:
+          type: integer
+          description: Tentativas feitas desde a criação ou o último reenvio.
+        ultimoHttp:
+          type: integer
+          description: Status HTTP da última tentativa; ausente se não houve resposta.
+        ultimoErro:
+          type: string
+        criadaEm:
+          type: string
+          format: date-time
+        proximaEm:
+          type: string
+          format: date-time
+        atualizadaEm:
+          type: string
+          format: date-time
     ContaCertificado:
       type: object
       description: >-
