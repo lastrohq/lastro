@@ -3,6 +3,7 @@ package fake
 import (
 	"cmp"
 	"context"
+	"encoding/json"
 	"fmt"
 	"maps"
 	"slices"
@@ -24,6 +25,9 @@ type dados struct {
 	cobvs     map[domain.Txid]domain.CobrancaVencimento
 	ordemV    []domain.Txid
 	outbox    []domain.Evento
+	distrib   map[string]bool
+	destinos  map[string]domain.Destino
+	entregas  map[[2]string]domain.Entrega
 	apikeys   map[string]domain.APIKey
 	idem      map[[2]string]domain.RegistroIdempotencia
 }
@@ -39,6 +43,9 @@ func (d *dados) clonar() *dados {
 		cobvs:     maps.Clone(d.cobvs),
 		ordemV:    slices.Clone(d.ordemV),
 		outbox:    slices.Clone(d.outbox),
+		distrib:   maps.Clone(d.distrib),
+		destinos:  maps.Clone(d.destinos),
+		entregas:  maps.Clone(d.entregas),
 		apikeys:   maps.Clone(d.apikeys),
 		idem:      maps.Clone(d.idem),
 	}
@@ -56,7 +63,7 @@ var _ ports.Store = (*Store)(nil)
 
 // NewStore cria um Store vazio.
 func NewStore() *Store {
-	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, tokens: map[string][]byte{}, pix: map[string]domain.PixRecebido{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, cobvs: map[domain.Txid]domain.CobrancaVencimento{}, idem: map[[2]string]domain.RegistroIdempotencia{}}}
+	return &Store{mu: &sync.Mutex{}, d: &dados{contas: map[string]domain.Conta{}, creds: map[string][]byte{}, tokens: map[string][]byte{}, pix: map[string]domain.PixRecebido{}, cobrancas: map[string]domain.Cobranca{}, apikeys: map[string]domain.APIKey{}, cobvs: map[domain.Txid]domain.CobrancaVencimento{}, idem: map[[2]string]domain.RegistroIdempotencia{}, distrib: map[string]bool{}, destinos: map[string]domain.Destino{}, entregas: map[[2]string]domain.Entrega{}}}
 }
 
 // Eventos devolve o que foi publicado no outbox, para asserções.
@@ -110,6 +117,12 @@ func (s *Store) CobrancasV() ports.CobrancaVRepo { return cobvs{s} }
 
 // Pix devolve o repositório de Pix recebidos.
 func (s *Store) Pix() ports.PixRepo { return pixes{s} }
+
+// Destinos devolve o repositório de destinos de webhook.
+func (s *Store) Destinos() ports.DestinoRepo { return destinos{s} }
+
+// Entregas devolve o repositório de entregas de webhook.
+func (s *Store) Entregas() ports.EntregaRepo { return entregas{s} }
 
 // Outbox devolve o repositório do outbox.
 func (s *Store) Outbox() ports.OutboxRepo { return outbox{s} }
@@ -336,7 +349,34 @@ type outbox struct{ s *Store }
 func (r outbox) Adicionar(_ context.Context, e domain.Evento) error {
 	r.s.lock()
 	defer r.s.unlock()
+	if _, err := json.Marshal(e.Dados); err != nil {
+		return fmt.Errorf("evento %s: serializando dados: %w", e.ID, err)
+	}
 	r.s.d.outbox = append(r.s.d.outbox, e)
+	return nil
+}
+
+func (r outbox) NaoDistribuidos(_ context.Context, limite int) ([]ports.EventoArmazenado, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	var out []ports.EventoArmazenado
+	for _, e := range r.s.d.outbox {
+		if r.s.d.distrib[e.ID] {
+			continue
+		}
+		dados, _ := json.Marshal(e.Dados)
+		out = append(out, ports.EventoArmazenado{ID: e.ID, Tipo: e.Tipo, ContaID: e.ContaID, OcorridoEm: e.OcorridoEm, Dados: dados})
+		if len(out) == limite {
+			break
+		}
+	}
+	return out, nil
+}
+
+func (r outbox) MarcarDistribuido(_ context.Context, id string) error {
+	r.s.lock()
+	defer r.s.unlock()
+	r.s.d.distrib[id] = true
 	return nil
 }
 
@@ -554,4 +594,119 @@ func (r pixes) ListarPorTxid(_ context.Context, txid domain.Txid) ([]domain.PixR
 	}
 	slices.SortFunc(out, func(a, b domain.PixRecebido) int { return a.Horario.Compare(b.Horario) })
 	return out, nil
+}
+
+type destinos struct{ s *Store }
+
+func (r destinos) Criar(_ context.Context, d domain.Destino) error {
+	r.s.lock()
+	defer r.s.unlock()
+	if _, ok := r.s.d.destinos[d.ID]; ok {
+		return fmt.Errorf("destino %s: %w", d.ID, ports.ErrJaExiste)
+	}
+	if d.ContaID != "" {
+		if _, ok := r.s.d.contas[d.ContaID]; !ok {
+			return fmt.Errorf("conta %s: %w", d.ContaID, ports.ErrNaoEncontrado)
+		}
+	}
+	r.s.d.destinos[d.ID] = d
+	return nil
+}
+
+func (r destinos) Listar(_ context.Context) ([]domain.Destino, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	out := slices.Collect(maps.Values(r.s.d.destinos))
+	slices.SortFunc(out, func(a, b domain.Destino) int { return a.CriadoEm.Compare(b.CriadoEm) })
+	return out, nil
+}
+
+func (r destinos) DaConta(ctx context.Context, contaID string) ([]domain.Destino, error) {
+	todos, _ := r.Listar(ctx)
+	var out []domain.Destino
+	for _, d := range todos {
+		if d.ContaID == "" || d.ContaID == contaID {
+			out = append(out, d)
+		}
+	}
+	return out, nil
+}
+
+func (r destinos) Remover(_ context.Context, id string) error {
+	r.s.lock()
+	defer r.s.unlock()
+	if _, ok := r.s.d.destinos[id]; !ok {
+		return fmt.Errorf("destino %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	delete(r.s.d.destinos, id)
+	return nil
+}
+
+type entregas struct{ s *Store }
+
+func (r entregas) Criar(_ context.Context, e domain.Entrega) error {
+	r.s.lock()
+	defer r.s.unlock()
+	k := [2]string{e.EventoID, e.DestinoID}
+	if _, ok := r.s.d.entregas[k]; !ok {
+		e.Corpo = slices.Clone(e.Corpo)
+		r.s.d.entregas[k] = e
+	}
+	return nil
+}
+
+func (r entregas) ordenadas(filtro func(domain.Entrega) bool, limite int) []domain.Entrega {
+	var out []domain.Entrega
+	for _, e := range r.s.d.entregas {
+		if filtro(e) {
+			out = append(out, e)
+		}
+	}
+	slices.SortFunc(out, func(a, b domain.Entrega) int {
+		if c := a.ProximaEm.Compare(b.ProximaEm); c != 0 {
+			return c
+		}
+		return cmp.Compare(a.EventoID+a.DestinoID, b.EventoID+b.DestinoID)
+	})
+	if limite > 0 && len(out) > limite {
+		out = out[:limite]
+	}
+	return out
+}
+
+func (r entregas) Proximas(_ context.Context, agora time.Time, limite int) ([]domain.Entrega, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	return r.ordenadas(func(e domain.Entrega) bool { return e.Status == domain.EntregaPendente && !e.ProximaEm.After(agora) }, limite), nil
+}
+
+func (r entregas) Atualizar(_ context.Context, e domain.Entrega) error {
+	r.s.lock()
+	defer r.s.unlock()
+	k := [2]string{e.EventoID, e.DestinoID}
+	if _, ok := r.s.d.entregas[k]; !ok {
+		return fmt.Errorf("entrega %s/%s: %w", e.EventoID, e.DestinoID, ports.ErrNaoEncontrado)
+	}
+	r.s.d.entregas[k] = e
+	return nil
+}
+
+func (r entregas) Listar(_ context.Context, status domain.StatusEntrega, limite int) ([]domain.Entrega, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	return r.ordenadas(func(e domain.Entrega) bool { return e.Status == status }, limite), nil
+}
+
+func (r entregas) Reenviar(_ context.Context, eventoID string, agora time.Time) (int, error) {
+	r.s.lock()
+	defer r.s.unlock()
+	n := 0
+	for k, e := range r.s.d.entregas {
+		if e.EventoID == eventoID && e.Status == domain.EntregaDLQ {
+			e.Status, e.Tentativas, e.ProximaEm, e.AtualizadaEm = domain.EntregaPendente, 0, agora, agora
+			r.s.d.entregas[k] = e
+			n++
+		}
+	}
+	return n, nil
 }

@@ -66,6 +66,29 @@ type Conta struct {
 	WebhookTokenHash []byte
 }
 
+type DestinosWebhook struct {
+	ID             string
+	ContaID        sql.NullString
+	Url            string
+	SegredoCifrado []byte
+	CriadoEm       int64
+}
+
+type EntregasWebhook struct {
+	EventoID     string
+	DestinoID    string
+	ContaID      string
+	Tipo         string
+	Corpo        []byte
+	CriadaEm     int64
+	Status       string
+	Tentativas   int64
+	ProximaEm    int64
+	UltimoHttp   int64
+	UltimoErro   string
+	AtualizadaEm int64
+}
+
 type Idempotencium struct {
 	Dono        string
 	Chave       string
@@ -77,12 +100,13 @@ type Idempotencium struct {
 }
 
 type Outbox struct {
-	Seq        int64
-	ID         string
-	Tipo       string
-	ContaID    string
-	OcorridoEm int64
-	Dados      string
+	Seq         int64
+	ID          string
+	Tipo        string
+	ContaID     string
+	OcorridoEm  int64
+	Dados       string
+	Distribuido int64
 }
 
 type PixRecebido struct {

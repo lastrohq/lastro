@@ -25,6 +25,8 @@ type Store interface {
 	Outbox() OutboxRepo
 	APIKeys() APIKeyRepo
 	Idempotencia() IdempotenciaRepo
+	Destinos() DestinoRepo
+	Entregas() EntregaRepo
 	// WithTx executa fn numa transação: erro em fn desfaz tudo.
 	WithTx(ctx context.Context, fn func(Store) error) error
 }
@@ -82,6 +84,19 @@ type CobrancaRepo interface {
 // OutboxRepo guarda eventos a entregar, na mesma transação da mudança de estado (ADR-005).
 type OutboxRepo interface {
 	Adicionar(ctx context.Context, e domain.Evento) error
+	// NaoDistribuidos devolve, em ordem de criação, eventos ainda sem entregas criadas.
+	NaoDistribuidos(ctx context.Context, limite int) ([]EventoArmazenado, error)
+	// MarcarDistribuido registra que as entregas do evento já foram criadas.
+	MarcarDistribuido(ctx context.Context, eventoID string) error
+}
+
+// EventoArmazenado é o evento como saiu do outbox, com os dados já em JSON.
+type EventoArmazenado struct {
+	ID         string
+	Tipo       domain.TipoEvento
+	ContaID    string
+	OcorridoEm time.Time
+	Dados      []byte
 }
 
 // APIKeyRepo guarda as API keys. Só o hash do segredo é gravado (RN-60).
@@ -123,4 +138,25 @@ type PixRepo interface {
 	BuscarPorE2E(ctx context.Context, e2e string) (domain.PixRecebido, error)
 	// ListarPorTxid devolve os Pix de uma cobrança, em ordem de horário.
 	ListarPorTxid(ctx context.Context, txid domain.Txid) ([]domain.PixRecebido, error)
+}
+
+// DestinoRepo guarda os destinos de webhook de saída.
+type DestinoRepo interface {
+	Criar(ctx context.Context, d domain.Destino) error
+	Listar(ctx context.Context) ([]domain.Destino, error)
+	// DaConta devolve os destinos da conta e os globais (ContaID vazio).
+	DaConta(ctx context.Context, contaID string) ([]domain.Destino, error)
+	Remover(ctx context.Context, id string) error
+}
+
+// EntregaRepo guarda as entregas de eventos a destinos (RN-32).
+type EntregaRepo interface {
+	// Criar ignora a entrega que já existe para (evento, destino).
+	Criar(ctx context.Context, e domain.Entrega) error
+	// Proximas devolve entregas pendentes com ProximaEm até agora, das mais antigas.
+	Proximas(ctx context.Context, agora time.Time, limite int) ([]domain.Entrega, error)
+	Atualizar(ctx context.Context, e domain.Entrega) error
+	Listar(ctx context.Context, status domain.StatusEntrega, limite int) ([]domain.Entrega, error)
+	// Reenviar devolve à fila as entregas do evento que estão na DLQ, zerando as tentativas.
+	Reenviar(ctx context.Context, eventoID string, agora time.Time) (int, error)
 }
