@@ -1,6 +1,6 @@
 {
   "name": "@vintemhq/sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "SDK TypeScript do Vintém, o gateway Pix self-hosted: cobranças, devoluções e verificação de webhooks.",
   "license": "Apache-2.0",
   "repository": {
@@ -8,7 +8,7 @@
     "url": "git+https://github.com/vintemhq/vintem.git",
     "directory": "sdk/typescript"
   },
-  "homepage": "https://github.com/vintemhq/vintem/tree/main/sdk/typescript#readme",
+  "homepage": "https://vintem.dev/integrar/sdk/",
   "keywords": [
     "pix",
     "vintem",
