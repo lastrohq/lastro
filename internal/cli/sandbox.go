@@ -58,11 +58,6 @@ func sandboxCmd(ctx context.Context, amb Ambiente) error {
 		dados += " (chave mestra em " + arquivoChave + ")"
 	}
 	url := urlLocal(getenv(amb, "VINTEM_ADDR", ":8080"))
-	// Fora da porta padrão, o MCP precisa da URL: sem ela ele tenta :8080.
-	mcp := "-e VINTEM_TOKEN=" + token + " -e VINTEM_CHAVE_PIX=" + chaveSandbox
-	if url != urlPadrao {
-		mcp += " -e VINTEM_URL=" + url
-	}
 	_, err = fmt.Fprintf(amb.Saida, `
 🧪 Vintém em modo sandbox: nenhum banco e nenhum dinheiro de verdade.
 
@@ -84,15 +79,25 @@ Em 5 s o "pagador" paga. Consulte com GET %[1]s/cob/{txid} e veja CONCLUIDA.
 
 Use com seu agente (Claude Code):
 
-  claude mcp add vintem %[6]s -- vintem mcp
+  %[6]s
 
 Valores mágicos e o que o sandbox simula: docs/SANDBOX.md
 
-`, url, contaSandbox, chaveSandbox, token, dados, mcp)
+`, url, contaSandbox, chaveSandbox, token, dados, comandoMCP(token, url))
 	if err != nil {
 		return err
 	}
 	return serve(ctx, amb)
+}
+
+// comandoMCP monta o comando que liga o MCP no Claude Code. Fora da porta padrão,
+// ele leva a URL: sem ela, o MCP tenta :8080.
+func comandoMCP(token, url string) string {
+	envs := "-e VINTEM_TOKEN=" + token + " -e VINTEM_CHAVE_PIX=" + chaveSandbox
+	if url != urlPadrao {
+		envs += " -e VINTEM_URL=" + url
+	}
+	return "claude mcp add vintem " + envs + " -- vintem mcp"
 }
 
 // chaveMestraSandbox usa VINTEM_MASTER_KEY se definida; senão lê (ou cria) o

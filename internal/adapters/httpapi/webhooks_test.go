@@ -99,3 +99,15 @@ func TestListaTrazOsPixDaCobrancaPaga(t *testing.T) {
 		t.Fatalf("pix por cobrança na lista: %v", pix)
 	}
 }
+
+// O erro do webhook não fala de API key: quem chama é o banco.
+func TestWebhookComTokenErradoNaoFalaDeAPIKey(t *testing.T) {
+	a := novaAPI(t)
+	var p gen.Problema
+	if st := a.chamar(http.MethodPost, "/webhooks/pix/loja/errado", `{"pix":[]}`, nil, &p); st != http.StatusUnauthorized || p.Type != tipoErro("NaoAutenticado") {
+		t.Fatalf("token errado: %d %+v", st, p)
+	}
+	if strings.Contains(p.Title, "API key") || !strings.Contains(p.Title, "webhook") || p.Detail != nil {
+		t.Fatalf("problema = %+v", p)
+	}
+}
