@@ -82,11 +82,13 @@ cada 5 minutos (RN-31). Nenhum pagamento depende só do aviso.
 
 ## O que observamos em produção
 
-- **Uma devolução aceita pode terminar `NAO_REALIZADO`, sem motivo.** Num Pix de R$ 1,00,
-  a devolução de R$ 1,00 foi aceita e depois não realizada, e a de R$ 0,50 foi `DEVOLVIDO`.
-  A causa provável é a conta ficar sem saldo depois da tarifa do Pix recebido, mas isso não
-  foi confirmado. O valor volta a ficar disponível para outra devolução. Acompanhe o
-  resultado pelo evento `devolucao.atualizada`, não pela resposta do `PUT`.
+- **A tarifa sai do valor recebido, e isso limita a devolução.** Num Pix de R$ 1,00, o Efí
+  cobrou R$ 0,01 e a conta ficou com R$ 0,99. A devolução de R$ 1,00 foi aceita e depois
+  terminou `NAO_REALIZADO`, sem motivo, e a de R$ 0,50 foi `DEVOLVIDO`. Sem outro saldo na
+  conta, não dá para devolver o valor integral. O valor não realizado volta a ficar
+  disponível para outra devolução. Acompanhe o resultado pelo evento
+  `devolucao.atualizada`, não pela resposta do `PUT`. Confira a tarifa da sua conta no
+  painel do Efí: um único Pix não diz se ela é fixa ou percentual.
 - **A descrição da devolução não vai ao Efí,** que recusa o campo. Ela fica só no Vintém.
 
 ## Desvios do Efí tratados pelo adapter
