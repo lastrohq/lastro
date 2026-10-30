@@ -3,7 +3,7 @@ package brcode_test
 import (
 	"fmt"
 
-	"github.com/lastrohq/lastro/pkg/brcode"
+	"github.com/vintemhq/vintem/pkg/brcode"
 )
 
 func ExampleEncode() {

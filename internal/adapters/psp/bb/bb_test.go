@@ -11,14 +11,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/bb"
-	"github.com/lastrohq/lastro/internal/adapters/psp/bb/bbtest"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
-	"github.com/lastrohq/lastro/test/conformance"
-	"github.com/lastrohq/lastro/test/conformance/fita"
+	"github.com/vintemhq/vintem/internal/adapters/psp/bb"
+	"github.com/vintemhq/vintem/internal/adapters/psp/bb/bbtest"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/certificado/certificadotest"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
+	"github.com/vintemhq/vintem/test/conformance"
+	"github.com/vintemhq/vintem/test/conformance/fita"
 )
 
 const (
@@ -194,10 +194,10 @@ func TestSimularPagamentoNaHomologacao(t *testing.T) {
 
 func TestWebhookRegistradoNaChave(t *testing.T) {
 	c := novo(t, fake.NewClock(agora))
-	if err := c.psp.ConfigurarWebhook(context.Background(), c.conta, "https://lastro.example.com/webhooks/pix/loja/token"); err != nil {
+	if err := c.psp.ConfigurarWebhook(context.Background(), c.conta, "https://vintem.example.com/webhooks/pix/loja/token"); err != nil {
 		t.Fatal(err)
 	}
-	if got := c.srv.Webhook("loja@example.com"); got != "https://lastro.example.com/webhooks/pix/loja/token" {
+	if got := c.srv.Webhook("loja@example.com"); got != "https://vintem.example.com/webhooks/pix/loja/token" {
 		t.Fatalf("webhook: %q", got)
 	}
 }
@@ -211,13 +211,13 @@ const ChavePixHomologacao = "9e881f18-cc66-4fc7-8f2c-a795dbb2bfc1"
 // TestConformidadeGravada roda a suíte contra as fitas da homologação do BB
 // (RN-51). Para gravar, com uma aplicação "Em teste" do Portal Developers BB:
 //
-//	LASTRO_GRAVAR_BB=1 BB_CLIENT_ID=... BB_CLIENT_SECRET=... BB_CHAVE_APLICACAO=... \
+//	VINTEM_GRAVAR_BB=1 BB_CLIENT_ID=... BB_CLIENT_SECRET=... BB_CHAVE_APLICACAO=... \
 //	go test -run TestConformidadeGravada ./internal/adapters/psp/bb/
 //
 // A chave Pix é a de teste do BB; o pagamento usa o simulador da homologação,
 // e Pagar espera a cobrança sair de ATIVA. A homologação não dispara webhook.
 func TestConformidadeGravada(t *testing.T) {
-	gravar := os.Getenv("LASTRO_GRAVAR_BB") != ""
+	gravar := os.Getenv("VINTEM_GRAVAR_BB") != ""
 	if !gravar {
 		if fitas, _ := filepath.Glob(filepath.Join(dirFitas, "*.json")); len(fitas) == 0 {
 			t.Skip("nenhuma fita da homologação do BB gravada ainda")

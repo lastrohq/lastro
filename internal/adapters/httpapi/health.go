@@ -8,9 +8,9 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // errNaoImplementado marca rotas do contrato que ainda não têm caso de uso.

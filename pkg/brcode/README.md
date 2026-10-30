@@ -3,10 +3,10 @@
 Gera e lê BR Codes do Pix (o "Pix Copia e Cola" e o conteúdo do QR Code), no
 padrão EMV MPM do [Manual de BR Code do BCB][manual], com CRC16-CCITT.
 
-Só usa a biblioteca padrão e não depende do resto do Lastro:
+Só usa a biblioteca padrão e não depende do resto do Vintém:
 
 ```sh
-go get github.com/lastrohq/lastro/pkg/brcode
+go get github.com/vintemhq/vintem/pkg/brcode
 ```
 
 ## Gerar
@@ -78,4 +78,4 @@ fictícia, todos falharam ao buscá-la, que é o resultado esperado. O teste
 completo depende de uma location de PSP real (F5).
 
 [manual]: https://www.bcb.gov.br/content/estabilidadefinanceira/spb_docs/ManualBRCode.pdf
-[issue]: https://github.com/lastrohq/lastro/issues/9
+[issue]: https://github.com/vintemhq/vintem/issues/9

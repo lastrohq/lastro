@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/app"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/app"
 )
 
 // limiteCorpo é o maior corpo aceito numa requisição com Idempotency-Key.
@@ -54,7 +54,7 @@ func idempotente(idem app.Idempotencia) func(http.Handler) http.Handler {
 				w.Header().Set("Idempotent-Replayed", "true")
 				w.Header().Set("X-Content-Type-Options", "nosniff")
 				w.WriteHeader(guardada.Status)
-				_, _ = w.Write(guardada.Corpo) //nolint:gosec // G705: é a resposta JSON que o próprio Lastro gerou e guardou, com o Content-Type original
+				_, _ = w.Write(guardada.Corpo) //nolint:gosec // G705: é a resposta JSON que o próprio Vintém gerou e guardou, com o Content-Type original
 
 				return
 			}

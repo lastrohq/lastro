@@ -12,9 +12,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 var _ ports.PSPRecorrencia = (*PSP)(nil)
@@ -55,7 +55,7 @@ func (p *PSP) CriarRecorrencia(_ context.Context, conta domain.Conta, r domain.R
 }
 
 // ConsultarRecorrencia devolve a recorrência da memória ou, depois de um
-// restart, a que o Lastro gravou. Recorrência CRIADA com solicitação há mais
+// restart, a que o Vintém gravou. Recorrência CRIADA com solicitação há mais
 // que o atraso já tem a resposta do pagador: o sandbox a calcula pelo horário
 // da solicitação, então ela vale entre processos e depois de reiniciar.
 func (p *PSP) ConsultarRecorrencia(ctx context.Context, conta domain.Conta, id string) (domain.Recorrencia, error) {
@@ -97,7 +97,7 @@ func desfecho(r domain.Recorrencia) (domain.StatusRecorrencia, string) {
 }
 
 // solicitadaEm é quando a confirmação da recorrência foi pedida pela primeira
-// vez: da memória ou, depois de um restart, das solicitações que o Lastro gravou.
+// vez: da memória ou, depois de um restart, das solicitações que o Vintém gravou.
 func (p *PSP) solicitadaEm(ctx context.Context, idRec string) (time.Time, error) {
 	p.mu.Lock()
 	t, ok := p.solicitadas[idRec]

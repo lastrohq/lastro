@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/store/sqlite/db"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/store/sqlite/db"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 func (r outbox) NaoDistribuidos(ctx context.Context, limite int) ([]ports.EventoArmazenado, error) {

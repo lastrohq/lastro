@@ -6,16 +6,16 @@ import (
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // errSemCobr responde 501 quando o servidor foi montado sem cobrança recorrente.
 var errSemCobr = fmt.Errorf("%w: a cobrança recorrente não está configurada nesta instância", ports.ErrNaoSuportado)
 
-// CriarCobr cria a cobrança recorrente com txid gerado pelo Lastro.
+// CriarCobr cria a cobrança recorrente com txid gerado pelo Vintém.
 func (s *Server) CriarCobr(ctx context.Context, r gen.CriarCobrRequestObject) (gen.CriarCobrResponseObject, error) {
 	c, err := s.criarCobr(ctx, "", *r.Body)
 	if err != nil {

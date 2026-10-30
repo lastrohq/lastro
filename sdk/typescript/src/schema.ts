@@ -92,7 +92,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Criar cobrança recorrente com txid gerado pelo Lastro
+         * Criar cobrança recorrente com txid gerado pelo Vintém
          * @description A recorrência precisa estar APROVADA e o vencimento, de 2 a 10 dias corridos à frente (RN-42). Um ciclo tem uma cobrança só.
          */
         post: operations["criarCobr"];
@@ -180,7 +180,7 @@ export interface paths {
         /** Listar cobranças imediatas */
         get: operations["listarCobs"];
         put?: never;
-        /** Criar cobrança imediata com txid gerado pelo Lastro */
+        /** Criar cobrança imediata com txid gerado pelo Vintém */
         post: operations["criarCob"];
         delete?: never;
         options?: never;
@@ -251,7 +251,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/lastro/v1/contas": {
+    "/vintem/v1/contas": {
         parameters: {
             query?: never;
             header?: never;
@@ -273,7 +273,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/lastro/v1/contas/{id}": {
+    "/vintem/v1/contas/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -292,7 +292,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/lastro/v1/contas/{id}/desativar": {
+    "/vintem/v1/contas/{id}/desativar": {
         parameters: {
             query?: never;
             header?: never;
@@ -314,7 +314,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/lastro/v1/webhooks/entregas": {
+    "/vintem/v1/webhooks/entregas": {
         parameters: {
             query?: never;
             header?: never;
@@ -336,7 +336,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/lastro/v1/webhooks/entregas/{eventoId}/reenviar": {
+    "/vintem/v1/webhooks/entregas/{eventoId}/reenviar": {
         parameters: {
             query?: never;
             header?: never;
@@ -375,7 +375,7 @@ export interface paths {
         /**
          * Aviso de Pix recebido, enviado pelo banco
          * @description Chamada pelo **banco**, não pela sua aplicação. A URL (com o token) é
-         *     gerada por `lastro conta webhook` e registrada no PSP. O corpo segue o
+         *     gerada por `vintem conta webhook` e registrada no PSP. O corpo segue o
          *     callback da spec do BCB (`{"pix": [...]}`); bancos que desviam são
          *     tratados pelo adapter da conta. Responde 200 só depois de gravar (RN-30).
          */
@@ -421,7 +421,7 @@ export interface paths {
         /**
          * Aviso de mudança de recorrência (Pix Automático), enviado pelo banco
          * @description Chamada pelo **banco**. A URL usa o mesmo token do aviso de Pix e é
-         *     registrada por `lastro conta webhook` quando o banco faz Pix Automático.
+         *     registrada por `vintem conta webhook` quando o banco faz Pix Automático.
          *     O corpo segue o callback da spec do BCB (`{"recs": [...]}`). Aviso
          *     repetido ou fora de ordem não muda nada; recorrência desconhecida é
          *     ignorada (RN-40).
@@ -468,7 +468,7 @@ export interface paths {
         /**
          * Aviso de mudança de cobrança recorrente (Pix Automático), enviado pelo banco
          * @description Chamada pelo **banco**. A URL usa o mesmo token do aviso de Pix e é
-         *     registrada por `lastro conta webhook` quando o banco faz cobrança
+         *     registrada por `vintem conta webhook` quando o banco faz cobrança
          *     recorrente. O corpo segue o callback da spec do BCB (`{"cobsr": [...]}`).
          *     Aviso repetido ou fora de ordem não muda nada; cobrança desconhecida é
          *     ignorada (RN-42).
@@ -535,7 +535,7 @@ export interface components {
             /** Format: date-time */
             atualizadaEm: string;
         };
-        /** @description Dados públicos do certificado do mTLS, conferido no cadastro (RN-62). O certificado e a chave privada nunca saem do Lastro. Ausente se a conta não tiver certificado. */
+        /** @description Dados públicos do certificado do mTLS, conferido no cadastro (RN-62). O certificado e a chave privada nunca saem do Vintém. Ausente se a conta não tiver certificado. */
         ContaCertificado: {
             /** @example CN=loja.example.com,O=Loja */
             sujeito: string;
@@ -670,7 +670,7 @@ export interface components {
         DevolucaoSolicitada: {
             valor: components["schemas"]["Valor"];
             /**
-             * @description RETIRADA (Pix Saque ou Troco) é recusada; o Lastro não recebe esse tipo de Pix.
+             * @description RETIRADA (Pix Saque ou Troco) é recusada; o Vintém não recebe esse tipo de Pix.
              * @default ORIGINAL
              * @enum {string}
              */
@@ -826,7 +826,7 @@ export interface components {
             solicitacaoPagador?: string;
             infoAdicionais?: components["schemas"]["InfoAdicional"][];
             pixCopiaECola?: string;
-            /** @description Extensão do Lastro. Na spec a cob continua ATIVA depois de expirar; este campo poupa o cálculo (RN-13). */
+            /** @description Extensão do Vintém. Na spec a cob continua ATIVA depois de expirar; este campo poupa o cálculo (RN-13). */
             expirada?: boolean;
         };
         CobCompleta: components["schemas"]["CobGerada"] & {

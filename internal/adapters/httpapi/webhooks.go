@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
 )
 
 // ReceberWebhookPix recebe o aviso de Pix enviado pelo banco.

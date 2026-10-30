@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 // leitorPorConteudo devolve um certificado diferente conforme o arquivo, para

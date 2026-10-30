@@ -1,8 +1,8 @@
-# Release do Lastro: acionado por tag vX.Y.Z na main (.github/workflows/release.yml).
+# Release do Vintém: acionado por tag vX.Y.Z na main (.github/workflows/release.yml).
 # Testar local: go run github.com/goreleaser/goreleaser/v2@latest release --snapshot --clean
 version: 2
 
-project_name: lastro
+project_name: vintem
 
 before:
   hooks:
@@ -11,9 +11,9 @@ before:
     - sh -c "cd web && npm ci && npm run build"
 
 builds:
-  - id: lastro
-    main: ./cmd/lastro
-    binary: lastro
+  - id: vintem
+    main: ./cmd/vintem
+    binary: vintem
     env:
       - CGO_ENABLED=0
     flags:
@@ -24,7 +24,7 @@ builds:
     goarch: [amd64, arm64]
 
 archives:
-  - id: lastro
+  - id: vintem
     formats: [tar.gz]
     format_overrides:
       - goos: windows
@@ -41,9 +41,9 @@ checksum:
 # Imagem multi-arch (amd64 e arm64) num manifesto só. latest só para versão
 # estável: pré-release (v0.2.0-rc.1) não move o latest.
 dockers_v2:
-  - id: lastro
+  - id: vintem
     images:
-      - ghcr.io/lastrohq/lastro
+      - ghcr.io/vintemhq/vintem
     tags:
       - "{{ .Version }}"
       - "{{ if not .Prerelease }}latest{{ end }}"
@@ -52,7 +52,7 @@ dockers_v2:
       - linux/amd64
       - linux/arm64
     labels:
-      org.opencontainers.image.source: https://github.com/lastrohq/lastro
+      org.opencontainers.image.source: https://github.com/vintemhq/vintem
       org.opencontainers.image.version: "{{ .Version }}"
       org.opencontainers.image.revision: "{{ .FullCommit }}"
       org.opencontainers.image.licenses: Apache-2.0
@@ -82,14 +82,14 @@ changelog:
 
 release:
   github:
-    owner: lastrohq
-    name: lastro
+    owner: vintemhq
+    name: vintem
   prerelease: auto
   footer: |
     ## Rodar
 
     ```bash
-    docker run --rm ghcr.io/lastrohq/lastro:{{ .Version }} version
+    docker run --rm ghcr.io/vintemhq/vintem:{{ .Version }} version
     ```
 
-    Passo a passo com o sandbox (sem conta PJ): [docs/SANDBOX.md](https://github.com/lastrohq/lastro/blob/{{ .Tag }}/docs/SANDBOX.md).
+    Passo a passo com o sandbox (sem conta PJ): [docs/SANDBOX.md](https://github.com/vintemhq/vintem/blob/{{ .Tag }}/docs/SANDBOX.md).

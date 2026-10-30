@@ -18,7 +18,7 @@ const PrazoDevolucao = 90 * 24 * time.Hour
 type NaturezaDevolucao string
 
 // Naturezas da spec. RETIRADA é a devolução do Pix Saque ou Troco, que o
-// Lastro não recebe; só ORIGINAL é aceita.
+// Vintém não recebe; só ORIGINAL é aceita.
 const (
 	DevolucaoOriginal NaturezaDevolucao = "ORIGINAL"
 	DevolucaoRetirada NaturezaDevolucao = "RETIRADA"
@@ -74,7 +74,7 @@ func (d Devolucao) ValidarSolicitacao(pix PixRecebido, anteriores []Devolucao, a
 		return fmt.Errorf("%w: valor deve ser positivo", ErrDevolucaoInvalida)
 	}
 	if d.Natureza != DevolucaoOriginal {
-		return fmt.Errorf("%w: natureza %q não suportada; o Lastro só devolve Pix de cobrança (ORIGINAL)", ErrDevolucaoInvalida, d.Natureza)
+		return fmt.Errorf("%w: natureza %q não suportada; o Vintém só devolve Pix de cobrança (ORIGINAL)", ErrDevolucaoInvalida, d.Natureza)
 	}
 	if n := utf8.RuneCountInString(d.Descricao); n > 140 {
 		return fmt.Errorf("%w: descrição com %d caracteres; o máximo é 140", ErrDevolucaoInvalida, n)

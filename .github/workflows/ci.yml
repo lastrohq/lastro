@@ -34,7 +34,7 @@ jobs:
       - name: govulncheck
         run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
       - name: Build da imagem
-        run: docker build -f deploy/docker/Dockerfile -t lastro:ci .
+        run: docker build -f deploy/docker/Dockerfile -t vintem:ci .
 
   painel:
     name: Painel
@@ -60,5 +60,5 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
-      - name: Fluxo crítico no navegador (Playwright + lastro sandbox)
+      - name: Fluxo crítico no navegador (Playwright + vintem sandbox)
         run: npm run e2e

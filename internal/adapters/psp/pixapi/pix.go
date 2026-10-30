@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // itensPorPagina é quantos Pix pedir por página em GET /pix (o Efí aceita até 100).

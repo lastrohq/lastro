@@ -8,11 +8,13 @@ com `Status: substitui ADR-00X`, e a antiga ganha `Status: substituída por ADR-
 | [001](./001-arquitetura-hexagonal.md) | Arquitetura hexagonal com adapter por PSP | Aceita |
 | [002](./002-sqlite-por-padrao.md) | SQLite por padrão, Postgres opcional | Aceita |
 | [003](./003-openapi-first.md) | OpenAPI-first, compatível com a spec do BCB | Aceita |
-| [004](./004-nao-custodial.md) | O Lastro é não custodial | Aceita |
+| [004](./004-nao-custodial.md) | O Vintém é não custodial | Aceita |
 | [005](./005-standard-webhooks.md) | Webhooks de saída no padrão Standard Webhooks, com outbox | Aceita |
 | [006](./006-certificado-conferido-no-cadastro.md) | Certificado do mTLS conferido no cadastro, com go-pkcs12 | Aceita |
 | [007](./007-credenciais-chegam-ao-adapter-por-port.md) | Credenciais chegam ao adapter de PSP por um port, montado depois do vault | Aceita |
 | [008](./008-mcp-como-cliente-da-api.md) | O servidor MCP é um cliente da API HTTP, não um atalho para o banco | Aceita |
-| [009](./009-nome-e-marca.md) | Nome do projeto e uso da marca Pix | Proposta |
+| [009](./009-nome-e-marca.md) | Nome do projeto (Lastro → Vintém) e uso da marca Pix | Aceita |
+
+Até a ADR-009 o projeto se chamava **Lastro**; as ADRs anteriores ficam com o nome da época.
 
 Modelo: **Contexto** (o que força a decisão) · **Decisão** · **Consequências** (o que fica melhor, o que fica pior).

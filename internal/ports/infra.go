@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // Clock é a fonte de tempo; o domínio nunca chama time.Now() direto.

@@ -3,8 +3,8 @@ package httpapi
 import (
 	"context"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // CriarConta cadastra uma conta recebedora com as credenciais cifradas.

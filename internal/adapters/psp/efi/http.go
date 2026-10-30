@@ -9,10 +9,10 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/pixapi"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/oauth"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/psp/pixapi"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/oauth"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // buscarToken pede o token em POST /oauth/token: Basic auth com client id e

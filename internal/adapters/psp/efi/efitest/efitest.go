@@ -18,7 +18,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/pkg/brcode"
+	"github.com/vintemhq/vintem/pkg/brcode"
 )
 
 // Servidor é o Efí falso.
@@ -482,7 +482,7 @@ func (s *Servidor) webhook(w http.ResponseWriter, r *http.Request, chave string)
 	defer s.mu.Unlock()
 	switch r.Method {
 	case http.MethodPut:
-		// O Efí exige mTLS no servidor do webhook; sem o skip, o servidor do Lastro
+		// O Efí exige mTLS no servidor do webhook; sem o skip, o servidor do Vintém
 		// (que não termina TLS) seria recusado. O nome do erro é deste falso.
 		if r.Header.Get("x-skip-mtls-checking") != "true" {
 			erro(w, http.StatusBadRequest, "webhook_invalido", "A URL do webhook precisa aceitar mTLS com o certificado do Efí")

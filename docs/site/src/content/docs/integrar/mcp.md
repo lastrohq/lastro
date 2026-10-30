@@ -1,30 +1,30 @@
 ---
 title: Use com seu agente (MCP)
-description: lastro mcp dá a agentes de IA ferramentas para cobrar, consultar e devolver Pix, com os escopos da API key.
+description: vintem mcp dá a agentes de IA ferramentas para cobrar, consultar e devolver Pix, com os escopos da API key.
 ---
 
-`lastro mcp` é um servidor MCP por stdio. Ele chama a API do Lastro com a API
+`vintem mcp` é um servidor MCP por stdio. Ele chama a API do Vintém com a API
 key do agente, então os escopos valem: uma key só de leitura dá um agente que
-só consulta ([ADR-008](/lastro/gerado/adr/008-mcp-como-cliente-da-api/)).
+só consulta ([ADR-008](/vintem/gerado/adr/008-mcp-como-cliente-da-api/)).
 
 ## No Claude Code
 
 ```bash
-lastro sandbox   # copie a key lst_... que ele imprime
-claude mcp add lastro -e LASTRO_TOKEN=lst_... -e LASTRO_CHAVE_PIX=sandbox@lastro.dev -- lastro mcp
+vintem sandbox   # copie a key vtm_... que ele imprime
+claude mcp add vintem -e VINTEM_TOKEN=vtm_... -e VINTEM_CHAVE_PIX=sandbox@vintem.dev -- vintem mcp
 ```
 
 Depois peça: *"cobre R$ 49,90 do pedido 42 e me mostre o Pix copia e cola"*.
 
 ## Em qualquer cliente MCP
 
-Rode `lastro mcp` por stdio com estas variáveis:
+Rode `vintem mcp` por stdio com estas variáveis:
 
 | Variável | Para quê |
 |---|---|
-| `LASTRO_URL` | Onde está a API (padrão `http://localhost:8080`) |
-| `LASTRO_TOKEN` | A API key do agente |
-| `LASTRO_CHAVE_PIX` | Chave usada quando o agente não informa outra |
+| `VINTEM_URL` | Onde está a API (padrão `http://localhost:8080`) |
+| `VINTEM_TOKEN` | A API key do agente |
+| `VINTEM_CHAVE_PIX` | Chave usada quando o agente não informa outra |
 
 ## Ferramentas
 

@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 func TestTodaRotaTemEscopo(t *testing.T) {
@@ -31,7 +31,7 @@ func TestSemTokenOuTokenRuimE401(t *testing.T) {
 	if strings.HasSuffix(a.token, "x") {
 		trocado = "y"
 	}
-	for _, auth := range []string{"", "Basic abc", "Bearer lst_invalido", "Bearer " + a.token[:len(a.token)-1] + trocado} {
+	for _, auth := range []string{"", "Basic abc", "Bearer vtm_invalido", "Bearer " + a.token[:len(a.token)-1] + trocado} {
 		st := a.chamar(http.MethodGet, "/cob/"+txid, "", map[string]string{"Authorization": auth}, &p)
 		if st != http.StatusUnauthorized || p.Detail != nil {
 			t.Errorf("Authorization %q: status %d, detail %v", auth, st, p.Detail)
@@ -54,7 +54,7 @@ func TestEscopoFaltandoE403(t *testing.T) {
 	if st != http.StatusForbidden || p.Detail == nil || !strings.Contains(*p.Detail, "cob:write") {
 		t.Fatalf("status %d, %+v", st, p)
 	}
-	if st := a.chamar(http.MethodGet, "/lastro/v1/contas", "", map[string]string{"Authorization": "Bearer " + soLeitura}, &p); st != http.StatusForbidden {
+	if st := a.chamar(http.MethodGet, "/vintem/v1/contas", "", map[string]string{"Authorization": "Bearer " + soLeitura}, &p); st != http.StatusForbidden {
 		t.Fatalf("contas sem conta:admin: %d", st)
 	}
 }
@@ -91,25 +91,25 @@ func TestContasPelaAPI(t *testing.T) {
 	var c gen.Conta
 	corpo := `{"id":"nova","nome":"Nova","psp":"sandbox","chave":"nova@example.com","ambiente":"homologacao",
 	           "credenciais":{"clientId":"id","clientSecret":"segredo-que-nao-volta","certificado":"UEVNLi4u"}}`
-	rec := a.chamarBruto(http.MethodPost, "/lastro/v1/contas", corpo, nil)
+	rec := a.chamarBruto(http.MethodPost, "/vintem/v1/contas", corpo, nil)
 	if rec.Code != http.StatusCreated || strings.Contains(rec.Body.String(), "segredo-que-nao-volta") {
 		t.Fatalf("criar: %d %s", rec.Code, rec.Body)
 	}
 	var lista struct{ Contas []gen.Conta }
-	if st := a.chamar(http.MethodGet, "/lastro/v1/contas", "", nil, &lista); st != http.StatusOK || len(lista.Contas) != 2 {
+	if st := a.chamar(http.MethodGet, "/vintem/v1/contas", "", nil, &lista); st != http.StatusOK || len(lista.Contas) != 2 {
 		t.Fatalf("listar: %d %+v", st, lista)
 	}
-	if st := a.chamar(http.MethodPost, "/lastro/v1/contas/nova/desativar", "", nil, &c); st != http.StatusOK || c.Ativa {
+	if st := a.chamar(http.MethodPost, "/vintem/v1/contas/nova/desativar", "", nil, &c); st != http.StatusOK || c.Ativa {
 		t.Fatalf("desativar: %d %+v", st, c)
 	}
 	var p gen.Problema
-	if st := a.chamar(http.MethodGet, "/lastro/v1/contas/nada", "", nil, &p); st != http.StatusNotFound {
+	if st := a.chamar(http.MethodGet, "/vintem/v1/contas/nada", "", nil, &p); st != http.StatusNotFound {
 		t.Fatalf("inexistente: %d", st)
 	}
-	if st := a.chamar(http.MethodPost, "/lastro/v1/contas", strings.Replace(corpo, `"psp":"sandbox"`, `"psp":"itau"`, 1), nil, &p); st != http.StatusBadRequest {
+	if st := a.chamar(http.MethodPost, "/vintem/v1/contas", strings.Replace(corpo, `"psp":"sandbox"`, `"psp":"itau"`, 1), nil, &p); st != http.StatusBadRequest {
 		t.Fatalf("psp desconhecido: %d", st)
 	}
-	if st := a.chamar(http.MethodPost, "/lastro/v1/contas", corpo, nil, &p); st != http.StatusConflict {
+	if st := a.chamar(http.MethodPost, "/vintem/v1/contas", corpo, nil, &p); st != http.StatusConflict {
 		t.Fatalf("duplicada: %d", st)
 	}
 }

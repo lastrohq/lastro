@@ -42,7 +42,7 @@ export function Webhooks() {
       {erro && <p role="alert" style={{ color: "var(--danger)" }}>{erro}</p>}
       {!lista && !erro && <p aria-busy="true" className="muted">Carregando…</p>}
       {lista && lista.length === 0 && (
-        <EmptyState titulo={status === "dlq" ? "Nenhuma entrega na DLQ" : "Nenhuma entrega aqui"} acao={status === "dlq" ? "Tudo o que o Lastro tentou entregar chegou." : <>Cadastre um destino com <code className="mono">lastro destino criar --url ...</code></>} />
+        <EmptyState titulo={status === "dlq" ? "Nenhuma entrega na DLQ" : "Nenhuma entrega aqui"} acao={status === "dlq" ? "Tudo o que o Vintém tentou entregar chegou." : <>Cadastre um destino com <code className="mono">vintem destino criar --url ...</code></>} />
       )}
       {lista && lista.length > 0 && (
         <Table

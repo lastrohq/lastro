@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // escopoDaRota diz o escopo exigido por cada rota do contrato (RN-60).
@@ -22,10 +22,10 @@ var escopoDaRota = map[string]domain.Escopo{
 	"GET /cobv":                             domain.EscopoCobvRead,
 	"PUT /cobv/{txid}":                      domain.EscopoCobvWrite,
 	"PATCH /cobv/{txid}":                    domain.EscopoCobvWrite,
-	"GET /lastro/v1/contas":                 domain.EscopoContaAdmin,
-	"POST /lastro/v1/contas":                domain.EscopoContaAdmin,
-	"GET /lastro/v1/contas/{id}":            domain.EscopoContaAdmin,
-	"POST /lastro/v1/contas/{id}/desativar": domain.EscopoContaAdmin,
+	"GET /vintem/v1/contas":                 domain.EscopoContaAdmin,
+	"POST /vintem/v1/contas":                domain.EscopoContaAdmin,
+	"GET /vintem/v1/contas/{id}":            domain.EscopoContaAdmin,
+	"POST /vintem/v1/contas/{id}/desativar": domain.EscopoContaAdmin,
 	"POST /rec":                             domain.EscopoRecWrite,
 	"GET /rec/{idRec}":                      domain.EscopoRecRead,
 	"POST /solicrec":                        domain.EscopoRecWrite,
@@ -36,8 +36,8 @@ var escopoDaRota = map[string]domain.Escopo{
 	"POST /cobr/{txid}/retentativa/{data}":  domain.EscopoCobrWrite,
 	"PUT /pix/{e2eid}/devolucao/{id}":       domain.EscopoDevolucaoWrite,
 	"GET /pix/{e2eid}/devolucao/{id}":       domain.EscopoPixRead,
-	"GET /lastro/v1/webhooks/entregas":      domain.EscopoWebhookAdmin,
-	"POST /lastro/v1/webhooks/entregas/{eventoId}/reenviar": domain.EscopoWebhookAdmin,
+	"GET /vintem/v1/webhooks/entregas":      domain.EscopoWebhookAdmin,
+	"POST /vintem/v1/webhooks/entregas/{eventoId}/reenviar": domain.EscopoWebhookAdmin,
 }
 
 // rotasPublicas não exigem API key. Os webhooks são chamados pelo banco e
@@ -52,7 +52,7 @@ var rotasPublicas = map[string]bool{
 	"POST /webhooks/cobr/{contaId}/{token}/cobr": true,
 }
 
-// autenticar exige "Authorization: Bearer lst_..." com o escopo da rota, e
+// autenticar exige "Authorization: Bearer vtm_..." com o escopo da rota, e
 // anexa o acesso (conta restrita, se houver) ao contexto dos casos de uso.
 func autenticar(keys app.APIKeys) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

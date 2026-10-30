@@ -9,8 +9,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // Contas gerencia as contas recebedoras e as credenciais delas (RN-03, RN-61, RN-62).

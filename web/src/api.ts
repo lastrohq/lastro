@@ -1,4 +1,4 @@
-// Cliente da API do Lastro para o painel: mesma origem, API key do usuário.
+// Cliente da API do Vintém para o painel: mesma origem, API key do usuário.
 export interface Pix { endToEndId: string; txid?: string; valor: string; horario: string; infoPagador?: string }
 export interface Cob {
   txid: string;
@@ -18,7 +18,7 @@ export class ErroAPI extends Error {
   }
 }
 
-const CHAVE = "lastro.painel.token";
+const CHAVE = "vintem.painel.token";
 export const sessao = {
   token: () => sessionStorage.getItem(CHAVE),
   entrar: (t: string) => sessionStorage.setItem(CHAVE, t),
@@ -29,7 +29,7 @@ export async function api<T>(caminho: string, token = sessao.token(), metodo = "
   const resp = await fetch(caminho, { method: metodo, headers: { Authorization: `Bearer ${token ?? ""}` } });
   const texto = await resp.text();
   if (!resp.ok) {
-    let msg = `o Lastro respondeu ${resp.status}`;
+    let msg = `o Vintém respondeu ${resp.status}`;
     try {
       const p = JSON.parse(texto) as { title?: string; detail?: string };
       msg = p.detail ?? p.title ?? msg;
@@ -78,9 +78,9 @@ export interface Conta {
   certificado?: { sujeito: string; impressaoDigital: string; validade: string };
 }
 
-export const entregas = (status: Entrega["status"]) => api<{ entregas: Entrega[] }>(`/lastro/v1/webhooks/entregas?status=${status}&limite=500`).then((r) => r.entregas);
-export const reenviar = (eventoId: string) => api<{ reenviadas: number }>(`/lastro/v1/webhooks/entregas/${encodeURIComponent(eventoId)}/reenviar`, sessao.token(), "POST");
-export const contas = () => api<{ contas: Conta[] }>("/lastro/v1/contas").then((r) => r.contas);
+export const entregas = (status: Entrega["status"]) => api<{ entregas: Entrega[] }>(`/vintem/v1/webhooks/entregas?status=${status}&limite=500`).then((r) => r.entregas);
+export const reenviar = (eventoId: string) => api<{ reenviadas: number }>(`/vintem/v1/webhooks/entregas/${encodeURIComponent(eventoId)}/reenviar`, sessao.token(), "POST");
+export const contas = () => api<{ contas: Conta[] }>("/vintem/v1/contas").then((r) => r.contas);
 
 /** Dias até a data, arredondados para cima como no aviso do servidor
  * (app.Certificados): zero ou negativo quando já passou. */
@@ -90,5 +90,5 @@ export function diasAte(iso: string, agora = new Date()): number {
 
 /** Mensagem para quando a API key não tem o escopo da tela. */
 export function semEscopo(e: unknown, escopo: string): string | null {
-  return e instanceof ErroAPI && e.status === 403 ? `Esta API key não tem o escopo ${escopo}. Crie uma com lastro apikey criar --escopo ${escopo}.` : null;
+  return e instanceof ErroAPI && e.status === 403 ? `Esta API key não tem o escopo ${escopo}. Crie uma com vintem apikey criar --escopo ${escopo}.` : null;
 }

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 var agndAgendada = domain.Tentativa{DataLiquidacao: domain.NovaData(2026, 11, 5), Tipo: domain.TipoAgendamento, Status: domain.TentativaAgendada}
@@ -113,12 +113,12 @@ func TestWebhookCobr(t *testing.T) {
 	svc, s, p, _ := novasCobrs(t)
 	_, _ = svc.Criar(ctx, idRecDaConta["loja"], pedidoCobr())
 	wh := webhooksCobr(svc)
-	endereco, err := wh.Configurar(ctx, "loja", "https://lastro.example.com")
+	endereco, err := wh.Configurar(ctx, "loja", "https://vintem.example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 	token := endereco[strings.LastIndex(endereco, "/")+1:]
-	if p.webhookCobr != "https://lastro.example.com/webhooks/cobr/loja/"+token {
+	if p.webhookCobr != "https://vintem.example.com/webhooks/cobr/loja/"+token {
 		t.Fatalf("webhookcobr = %q", p.webhookCobr)
 	}
 

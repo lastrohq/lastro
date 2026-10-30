@@ -6,6 +6,6 @@ export default defineConfig({
   base: "/painel/",
   plugins: [react()],
   build: { outDir: "dist/painel", emptyOutDir: true },
-  server: { proxy: { "^/(cob|cobv|pix|lastro|health)": "http://localhost:8080" } },
+  server: { proxy: { "^/(cob|cobv|pix|vintem|health)": "http://localhost:8080" } },
   test: { environment: "jsdom", include: ["test/**/*.test.{ts,tsx}"] },
 });

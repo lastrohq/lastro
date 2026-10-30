@@ -6,17 +6,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
 )
 
 // configurarWebhook registra a URL da conta loja no sandbox e devolve o caminho dela.
 func (a *api) configurarWebhook() string {
 	a.t.Helper()
-	endereco, err := a.webhooks.Configurar(context.Background(), "loja", "https://lastro.example.com")
+	endereco, err := a.webhooks.Configurar(context.Background(), "loja", "https://vintem.example.com")
 	if err != nil {
 		a.t.Fatal(err)
 	}
-	return strings.TrimPrefix(endereco, "https://lastro.example.com")
+	return strings.TrimPrefix(endereco, "https://vintem.example.com")
 }
 
 func corpoWebhook(txid, valor string) string {

@@ -10,10 +10,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/store/sqlite"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/storetest"
+	"github.com/vintemhq/vintem/internal/adapters/store/sqlite"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/storetest"
 )
 
 func abrir(t *testing.T, path string) *sqlite.Store {
@@ -28,12 +28,12 @@ func abrir(t *testing.T, path string) *sqlite.Store {
 
 func TestStoreContrato(t *testing.T) {
 	storetest.Run(t, func(t *testing.T) ports.Store {
-		return abrir(t, filepath.Join(t.TempDir(), "lastro.db"))
+		return abrir(t, filepath.Join(t.TempDir(), "vintem.db"))
 	})
 }
 
 func TestMigrationsAplicamDoZeroEReabrirNaoReaplica(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "lastro.db")
+	path := filepath.Join(t.TempDir(), "vintem.db")
 	s := abrir(t, path)
 	conta := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true}
 	if err := s.Contas().Criar(t.Context(), conta); err != nil {
@@ -48,7 +48,7 @@ func TestMigrationsAplicamDoZeroEReabrirNaoReaplica(t *testing.T) {
 }
 
 func TestCobrancaDeContaInexistenteFalha(t *testing.T) {
-	s := abrir(t, filepath.Join(t.TempDir(), "lastro.db"))
+	s := abrir(t, filepath.Join(t.TempDir(), "vintem.db"))
 	err := s.Cobrancas().Criar(t.Context(), domain.Cobranca{Txid: "txid00000000000000000000001", ContaID: "fantasma", Status: domain.CobrancaAtiva})
 	if err == nil {
 		t.Fatal("aceitou cobrança de conta inexistente")
@@ -56,7 +56,7 @@ func TestCobrancaDeContaInexistenteFalha(t *testing.T) {
 }
 
 func TestAmbienteInvalidoFalha(t *testing.T) {
-	s := abrir(t, filepath.Join(t.TempDir(), "lastro.db"))
+	s := abrir(t, filepath.Join(t.TempDir(), "vintem.db"))
 	if err := s.Contas().Criar(t.Context(), domain.Conta{ID: "c1", Ambiente: "teste"}); err == nil {
 		t.Fatal("aceitou ambiente fora do CHECK")
 	}
@@ -65,7 +65,7 @@ func TestAmbienteInvalidoFalha(t *testing.T) {
 // Escritas concorrentes não podem dar "database is locked": o busy_timeout e
 // as transações IMMEDIATE serializam os escritores.
 func TestEscritasConcorrentes(t *testing.T) {
-	s := abrir(t, filepath.Join(t.TempDir(), "lastro.db"))
+	s := abrir(t, filepath.Join(t.TempDir(), "vintem.db"))
 	ctx := context.Background()
 	if err := s.Contas().Criar(ctx, domain.Conta{ID: "c1", Ambiente: domain.Homologacao}); err != nil {
 		t.Fatal(err)
@@ -99,7 +99,7 @@ func TestEscritasConcorrentes(t *testing.T) {
 }
 
 func TestEventoComDadosNaoSerializaveisFalha(t *testing.T) {
-	s := abrir(t, filepath.Join(t.TempDir(), "lastro.db"))
+	s := abrir(t, filepath.Join(t.TempDir(), "vintem.db"))
 	err := s.Outbox().Adicionar(t.Context(), domain.Evento{ID: "e1", Dados: make(chan int)})
 	if err == nil || errors.Is(err, ports.ErrJaExiste) {
 		t.Fatalf("err = %v", err)
@@ -110,7 +110,7 @@ func TestEventoComDadosNaoSerializaveisFalha(t *testing.T) {
 // guardado pela impressão digital (RN-62). Ainda não há comando de troca; o teste
 // troca direto no banco.
 func TestTrocarCertificadoZeraOAvisoDeVencimento(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "lastro.db")
+	path := filepath.Join(t.TempDir(), "vintem.db")
 	s := abrir(t, path)
 	ctx := t.Context()
 	c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true,

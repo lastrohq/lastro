@@ -12,7 +12,7 @@ Closes #
 
 ## Como testar
 
-<!-- Passo a passo para quem revisa reproduzir. Prefira o sandbox (`lastro sandbox`). -->
+<!-- Passo a passo para quem revisa reproduzir. Prefira o sandbox (`vintem sandbox`). -->
 
 1.
 2.

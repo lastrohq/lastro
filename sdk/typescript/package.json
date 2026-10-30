@@ -1,17 +1,17 @@
 {
-  "name": "@lastrohq/sdk",
+  "name": "@vintemhq/sdk",
   "version": "0.1.0",
-  "description": "SDK TypeScript do Lastro, o gateway Pix self-hosted: cobranças, devoluções e verificação de webhooks.",
+  "description": "SDK TypeScript do Vintém, o gateway Pix self-hosted: cobranças, devoluções e verificação de webhooks.",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lastrohq/lastro.git",
+    "url": "git+https://github.com/vintemhq/vintem.git",
     "directory": "sdk/typescript"
   },
-  "homepage": "https://github.com/lastrohq/lastro/tree/main/sdk/typescript#readme",
+  "homepage": "https://github.com/vintemhq/vintem/tree/main/sdk/typescript#readme",
   "keywords": [
     "pix",
-    "lastro",
+    "vintem",
     "gateway",
     "payments",
     "brasil",

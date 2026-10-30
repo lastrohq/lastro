@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 func pixDe(e2e, txid string, valor domain.Money) domain.PixRecebido {
@@ -104,11 +104,11 @@ func TestWebhookConfigurarEReceber(t *testing.T) {
 	reg := psp.NewRegistry(sandbox.New(c.clock))
 	wh := app.Webhooks{Store: c.store, PSPs: reg, Recebimentos: app.Recebimentos{Store: c.store, Clock: c.clock}}
 
-	if _, err := wh.Configurar(ctx, "loja", "http://lastro.example.com"); !errors.Is(err, app.ErrRequisicaoInvalida) {
+	if _, err := wh.Configurar(ctx, "loja", "http://vintem.example.com"); !errors.Is(err, app.ErrRequisicaoInvalida) {
 		t.Fatalf("http fora de localhost: err = %v", err)
 	}
-	endereco, err := wh.Configurar(ctx, "loja", "https://lastro.example.com/")
-	if err != nil || !strings.HasPrefix(endereco, "https://lastro.example.com/webhooks/pix/loja/") {
+	endereco, err := wh.Configurar(ctx, "loja", "https://vintem.example.com/")
+	if err != nil || !strings.HasPrefix(endereco, "https://vintem.example.com/webhooks/pix/loja/") {
 		t.Fatalf("Configurar = %q, %v", endereco, err)
 	}
 	token := endereco[strings.LastIndex(endereco, "/")+1:]
@@ -131,7 +131,7 @@ func TestWebhookConfigurarEReceber(t *testing.T) {
 		t.Fatalf("token de outra conta: err = %v", err)
 	}
 	// Reconfigurar troca o token: o antigo para de valer.
-	_, _ = wh.Configurar(ctx, "loja", "https://lastro.example.com")
+	_, _ = wh.Configurar(ctx, "loja", "https://vintem.example.com")
 	if _, err := wh.Receber(ctx, "loja", token, []byte(corpo)); !errors.Is(err, domain.ErrNaoAutenticado) {
 		t.Fatal("token antigo continuou valendo")
 	}

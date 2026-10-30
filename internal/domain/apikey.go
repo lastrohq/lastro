@@ -58,7 +58,7 @@ type APIKey struct {
 }
 
 const (
-	prefixoToken = "lst_"
+	prefixoToken = "vtm_"
 	tamanhoID    = 12
 	tamanhoSeg   = 32
 )
@@ -93,7 +93,7 @@ func NovaAPIKey(nome string, escopos []Escopo, contaID string, agora time.Time) 
 	return k, prefixoToken + id + "_" + segredo, nil
 }
 
-// SepararToken extrai id e segredo de "lst_<id>_<segredo>".
+// SepararToken extrai id e segredo de "vtm_<id>_<segredo>".
 func SepararToken(token string) (id, segredo string, err error) {
 	resto, ok := strings.CutPrefix(token, prefixoToken)
 	if !ok {

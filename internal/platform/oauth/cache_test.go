@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/platform/oauth"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/platform/oauth"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 var inicio = time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)

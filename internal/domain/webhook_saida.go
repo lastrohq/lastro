@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Destino é para onde o Lastro envia os eventos (RN-32): uma URL da aplicação
+// Destino é para onde o Vintém envia os eventos (RN-32): uma URL da aplicação
 // do cliente, para uma conta ou, com ContaID vazio, para todas.
 type Destino struct {
 	ID      string
@@ -36,7 +36,7 @@ const (
 	EntregaDLQ StatusEntrega = "dlq"
 )
 
-// ValidadeEntrega é por quanto tempo o Lastro insiste antes da DLQ (RN-32).
+// ValidadeEntrega é por quanto tempo o Vintém insiste antes da DLQ (RN-32).
 const ValidadeEntrega = 24 * time.Hour
 
 // Entrega é um evento a caminho de um destino. Corpo é montado uma vez, na

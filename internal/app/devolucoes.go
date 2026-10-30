@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // Devolucoes pede e consulta devoluções de Pix recebidos (RN-20, RN-21). O
@@ -44,7 +44,7 @@ func eventoDevolucao(agora time.Time, tipo domain.TipoEvento, d domain.Devolucao
 
 // aplicarDevolucao leva para a devolução gravada o que o banco informou sobre
 // ela e, se algo mudou, grava com o evento devolucao.atualizada, dentro de tx.
-// Devolve se mudou. Devolução que o Lastro não conhece, de outra conta ou com
+// Devolve se mudou. Devolução que o Vintém não conhece, de outra conta ou com
 // status que volta atrás (RN-20) é ignorada com aviso: responder erro faria o
 // banco reenviar para sempre. Se o aviso chegou antes de o Solicitar gravar a
 // devolução, ela segue EM_PROCESSAMENTO e a conciliação a confere depois.
@@ -73,7 +73,7 @@ func aplicarDevolucao(ctx context.Context, tx ports.Store, agora time.Time, doBa
 
 // travasPix serializa as devoluções de um mesmo Pix nesta instância: duas
 // pedidas ao mesmo tempo não podem, juntas, passar do valor recebido. O banco
-// confere de novo, mas o Lastro não deve depender disso.
+// confere de novo, mas o Vintém não deve depender disso.
 var travasPix sync.Map // e2e → *sync.Mutex
 
 func travarPix(e2e string) func() {

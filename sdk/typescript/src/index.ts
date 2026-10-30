@@ -1,4 +1,4 @@
-// SDK TypeScript do Lastro. Os tipos vêm de ./schema.ts, gerado do
+// SDK TypeScript do Vintém. Os tipos vêm de ./schema.ts, gerado do
 // api/openapi.yaml (npm run gerar); este arquivo só liga cada operação à rota.
 import type { components, operations } from "./schema.js";
 
@@ -17,34 +17,34 @@ export type CobrancaVencimento = Schemas["CobVCompleta"];
 export type Devolucao = Schemas["Devolucao"];
 export type Problema = Schemas["Problema"];
 
-export interface OpcoesLastro {
-  /** URL da API do Lastro, ex.: http://localhost:8080 */
+export interface OpcoesVintem {
+  /** URL da API do Vintém, ex.: http://localhost:8080 */
   url?: string;
-  /** API key (lst_...). Os escopos da key decidem o que o cliente pode fazer. */
+  /** API key (vtm_...). Os escopos da key decidem o que o cliente pode fazer. */
   token: string;
   /** fetch alternativo (testes, proxies). Padrão: o fetch global. */
   fetch?: typeof fetch;
 }
 
-/** Erro da API do Lastro, com o problema no formato da spec do BCB (RFC 7807). */
-export class LastroError extends Error {
+/** Erro da API do Vintém, com o problema no formato da spec do BCB (RFC 7807). */
+export class VintemError extends Error {
   constructor(
     readonly status: number,
     readonly problema: Problema | undefined,
     corpo: string,
   ) {
-    super(problema?.detail ?? problema?.title ?? `o Lastro respondeu ${status}: ${corpo}`);
-    this.name = "LastroError";
+    super(problema?.detail ?? problema?.title ?? `o Vintém respondeu ${status}: ${corpo}`);
+    this.name = "VintemError";
   }
 }
 
-export class Lastro {
+export class Vintem {
   readonly url: string;
   private readonly token: string;
   private readonly fetch: typeof fetch;
 
-  constructor(opcoes: OpcoesLastro) {
-    if (!opcoes.token) throw new Error("informe o token (API key lst_...) do Lastro");
+  constructor(opcoes: OpcoesVintem) {
+    if (!opcoes.token) throw new Error("informe o token (API key vtm_...) do Vintém");
     this.url = (opcoes.url ?? "http://localhost:8080").replace(/\/+$/, "");
     this.token = opcoes.token;
     this.fetch = opcoes.fetch ?? globalThis.fetch;
@@ -52,13 +52,13 @@ export class Lastro {
 
   /** Cobrança imediata (cob). */
   readonly cob = {
-    /** Cria com txid gerado pelo Lastro. A chave de idempotência evita cobrança dupla ao tentar de novo. */
+    /** Cria com txid gerado pelo Vintém. A chave de idempotência evita cobrança dupla ao tentar de novo. */
     criar: (corpo: Corpo<"criarCob">, opcoes?: { idempotencyKey?: string }) =>
       this.chamar<Resposta<"criarCob", 201>>("POST", "/cob", corpo, { "Idempotency-Key": opcoes?.idempotencyKey ?? novoId() }),
     /** Cria com o txid do seu sistema (26 a 35 caracteres alfanuméricos). */
     criarComTxid: (txid: string, corpo: Corpo<"criarCobComTxid">) =>
       this.chamar<Resposta<"criarCobComTxid", 201>>("PUT", `/cob/${encodeURIComponent(txid)}`, corpo),
-    /** Consulta; se ainda estiver ATIVA, o Lastro pergunta ao banco se já foi paga. */
+    /** Consulta; se ainda estiver ATIVA, o Vintém pergunta ao banco se já foi paga. */
     consultar: (txid: string) => this.chamar<Resposta<"consultarCob", 200>>("GET", `/cob/${encodeURIComponent(txid)}`),
     listar: (filtro: Consulta<"listarCobs">) => this.chamar<Resposta<"listarCobs", 200>>("GET", "/cob" + query(filtro)),
     revisar: (txid: string, corpo: Corpo<"revisarCob">) =>
@@ -104,14 +104,14 @@ export class Lastro {
       } catch {
         // corpo fora do formato: fica só o texto
       }
-      throw new LastroError(resp.status, problema, texto);
+      throw new VintemError(resp.status, problema, texto);
     }
     return (texto ? JSON.parse(texto) : undefined) as T;
   }
 }
 
-/** Evento que o Lastro entrega no seu endpoint (Standard Webhooks). */
-export interface EventoLastro<D = Record<string, unknown>> {
+/** Evento que o Vintém entrega no seu endpoint (Standard Webhooks). */
+export interface EventoVintem<D = Record<string, unknown>> {
   type: string;
   timestamp: string;
   data: D;
@@ -126,7 +126,7 @@ export class AssinaturaInvalida extends Error {
 }
 
 /**
- * Confere a assinatura de um webhook do Lastro (Standard Webhooks) e devolve o
+ * Confere a assinatura de um webhook do Vintém (Standard Webhooks) e devolve o
  * evento. Use o corpo cru, exatamente como chegou: reserializar o JSON muda a
  * assinatura. `segredo` é o whsec_ mostrado ao criar o destino.
  */
@@ -135,7 +135,7 @@ export async function verificarWebhook<D = Record<string, unknown>>(
   headers: Headers | Record<string, string | string[] | undefined>,
   corpo: string,
   opcoes: { toleranciaSegundos?: number; agora?: Date } = {},
-): Promise<EventoLastro<D>> {
+): Promise<EventoVintem<D>> {
   const ler = (nome: string): string | undefined => {
     if (headers instanceof Headers) return headers.get(nome) ?? undefined;
     const v = headers[nome] ?? headers[nome.toLowerCase()];
@@ -159,7 +159,7 @@ export async function verificarWebhook<D = Record<string, unknown>>(
     return versao === "v1" && valor !== undefined && iguaisEmTempoConstante(base64ParaBytes(valor), esperada);
   });
   if (!valida) throw new AssinaturaInvalida("assinatura não confere");
-  return JSON.parse(corpo) as EventoLastro<D>;
+  return JSON.parse(corpo) as EventoVintem<D>;
 }
 
 function base64ParaBytes(b64: string): Uint8Array<ArrayBuffer> {

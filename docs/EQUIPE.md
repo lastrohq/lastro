@@ -1,10 +1,10 @@
 <div align="center">
 
-# 🧭 Lastro — Manual do projeto
+# 🧭 Vintém — Manual do projeto
 
 ### Como o trabalho se organiza: board, fluxo, ritmo e o que conta como "pronto".
 
-<sub>👤 <strong>1</strong> mantenedor + comunidade &nbsp;•&nbsp; 🔁 sprint de <strong>2 semanas</strong> &nbsp;•&nbsp; 📋 board no <a href="https://github.com/orgs/lastrohq/projects">GitHub Projects</a></sub>
+<sub>👤 <strong>1</strong> mantenedor + comunidade &nbsp;•&nbsp; 🔁 sprint de <strong>2 semanas</strong> &nbsp;•&nbsp; 📋 board no <a href="https://github.com/orgs/vintemhq/projects">GitHub Projects</a></sub>
 
 </div>
 
@@ -12,7 +12,7 @@
 
 ## 🎯 Em uma tela
 
-O Lastro tem **um repositório** (monorepo `lastrohq/lastro`) e **um board**. Toda
+O Vintém tem **um repositório** (monorepo `vintemhq/vintem`) e **um board**. Toda
 tarefa começa como issue, vira branch, volta como PR e só fecha quando o merge
 acontece. Se não está no board, não existe.
 
@@ -140,7 +140,7 @@ Uma issue só entra na sprint se:
 | **F0 · Fundação** | Repo, CI, docs, board, estudo de `/rec`/`/cobr` |
 | **F1 · Domínio & BR Code** | `Money`, `Txid`, máquinas de estado, `pkg/brcode` |
 | **F2 · Cobranças** | Ports, store SQLite, `cob`/`cobv`, API keys, idempotência |
-| **F3 · Sandbox com estado** | Adapter sandbox, `lastro sandbox` |
+| **F3 · Sandbox com estado** | Adapter sandbox, `vintem sandbox` |
 | **F4 · Webhooks & conciliação** | Entrada, outbox, retry, DLQ, assinatura, conciliação |
 | **F5 · Adapters reais** | Certificados, OAuth2, Efí, Inter, Sicoob, BB, conformidade |
 | **F6 · Pix Automático** | `rec`, `solicrec`, `cobr`, `webhookrec`, `webhookcobr` |
@@ -192,8 +192,8 @@ sempre vem anotada no release.
 3. Tag na `main`: `git tag -a vX.Y.Z -m "vX.Y.Z" && git push origin vX.Y.Z`.
 4. O workflow `Release` roda o goreleaser: binários (linux, darwin e windows, amd64 e
    arm64), checksums, changelog agrupado pelos prefixos dos commits e a imagem
-   `ghcr.io/lastrohq/lastro:X.Y.Z` multi-arch. `latest` só se move em versão estável.
-5. Conferir: `docker run --rm ghcr.io/lastrohq/lastro:X.Y.Z version`.
+   `ghcr.io/vintemhq/vintem:X.Y.Z` multi-arch. `latest` só se move em versão estável.
+5. Conferir: `docker run --rm ghcr.io/vintemhq/vintem:X.Y.Z version`.
 6. Registrar a leva no [arquivo do board](./ARQUIVO-DO-BOARD.md) e mover os cards de
    `🚀 Aguardando release` para `✅ Concluído`.
 

@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // Saida entrega os eventos do outbox à aplicação do cliente, assinados no

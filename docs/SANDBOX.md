@@ -1,36 +1,36 @@
 # 🧪 Sandbox
 
-O adapter `sandbox` é um PSP de mentira: implementa as capacidades do Lastro
+O adapter `sandbox` é um PSP de mentira: implementa as capacidades do Vintém
 sem banco nenhum, para você testar o fluxo inteiro **sem conta PJ** (RN-52).
 
 ## Um comando
 
 ```bash
-lastro sandbox
+vintem sandbox
 # ou
-docker run --rm -p 8080:8080 ghcr.io/lastrohq/lastro sandbox
+docker run --rm -p 8080:8080 ghcr.io/vintemhq/vintem sandbox
 ```
 
-O `lastro sandbox` cria um banco separado (`lastro-sandbox.db`), guarda a chave
-mestra ao lado dele (`lastro-sandbox.key`), cadastra a conta `sandbox` com a
-chave Pix `sandbox@lastro.dev`, gera uma API key com todos os escopos e imprime
+O `vintem sandbox` cria um banco separado (`vintem-sandbox.db`), guarda a chave
+mestra ao lado dele (`vintem-sandbox.key`), cadastra a conta `sandbox` com a
+chave Pix `sandbox@vintem.dev`, gera uma API key com todos os escopos e imprime
 um `curl` que já funciona:
 
 ```bash
-export LASTRO_TOKEN=lst_...   # o que o terminal mostrou
+export VINTEM_TOKEN=vtm_...   # o que o terminal mostrou
 curl -s -X POST localhost:8080/cob \
-  -H "Authorization: Bearer $LASTRO_TOKEN" -H "Idempotency-Key: pedido-$RANDOM" \
+  -H "Authorization: Bearer $VINTEM_TOKEN" -H "Idempotency-Key: pedido-$RANDOM" \
   -H 'Content-Type: application/json' \
-  -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"sandbox@lastro.dev"}'
+  -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"sandbox@vintem.dev"}'
 # → 201, status ATIVA, com txid e pixCopiaECola
 
 sleep 10
-curl -s -H "Authorization: Bearer $LASTRO_TOKEN" localhost:8080/cob/{txid}
+curl -s -H "Authorization: Bearer $VINTEM_TOKEN" localhost:8080/cob/{txid}
 # → status CONCLUIDA
 ```
 
 No modo sandbox a conciliação roda a cada 10 s (mude com
-`LASTRO_CONCILIACAO_INTERVALO`), então o pagamento aparece sozinho. A cada
+`VINTEM_CONCILIACAO_INTERVALO`), então o pagamento aparece sozinho. A cada
 subida sai uma API key nova; as anteriores continuam valendo. Os dados
 sobrevivem ao restart; no Docker, monte um volume em `/home/nonroot` para
 guardá-los. Por segurança, o comando se recusa a rodar num banco que já tenha
@@ -38,28 +38,28 @@ conta de um PSP real.
 
 ## Passo a passo, sem atalho
 
-Para ver o que o `lastro sandbox` faz por baixo, ou montar o sandbox num banco
+Para ver o que o `vintem sandbox` faz por baixo, ou montar o sandbox num banco
 seu:
 
 ```bash
-export LASTRO_MASTER_KEY=$(lastro chave gerar)
-lastro conta criar --id loja --nome "Minha Loja" --psp sandbox --chave loja@example.com
-lastro apikey criar --nome teste --escopo cob:read --escopo cob:write   # copie o token lst_...
-export LASTRO_TOKEN=lst_...
-lastro serve &
+export VINTEM_MASTER_KEY=$(vintem chave gerar)
+vintem conta criar --id loja --nome "Minha Loja" --psp sandbox --chave loja@example.com
+vintem apikey criar --nome teste --escopo cob:read --escopo cob:write   # copie o token vtm_...
+export VINTEM_TOKEN=vtm_...
+vintem serve &
 
 curl -X PUT localhost:8080/cob/pedido00000000000000000000001 \
-  -H "Authorization: Bearer $LASTRO_TOKEN" \
+  -H "Authorization: Bearer $VINTEM_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"loja@example.com"}'
 
 sleep 5
-curl -H "Authorization: Bearer $LASTRO_TOKEN" localhost:8080/cob/pedido00000000000000000000001
+curl -H "Authorization: Bearer $VINTEM_TOKEN" localhost:8080/cob/pedido00000000000000000000001
 # → status CONCLUIDA, revisao 1
 ```
 
 Você nem precisa consultar: a **conciliação** (a cada 5 min no `serve`, ou na
-hora com `lastro conciliar`) encontra o pagamento do sandbox e conclui a cobrança
+hora com `vintem conciliar`) encontra o pagamento do sandbox e conclui a cobrança
 sozinha. A consulta também pergunta ao PSP quando a cobrança ainda está `ATIVA`.
 
 ## Como ele se comporta
@@ -96,16 +96,16 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
   | R$ 0,88 | não responde: a solicitação expira |
   | outros (e valor variável) | aprova |
 
-  O aviso pelo webhook só chega quando `lastro conta webhook` e o `serve` rodam
+  O aviso pelo webhook só chega quando `vintem conta webhook` e o `serve` rodam
   no mesmo processo, porque o sandbox guarda a URL em memória. Entre processos,
   que é o caso normal, a **conciliação** encontra a resposta na rodada seguinte
-  (5 min por padrão, ou `lastro conciliar` na hora), e o resultado é o mesmo.
-- **Estado:** o sandbox lembra das cobranças depois de reiniciar o Lastro. Ele
-  reconstrói a partir das cobranças que o próprio Lastro gravou no SQLite: uma
+  (5 min por padrão, ou `vintem conciliar` na hora), e o resultado é o mesmo.
+- **Estado:** o sandbox lembra das cobranças depois de reiniciar o Vintém. Ele
+  reconstrói a partir das cobranças que o próprio Vintém gravou no SQLite: uma
   cobrança criada antes do restart é paga no horário de sempre, e os valores
-  mágicos continuam valendo. As **devoluções** também: as que o Lastro gravou
+  mágicos continuam valendo. As **devoluções** também: as que o Vintém gravou
   contam no saldo do Pix e respondem pelo id depois do restart.
-- **Devolução:** `PUT /pix/{e2eid}/devolucao/{id}` devolve um Pix que o Lastro
+- **Devolução:** `PUT /pix/{e2eid}/devolucao/{id}` devolve um Pix que o Vintém
   já gravou (pelo webhook ou pela conciliação). O sandbox responde `DEVOLVIDO`
   na hora, com `rtrId` e horário de liquidação. Por isso o evento
   `devolucao.atualizada`, que sai quando o banco informa o resultado depois,
@@ -128,7 +128,7 @@ O valor da cobrança escolhe o cenário, como os cartões de teste dos gateways:
 
   Cancelar (`PATCH /cobr/{txid}` com `CANCELADA`) congela a cobrança: nada é
   liquidado depois. A cada passo, o sandbox avisa pelo webhook de cobrança
-  recorrente (`/webhooks/cobr/{conta}/{token}`), que `lastro conta webhook`
+  recorrente (`/webhooks/cobr/{conta}/{token}`), que `vintem conta webhook`
   registra junto com os outros. O `GET /cobr/{txid}` também pergunta ao sandbox
   enquanto a cobrança está aberta, e a conciliação confere as abertas.
 

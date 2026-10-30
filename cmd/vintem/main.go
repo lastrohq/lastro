@@ -1,4 +1,4 @@
-// Command lastro é o binário único do Lastro: API, painel, workers e MCP.
+// Command vintem é o binário único do Vintém: API, painel, workers e MCP.
 package main
 
 import (
@@ -8,15 +8,15 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/adapters/psp/bb"
-	"github.com/lastrohq/lastro/internal/adapters/psp/efi"
-	"github.com/lastrohq/lastro/internal/adapters/psp/inter"
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
-	"github.com/lastrohq/lastro/internal/adapters/psp/sicoob"
-	"github.com/lastrohq/lastro/internal/cli"
-	"github.com/lastrohq/lastro/internal/platform/clock"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/adapters/psp/bb"
+	"github.com/vintemhq/vintem/internal/adapters/psp/efi"
+	"github.com/vintemhq/vintem/internal/adapters/psp/inter"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sicoob"
+	"github.com/vintemhq/vintem/internal/cli"
+	"github.com/vintemhq/vintem/internal/platform/clock"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // version é preenchida no build pelo goreleaser (-ldflags "-X main.version=...").

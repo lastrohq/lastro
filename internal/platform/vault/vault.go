@@ -16,7 +16,7 @@ import (
 const versao byte = 1
 
 // ErrChaveInvalida indica uma master key fora do formato.
-var ErrChaveInvalida = errors.New("LASTRO_MASTER_KEY inválida: use 32 bytes em base64 (gere com `lastro chave gerar`)")
+var ErrChaveInvalida = errors.New("VINTEM_MASTER_KEY inválida: use 32 bytes em base64 (gere com `vintem chave gerar`)")
 
 // ErrDecifrar indica texto cifrado corrompido ou cifrado com outra chave.
 var ErrDecifrar = errors.New("não foi possível decifrar: dado corrompido ou master key diferente")

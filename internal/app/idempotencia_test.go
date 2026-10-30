@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 func novaIdem() (app.Idempotencia, *fake.Clock) {

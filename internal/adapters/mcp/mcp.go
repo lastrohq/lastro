@@ -17,12 +17,12 @@ import (
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// API é a API HTTP do Lastro que as ferramentas chamam, com a API key do
+// API é a API HTTP do Vintém que as ferramentas chamam, com a API key do
 // agente. Os escopos da key valem aqui como valem para qualquer cliente
 // (ADR-008): ferramenta de escrita com key só de leitura recebe o 403.
 type API struct {
 	URL   string // ex.: http://localhost:8080
-	Token string // API key lst_...
+	Token string // API key vtm_...
 	// ChavePix é a chave usada quando o agente não informa outra.
 	ChavePix string
 	HTTP     *http.Client
@@ -34,8 +34,8 @@ func NovoServidor(api API, versao string) *sdk.Server {
 		api.HTTP = &http.Client{Timeout: 30 * time.Second}
 	}
 	api.URL = strings.TrimRight(api.URL, "/")
-	s := sdk.NewServer(&sdk.Implementation{Name: "lastro", Title: "Lastro: Pix sem gateway", Version: versao}, &sdk.ServerOptions{
-		Instructions: "Ferramentas para cobrar por Pix pelo Lastro, um gateway Pix self-hosted. " +
+	s := sdk.NewServer(&sdk.Implementation{Name: "vintem", Title: "Vintém: Pix sem gateway", Version: versao}, &sdk.ServerOptions{
+		Instructions: "Ferramentas para cobrar por Pix pelo Vintém, um gateway Pix self-hosted. " +
 			"Valores são em reais com duas casas (\"49.90\"). Uma cobrança nasce ATIVA e vira CONCLUIDA quando o pagador paga; " +
 			"consultar uma cobrança ATIVA pergunta ao banco se ela já foi paga. Mostre o pixCopiaECola para o pagador copiar.",
 	})
@@ -50,7 +50,7 @@ func NovoServidor(api API, versao string) *sdk.Server {
 		}
 		chave := cmp.Or(in.Chave, api.ChavePix)
 		if chave == "" {
-			return erroParaAgente("informe a chave Pix que recebe (ou defina LASTRO_CHAVE_PIX no lastro mcp)"), nil, nil
+			return erroParaAgente("informe a chave Pix que recebe (ou defina VINTEM_CHAVE_PIX no vintem mcp)"), nil, nil
 		}
 		corpo["chave"] = chave
 		if in.Descricao != "" {
@@ -70,8 +70,8 @@ func NovoServidor(api API, versao string) *sdk.Server {
 
 	sdk.AddTool(s, &sdk.Tool{
 		Name: "consultar_cobranca",
-		Description: "Consulta uma cobrança Pix imediata pelo txid. Se ela ainda estiver ATIVA, o Lastro pergunta ao banco se já foi paga. " +
-			"Os pagamentos aparecem em pix[], com o endToEndId que a devolução pede, quando o Lastro registra o Pix (pelo webhook do banco ou pela conciliação, que roda sozinha).",
+		Description: "Consulta uma cobrança Pix imediata pelo txid. Se ela ainda estiver ATIVA, o Vintém pergunta ao banco se já foi paga. " +
+			"Os pagamentos aparecem em pix[], com o endToEndId que a devolução pede, quando o Vintém registra o Pix (pelo webhook do banco ou pela conciliação, que roda sozinha).",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in Txid) (*sdk.CallToolResult, any, error) {
 		return api.chamar(ctx, http.MethodGet, "/cob/"+url.PathEscape(in.Txid), nil, nil)
 	})
@@ -96,7 +96,7 @@ func NovoServidor(api API, versao string) *sdk.Server {
 
 	sdk.AddTool(s, &sdk.Tool{
 		Name:        "devolver_pix",
-		Description: "Devolve um Pix recebido, total ou parcialmente. O Lastro recusa devolver mais do que foi recebido.",
+		Description: "Devolve um Pix recebido, total ou parcialmente. O Vintém recusa devolver mais do que foi recebido.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in Devolver) (*sdk.CallToolResult, any, error) {
 		corpo := map[string]any{"valor": in.Valor}
 		if in.Descricao != "" {
@@ -121,7 +121,7 @@ type (
 		Valor             string `json:"valor" jsonschema:"valor em reais com duas casas, ex. 49.90"`
 		Descricao         string `json:"descricao,omitempty" jsonschema:"texto que o pagador vê no app do banco (até 140 caracteres)"`
 		ExpiracaoSegundos int    `json:"expiracao_segundos,omitempty" jsonschema:"segundos até a cobrança expirar; padrão 3600"`
-		Chave             string `json:"chave,omitempty" jsonschema:"chave Pix que recebe; vazia usa LASTRO_CHAVE_PIX do servidor MCP"`
+		Chave             string `json:"chave,omitempty" jsonschema:"chave Pix que recebe; vazia usa VINTEM_CHAVE_PIX do servidor MCP"`
 		DevedorNome       string `json:"devedor_nome,omitempty" jsonschema:"nome de quem paga, se quiser identificar"`
 		DevedorDocumento  string `json:"devedor_documento,omitempty" jsonschema:"CPF (11 dígitos) ou CNPJ (14 dígitos) de quem paga, só números"`
 		ChaveIdempotencia string `json:"chave_idempotencia,omitempty" jsonschema:"repita o mesmo valor para não criar a cobrança duas vezes ao tentar de novo"`
@@ -175,7 +175,7 @@ func (api API) chamar(ctx context.Context, metodo, caminho string, corpo any, he
 	}
 	resp, err := api.HTTP.Do(req)
 	if err != nil {
-		return nil, nil, fmt.Errorf("o Lastro em %s não respondeu: %w", api.URL, err)
+		return nil, nil, fmt.Errorf("o Vintém em %s não respondeu: %w", api.URL, err)
 	}
 	defer func() { _ = resp.Body.Close() }()
 	b, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
@@ -184,7 +184,7 @@ func (api API) chamar(ctx context.Context, metodo, caminho string, corpo any, he
 	}
 	texto := string(b)
 	if resp.StatusCode >= 400 {
-		texto = fmt.Sprintf("o Lastro respondeu %d: %s", resp.StatusCode, b)
+		texto = fmt.Sprintf("o Vintém respondeu %d: %s", resp.StatusCode, b)
 		if resp.StatusCode == http.StatusForbidden {
 			texto += "\n(a API key do agente não tem o escopo para esta ferramenta)"
 		}
@@ -200,7 +200,7 @@ func erroParaAgente(texto string) *sdk.CallToolResult {
 }
 
 // ErrSemToken indica que o agente não recebeu uma API key.
-var ErrSemToken = errors.New("defina LASTRO_TOKEN com uma API key do Lastro (lastro apikey criar)")
+var ErrSemToken = errors.New("defina VINTEM_TOKEN com uma API key do Vintém (vintem apikey criar)")
 
 // idAleatorio gera um identificador de 32 caracteres para idempotência e devolução.
 func idAleatorio() string {

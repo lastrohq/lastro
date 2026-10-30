@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/pkg/brcode"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/pkg/brcode"
 )
 
 // Alvo é o adapter sob teste e o que a suíte precisa para exercitá-lo.
@@ -313,7 +313,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 		if _, err := cobr.ConsultarCobr(ctx, a.Conta, "conformidadecobrinexistente1"); !errors.Is(err, ports.ErrNaoEncontrado) {
 			t.Fatalf("inexistente: %v", err)
 		}
-		if err := cobr.ConfigurarWebhookCobr(ctx, a.Conta, "https://lastro.example.com/webhooks/cobr/"+a.Conta.ID+"/token"); err != nil {
+		if err := cobr.ConfigurarWebhookCobr(ctx, a.Conta, "https://vintem.example.com/webhooks/cobr/"+a.Conta.ID+"/token"); err != nil {
 			t.Fatalf("configurar webhookcobr: %v", err)
 		}
 	})
@@ -326,7 +326,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 			if a.Real {
 				t.Skip("o banco testa a URL do webhook antes de aceitar: o alvo precisa de URLWebhook pública")
 			}
-			url = "https://lastro.example.com/webhook/" + a.Conta.ID
+			url = "https://vintem.example.com/webhook/" + a.Conta.ID
 		}
 		if err := a.PSP.ConfigurarWebhook(context.Background(), a.Conta, url); err != nil {
 			t.Fatal(err)
@@ -359,7 +359,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 			t.Fatal("declara rec mas não implementa ports.PSPRecorrencia")
 		}
 		ctx := context.Background()
-		if err := rec.ConfigurarWebhookRec(ctx, a.Conta, "https://lastro.example.com/webhooks/rec/"+a.Conta.ID+"/token"); err != nil {
+		if err := rec.ConfigurarWebhookRec(ctx, a.Conta, "https://vintem.example.com/webhooks/rec/"+a.Conta.ID+"/token"); err != nil {
 			t.Fatalf("configurar webhookrec: %v", err)
 		}
 		ats, err := rec.InterpretarWebhookRec(a.Conta, []byte(`{"recs":[{"idRec":"RR1026652320240821lab77511abf","status":"APROVADA",
@@ -410,7 +410,7 @@ func Run(t *testing.T, novo func(t *testing.T) Alvo) {
 				return err
 			},
 			ports.CapWebhook: func() error {
-				return a.PSP.ConfigurarWebhook(ctx, a.Conta, "https://lastro.example.com/webhook/"+a.Conta.ID)
+				return a.PSP.ConfigurarWebhook(ctx, a.Conta, "https://vintem.example.com/webhook/"+a.Conta.ID)
 			},
 		}
 		for c, chamar := range naoDeclaradas {

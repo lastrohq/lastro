@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 func avisoRec(status, extra string) []byte {
@@ -113,7 +113,7 @@ func TestReceberRecConfereTokenEAplica(t *testing.T) {
 	if rec, _ := s.Recorrencias().Buscar(ctx, idRecPSP); rec.Status != domain.RecorrenciaRejeitada || rec.MotivoRejeicao != "AP14: x" {
 		t.Fatalf("rec = %s %q", rec.Status, rec.MotivoRejeicao)
 	}
-	// Recorrência que o Lastro não conhece: ignorada, sem fazer o banco reenviar.
+	// Recorrência que o Vintém não conhece: ignorada, sem fazer o banco reenviar.
 	desconhecida := []byte(`{"recs":[{"idRec":"RR9999999920261029abcDEF00009","status":"APROVADA","atualizacao":[]}]}`)
 	if n, err := wh.ReceberRec(ctx, "loja", "token-certo", desconhecida); err != nil || n != 0 {
 		t.Fatalf("desconhecida: %d, %v", n, err)
@@ -124,12 +124,12 @@ func TestConfigurarRegistraOWebhookDeRecorrencia(t *testing.T) {
 	svc, s, p := novasRecorrencias(t)
 	wh := app.Webhooks{Store: s, PSPs: svc.PSPs, Recorrencias: svc}
 	p.caps[ports.CapWebhook] = true
-	endereco, err := wh.Configurar(context.Background(), "loja", "https://lastro.example.com")
+	endereco, err := wh.Configurar(context.Background(), "loja", "https://vintem.example.com")
 	if err != nil {
 		t.Fatal(err)
 	}
 	token := endereco[strings.LastIndex(endereco, "/")+1:]
-	if p.webhookRec != "https://lastro.example.com/webhooks/rec/loja/"+token {
+	if p.webhookRec != "https://vintem.example.com/webhooks/rec/loja/"+token {
 		t.Fatalf("webhookrec = %q (pix em %q)", p.webhookRec, endereco)
 	}
 }

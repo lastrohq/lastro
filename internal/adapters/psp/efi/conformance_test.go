@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/efi"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
-	"github.com/lastrohq/lastro/test/conformance"
-	"github.com/lastrohq/lastro/test/conformance/fita"
+	"github.com/vintemhq/vintem/internal/adapters/psp/efi"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/certificado/certificadotest"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
+	"github.com/vintemhq/vintem/test/conformance"
+	"github.com/vintemhq/vintem/test/conformance/fita"
 )
 
 // A suíte de conformidade roda contra o Efí falso, que segue os exemplos da
@@ -43,7 +43,7 @@ const dirFitas = "../../../../test/fixtures/efi"
 // TestConformidadeGravada roda a suíte contra as fitas da homologação do Efí
 // de verdade (RN-51). Para gravar de novo, com uma conta Efí Pro:
 //
-//	LASTRO_GRAVAR_EFI=1 EFI_CLIENT_ID=... EFI_CLIENT_SECRET=... \
+//	VINTEM_GRAVAR_EFI=1 EFI_CLIENT_ID=... EFI_CLIENT_SECRET=... \
 //	EFI_CERTIFICADO=homologacao.p12 EFI_SENHA_CERTIFICADO= EFI_CHAVE_PIX=... \
 //	EFI_URL_WEBHOOK=https://... \
 //	go test -run TestConformidadeGravada ./internal/adapters/psp/efi/
@@ -53,7 +53,7 @@ const dirFitas = "../../../../test/fixtures/efi"
 // EFI_URL_WEBHOOK é opcional: o Efí chama a URL e só aceita se ela responder
 // 2xx; sem ela, o cenário de configurar o webhook é pulado.
 func TestConformidadeGravada(t *testing.T) {
-	gravar := os.Getenv("LASTRO_GRAVAR_EFI") != ""
+	gravar := os.Getenv("VINTEM_GRAVAR_EFI") != ""
 	if !gravar {
 		if fitas, _ := filepath.Glob(filepath.Join(dirFitas, "*.json")); len(fitas) == 0 {
 			t.Skip("nenhuma fita da homologação do Efí gravada ainda (#27)")

@@ -15,9 +15,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/certificado/certificadotest"
 )
 
 // arquivo grava conteudo num arquivo temporário e devolve o caminho.
@@ -115,24 +115,24 @@ func TestContaCriarRecusaCertificado(t *testing.T) {
 }
 
 func TestServeSemMasterKeyNaoSobe(t *testing.T) {
-	amb, _ := ambiente(t, map[string]string{"LASTRO_DB": filepath.Join(t.TempDir(), "x.db"), "LASTRO_ADDR": "127.0.0.1:0"})
+	amb, _ := ambiente(t, map[string]string{"VINTEM_DB": filepath.Join(t.TempDir(), "x.db"), "VINTEM_ADDR": "127.0.0.1:0"})
 	ctx, cancelar := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelar()
 	err := Run(ctx, []string{"serve"}, amb)
-	if err == nil || !strings.Contains(err.Error(), "LASTRO_MASTER_KEY") {
+	if err == nil || !strings.Contains(err.Error(), "VINTEM_MASTER_KEY") {
 		t.Fatalf("serve sem master key: err = %v", err)
 	}
 }
 
 // TestNenhumSegredoNoLogNemNaSaida cadastra uma conta com todos os segredos,
 // erra a senha de propósito, sobe e derruba o serve, e procura cada segredo em
-// tudo o que o Lastro escreveu (RN-61).
+// tudo o que o Vintém escreveu (RN-61).
 func TestNenhumSegredoNoLogNemNaSaida(t *testing.T) {
 	par := certificadotest.Gerar(t, "loja", validadeTeste)
 	env := envComBanco(t)
-	env["LASTRO_ADDR"] = "127.0.0.1:0"
-	env["LASTRO_CONCILIACAO_INTERVALO"] = "0"
-	env["LASTRO_WEBHOOK_INTERVALO"] = "0"
+	env["VINTEM_ADDR"] = "127.0.0.1:0"
+	env["VINTEM_CONCILIACAO_INTERVALO"] = "0"
+	env["VINTEM_WEBHOOK_INTERVALO"] = "0"
 	amb, out := ambiente(t, env)
 
 	var log bytes.Buffer
@@ -167,7 +167,7 @@ func TestNenhumSegredoNoLogNemNaSaida(t *testing.T) {
 	if err := <-feito; err != nil {
 		t.Fatalf("serve: %v", err)
 	}
-	if !strings.Contains(log.String(), "lastro no ar") {
+	if !strings.Contains(log.String(), "vintem no ar") {
 		t.Fatalf("o serve não chegou a subir; log: %s", log.String())
 	}
 
@@ -199,9 +199,9 @@ func TestServeAvisaCertificadoPertoDeVencer(t *testing.T) {
 	defer destino.Close()
 
 	env := envComBanco(t)
-	env["LASTRO_ADDR"] = "127.0.0.1:0"
-	env["LASTRO_CONCILIACAO_INTERVALO"] = "0"
-	env["LASTRO_WEBHOOK_INTERVALO"] = "50ms"
+	env["VINTEM_ADDR"] = "127.0.0.1:0"
+	env["VINTEM_CONCILIACAO_INTERVALO"] = "0"
+	env["VINTEM_WEBHOOK_INTERVALO"] = "50ms"
 	amb, _ := ambiente(t, env) // relógio em 2026-10-29 12:00 UTC
 	ctx := context.Background()
 
@@ -232,7 +232,7 @@ func TestServeAvisaCertificadoPertoDeVencer(t *testing.T) {
 		if err := json.Unmarshal([]byte(corpo), &ev); err != nil {
 			t.Fatal(err)
 		}
-		if ev.Type != "certificado.expirando" || ev.Data.ContaID != "loja" || ev.Data.DiasRestantes != 20 || ev.Data.Sujeito != "CN=loja,O=Lastro Teste" {
+		if ev.Type != "certificado.expirando" || ev.Data.ContaID != "loja" || ev.Data.DiasRestantes != 20 || ev.Data.Sujeito != "CN=loja,O=Vintém Teste" {
 			t.Fatalf("evento = %s", corpo)
 		}
 		if strings.Contains(corpo, string(par.CertificadoPEM[30:60])) {

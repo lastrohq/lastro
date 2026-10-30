@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/store/sqlite/db"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/adapters/store/sqlite/db"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 type idem struct{ q *db.Queries }

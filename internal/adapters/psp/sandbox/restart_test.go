@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
-	"github.com/lastrohq/lastro/test/conformance"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
+	"github.com/vintemhq/vintem/test/conformance"
 )
 
 // antesDoRestart cria a cobrança no sandbox e a grava no store, como o caso
@@ -51,7 +51,7 @@ func TestCobrancaCriadaAntesDoRestartEPagaDepois(t *testing.T) {
 		t.Fatalf("ListarPix depois do restart = %+v, %v", pix, err)
 	}
 
-	// O mesmo Pix que o sandbox antigo teria listado (mesmo endToEndId): a deduplicação do Lastro segura.
+	// O mesmo Pix que o sandbox antigo teria listado (mesmo endToEndId): a deduplicação do Vintém segura.
 	antigo := sandbox.New(clock)
 	_, _ = antigo.CriarCob(ctx, conta, domain.Cobranca{Txid: c.Txid, Valor: 2500, Expiracao: time.Hour, CriadaEm: inicio})
 	pixAntigo, _ := antigo.ListarPix(ctx, conta, ports.Janela{Inicio: inicio, Fim: clock.Now().Add(time.Second)})
@@ -84,13 +84,13 @@ func TestValoresMagicosDepoisDoRestart(t *testing.T) {
 	}
 }
 
-func TestEstadoGravadoPeloLastroValeDepoisDoRestart(t *testing.T) {
+func TestEstadoGravadoPeloVintemValeDepoisDoRestart(t *testing.T) {
 	store, clock := fake.NewStore(), fake.NewClock(inicio)
 	ctx := context.Background()
 	paga := antesDoRestart(t, store, clock, "restart000000000000000000005", 2500)
 	removida := antesDoRestart(t, store, clock, "restart000000000000000000006", 2500)
 
-	// O Lastro já tinha registrado o pagamento de uma e a remoção da outra.
+	// O Vintém já tinha registrado o pagamento de uma e a remoção da outra.
 	for txid, status := range map[domain.Txid]domain.StatusCobranca{paga.Txid: domain.CobrancaConcluida, removida.Txid: domain.CobrancaRemovidaPeloUsuarioRecebedor} {
 		c, _ := store.Cobrancas().Buscar(ctx, conta.ID, txid)
 		c.Status = status

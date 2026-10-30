@@ -1,19 +1,19 @@
-# Como contribuir com o Lastro
+# Como contribuir com o Vintém
 
 Obrigado por querer ajudar! O jeito de maior impacto é **adicionar ou melhorar
 o suporte a um banco**: cada banco novo é um público inteiro que passa a poder
-usar o Lastro.
+usar o Vintém.
 
 ## Antes de começar
 
 1. Leia o [manual do projeto](./docs/EQUIPE.md) (fluxo, DoR e DoD) e as [regras de negócio](./docs/REGRAS-DE-NEGOCIO.md).
-2. Procure a issue no [board](https://github.com/orgs/lastrohq/projects). Não achou? Abra uma pelo template antes de escrever código — evita PR que não entra.
+2. Procure a issue no [board](https://github.com/orgs/vintemhq/projects). Não achou? Abra uma pelo template antes de escrever código — evita PR que não entra.
 3. Comente na issue que vai pegar.
 
 ## Ambiente
 
 ```bash
-git clone https://github.com/lastrohq/lastro && cd lastro
+git clone https://github.com/vintemhq/vintem && cd vintem
 git checkout develop
 make test   # go test -race ./...
 make lint   # golangci-lint run

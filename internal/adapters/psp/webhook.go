@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // webhookPix é o corpo do callback da spec do BCB: POST {webhookUrl}/pix.

@@ -7,8 +7,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // Cobrancas são os casos de uso da cobrança imediata (cob).
@@ -25,7 +25,7 @@ type PedidoDevedor struct {
 
 // PedidoCob é a criação de uma cob, com os campos ainda no formato da spec.
 type PedidoCob struct {
-	// Txid vazio faz o Lastro gerar um.
+	// Txid vazio faz o Vintém gerar um.
 	Txid               string
 	Chave              string
 	Valor              string
