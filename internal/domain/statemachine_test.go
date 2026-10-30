@@ -56,6 +56,7 @@ func TestTransicoesRecorrencia(t *testing.T) {
 			{RecorrenciaCriada, RecorrenciaAprovada}:    true,
 			{RecorrenciaCriada, RecorrenciaRejeitada}:   true,
 			{RecorrenciaCriada, RecorrenciaExpirada}:    true,
+			{RecorrenciaCriada, RecorrenciaCancelada}:   true,
 			{RecorrenciaAprovada, RecorrenciaCancelada}: true,
 			{RecorrenciaAprovada, RecorrenciaExpirada}:  true,
 		},
@@ -68,7 +69,6 @@ func TestTransicoesCobrancaRecorrente(t *testing.T) {
 	conferirTodas(t, TransicoesCobrancaRecorrente, estados,
 		map[[2]StatusCobrancaRecorrente]bool{
 			{CobrCriada, CobrAtiva}:     true,
-			{CobrCriada, CobrRejeitada}: true,
 			{CobrCriada, CobrCancelada}: true,
 			{CobrAtiva, CobrConcluida}:  true,
 			{CobrAtiva, CobrExpirada}:   true,
@@ -82,5 +82,19 @@ func TestTransicoesCobrancaRecorrente(t *testing.T) {
 func TestEstadoDesconhecidoNaoTransita(t *testing.T) {
 	if err := TransicoesCobranca.Validar("INVENTADO", CobrancaConcluida); !errors.Is(err, ErrTransicaoInvalida) {
 		t.Fatalf("estado desconhecido transitou: %v", err)
+	}
+}
+
+func TestAlcanca(t *testing.T) {
+	tr := TransicoesCobrancaRecorrente
+	for _, para := range []StatusCobrancaRecorrente{CobrAtiva, CobrConcluida, CobrExpirada, CobrRejeitada, CobrCancelada} {
+		if !tr.Alcanca(CobrCriada, para) {
+			t.Errorf("CRIADA alcança %s pelo diagrama", para)
+		}
+	}
+	for _, c := range [][2]StatusCobrancaRecorrente{{CobrCriada, CobrCriada}, {CobrAtiva, CobrCriada}, {CobrConcluida, CobrAtiva}, {CobrRejeitada, CobrConcluida}} {
+		if err := tr.ValidarCaminho(c[0], c[1]); !errors.Is(err, ErrTransicaoInvalida) {
+			t.Errorf("%s → %s deveria ser recusada, err = %v", c[0], c[1], err)
+		}
 	}
 }

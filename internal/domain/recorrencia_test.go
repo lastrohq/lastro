@@ -84,7 +84,8 @@ func TestTransicoesSolicitacao(t *testing.T) {
 	conferirTodas(t, TransicoesSolicitacao, estados,
 		map[[2]StatusSolicitacao]bool{
 			{SolicitacaoCriada, SolicitacaoEnviada}: true, {SolicitacaoCriada, SolicitacaoExpirada}: true, {SolicitacaoCriada, SolicitacaoCancelada}: true,
-			{SolicitacaoEnviada, SolicitacaoRecebida}: true, {SolicitacaoEnviada, SolicitacaoExpirada}: true, {SolicitacaoEnviada, SolicitacaoCancelada}: true,
+			{SolicitacaoEnviada, SolicitacaoRecebida}: true, {SolicitacaoEnviada, SolicitacaoRejeitada}: true,
+			{SolicitacaoEnviada, SolicitacaoExpirada}: true, {SolicitacaoEnviada, SolicitacaoCancelada}: true,
 			{SolicitacaoRecebida, SolicitacaoAceita}: true, {SolicitacaoRecebida, SolicitacaoRejeitada}: true,
 			{SolicitacaoRecebida, SolicitacaoExpirada}: true, {SolicitacaoRecebida, SolicitacaoCancelada}: true,
 		},

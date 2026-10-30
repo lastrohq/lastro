@@ -26,13 +26,13 @@ const (
 	CobrCancelada StatusCobrancaRecorrente = "CANCELADA"
 )
 
-// TransicoesCobrancaRecorrente segue a RN-42. A spec lista os status, não as
-// transições: CRIADA é a cobrança registrada no PSP do recebedor e ATIVA, a
-// instrução aceita pelo PSP do pagador, que continua ATIVA durante as
-// retentativas (exemplo cobRResponse3 da spec). Precisa ser conferida no
-// Manual de Fluxos do BCB, como a da solicitação (RN-41).
+// TransicoesCobrancaRecorrente segue a RN-42, conferida nos diagramas de
+// estados da CobR do Manual de Padrões para Iniciação do Pix 2.10.0 (seção 3.3
+// do Pix Automático): CRIADA é a cobrança registrada no PSP do recebedor e
+// ATIVA, a enviada ao PSP do pagador para agendamento, que continua ATIVA
+// durante as retentativas. A rejeição pelo PSP do pagador passa por ATIVA.
 var TransicoesCobrancaRecorrente = Transicoes[StatusCobrancaRecorrente]{
-	CobrCriada: {CobrAtiva, CobrRejeitada, CobrCancelada},
+	CobrCriada: {CobrAtiva, CobrCancelada},
 	CobrAtiva:  {CobrConcluida, CobrExpirada, CobrRejeitada, CobrCancelada},
 }
 
@@ -237,9 +237,12 @@ func (c *CobrancaRecorrente) Aplicar(a AtualizacaoCobrancaRecorrente) (statusMud
 	novo := *c
 	novo.Tentativas = append([]Tentativa(nil), c.Tentativas...)
 	if a.Status != "" && a.Status != c.Status {
-		if err := novo.Transitar(a.Status); err != nil {
+		// O status vem do banco: vale se for alcançável, porque o aviso do
+		// passo intermediário (CRIADA → ATIVA) pode ter se perdido.
+		if err := TransicoesCobrancaRecorrente.ValidarCaminho(c.Status, a.Status); err != nil {
 			return false, nil, err
 		}
+		novo.Status = a.Status
 		statusMudou = true
 	}
 	if a.MotivoEncerramento != "" && a.MotivoEncerramento != c.MotivoEncerramento {

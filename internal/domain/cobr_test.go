@@ -263,6 +263,15 @@ func TestAplicarAtualizacao(t *testing.T) {
 			t.Fatalf("%+v, %v", c, err)
 		}
 	})
+	t.Run("aviso de ATIVA perdido: CONCLUIDA vale direto de CRIADA", func(t *testing.T) {
+		c := base()
+		paga := agnd
+		paga.Status = TentativaPaga
+		mudou, _, err := c.Aplicar(AtualizacaoCobrancaRecorrente{Status: CobrConcluida, Tentativas: []Tentativa{paga}})
+		if err != nil || !mudou || c.Status != CobrConcluida {
+			t.Fatalf("mudou %v, %+v, %v", mudou, c, err)
+		}
+	})
 	t.Run("status fora da RN-42 não muda nada", func(t *testing.T) {
 		c := base()
 		c.Status = CobrConcluida

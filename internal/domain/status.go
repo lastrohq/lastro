@@ -43,8 +43,11 @@ const (
 	RecorrenciaCancelada StatusRecorrencia = "CANCELADA"
 )
 
-// TransicoesRecorrencia define a RN-40: aprovada ainda pode ser cancelada ou expirar no fim da vigência.
+// TransicoesRecorrencia define a RN-40, conferida no diagrama de estados da Rec
+// do Manual de Padrões para Iniciação do Pix 2.10.0 (seção 3.1 do Pix
+// Automático): criada pode ser cancelada antes da aprovação; aprovada ainda
+// pode ser cancelada ou expirar no fim da vigência.
 var TransicoesRecorrencia = Transicoes[StatusRecorrencia]{
-	RecorrenciaCriada:   {RecorrenciaAprovada, RecorrenciaRejeitada, RecorrenciaExpirada},
+	RecorrenciaCriada:   {RecorrenciaAprovada, RecorrenciaRejeitada, RecorrenciaExpirada, RecorrenciaCancelada},
 	RecorrenciaAprovada: {RecorrenciaCancelada, RecorrenciaExpirada},
 }
