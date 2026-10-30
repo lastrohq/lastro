@@ -132,5 +132,5 @@ regulatório.
 
 ## Licença
 
-[Apache-2.0](./LICENSE). "Pix" é marca do Banco Central do Brasil; o Lastro é
+[Apache-2.0](./LICENSE). Pix é marca do Banco Central do Brasil; o Lastro é
 um projeto independente, sem vínculo nem endosso do BCB.
