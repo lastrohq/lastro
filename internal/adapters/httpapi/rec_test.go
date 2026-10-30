@@ -103,3 +103,56 @@ func TestCriarSolicRec(t *testing.T) {
 		t.Fatalf("passa de 30 dias: %d", st)
 	}
 }
+
+func TestConsultarECancelarSolicRec(t *testing.T) {
+	a := novaAPI(t)
+	h := comChaveDaLoja(a, "")
+	var r gen.RecGerada
+	if st := a.chamar(http.MethodPost, "/rec", pedidoRec, comChaveDaLoja(a, "rec-c"), &r); st != http.StatusCreated {
+		t.Fatalf("criar recorrência: %d", st)
+	}
+	expira := a.clock.Now().Add(7 * 24 * 3600 * 1e9).UTC().Format("2006-01-02T15:04:05Z")
+	corpo := `{"idRec":"` + r.IdRec + `","calendario":{"dataExpiracaoSolicitacao":"` + expira + `"},"destinatario":{"conta":"123456","ispbParticipante":"18236120","agencia":"0001"}}`
+	var s gen.SolicRecGerada
+	if st := a.chamar(http.MethodPost, "/solicrec", corpo, comChaveDaLoja(a, "sol-c"), &s); st != http.StatusCreated {
+		t.Fatalf("solicitar: %d", st)
+	}
+	caminho := "/solicrec/" + s.IdSolicRec
+
+	var lida gen.SolicRecGerada
+	if st := a.chamar(http.MethodGet, caminho, "", h, &lida); st != http.StatusOK || lida.Status != "ENVIADA" || lida.IdRec != r.IdRec || lida.Destinatario.Conta != "123456" {
+		t.Fatalf("consultar: %d %+v", st, lida)
+	}
+	var p gen.Problema
+	if err := a.store.Contas().Criar(t.Context(), domain.Conta{ID: "outra", Nome: "Outra", PSP: "sandbox", ChavePix: "outra@example.com", Ambiente: domain.Homologacao, Ativa: true}); err != nil {
+		t.Fatal(err)
+	}
+	outra := map[string]string{"Authorization": "Bearer " + a.novoToken("outra", domain.EscopoRecRead, domain.EscopoRecWrite)}
+	if st := a.chamar(http.MethodGet, caminho, "", outra, &p); st != http.StatusNotFound {
+		t.Fatalf("outra conta consultando: %d", st)
+	}
+	if st := a.chamar(http.MethodPatch, caminho, `{"status":"CANCELADA"}`, outra, &p); st != http.StatusNotFound {
+		t.Fatalf("outra conta cancelando: %d", st)
+	}
+	if st := a.chamar(http.MethodPatch, caminho, `{"status":"ACEITA"}`, h, &p); st != http.StatusBadRequest {
+		t.Fatalf("status que não é CANCELADA: %d", st)
+	}
+	if st := a.chamar(http.MethodGet, caminho, "", h, &lida); st != http.StatusOK || lida.Status != "ENVIADA" {
+		t.Fatalf("a revisão recusada mudou a solicitação: %d %+v", st, lida)
+	}
+
+	var cancelada gen.SolicRecGerada
+	if st := a.chamar(http.MethodPatch, caminho, `{"status":"CANCELADA"}`, h, &cancelada); st != http.StatusOK || cancelada.Status != "CANCELADA" {
+		t.Fatalf("cancelar: %d %+v", st, cancelada)
+	}
+	if st := a.chamar(http.MethodPatch, caminho, `{"status":"CANCELADA"}`, h, &p); st != http.StatusBadRequest {
+		t.Fatalf("cancelar de novo: %d", st)
+	}
+	var rec gen.RecGerada
+	if st := a.chamar(http.MethodGet, "/rec/"+r.IdRec, "", h, &rec); st != http.StatusOK || rec.Status != "CRIADA" {
+		t.Fatalf("a recorrência continua CRIADA: %d %+v", st, rec)
+	}
+	if st := a.chamar(http.MethodGet, "/solicrec/SC0000000020261029naoexiste1", "", h, &p); st != http.StatusNotFound {
+		t.Fatalf("solicitação que não existe: %d", st)
+	}
+}

@@ -251,13 +251,16 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
 - `ACEITA` leva a recorrência a `APROVADA`; `REJEITADA`, a `REJEITADA` (RN-40).
 - Fica pendente no app do pagador por **no máximo 30 dias**; o recebedor pode
   definir menos. Passado o prazo, expira.
-- O recebedor só cancela (`PATCH` com `CANCELADA`).
+- O recebedor só cancela (`PATCH /solicrec/{idSolicRec}` com `CANCELADA`), enquanto
+  o pagador não respondeu. Outro status no corpo é recusado. A recorrência continua
+  `CRIADA`, e o cancelamento publica `recorrencia.solicitacao` com o status novo.
 - Mudanças chegam por webhook de recorrência (`/webhookrec`).
 
 ### RN-42 · Cobrança recorrente (`/cobr`)
 
 - Status da API Pix (`CobRStatus`, 2.10.0): `CRIADA`, `ATIVA`, `CONCLUIDA`,
-  `EXPIRADA`, `REJEITADA`, `CANCELADA`. O recebedor só cancela.
+  `EXPIRADA`, `REJEITADA`, `CANCELADA`. O recebedor só cancela: outro status no
+  `PATCH` é recusado.
 
   ```
   CRIADA ──▶ ATIVA ──▶ CONCLUIDA

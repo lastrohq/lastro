@@ -81,6 +81,9 @@ type PSPRecorrencia interface {
 	// SolicitarConfirmacao pede a autorização no app do pagador (POST
 	// /solicrec, jornada 1) e devolve a solicitação com o idSolicRec do PSP.
 	SolicitarConfirmacao(ctx context.Context, conta domain.Conta, s domain.SolicitacaoRecorrencia) (domain.SolicitacaoRecorrencia, error)
+	// CancelarSolicitacao desiste do pedido antes da resposta do pagador (PATCH
+	// /solicrec/{idSolicRec} com CANCELADA).
+	CancelarSolicitacao(ctx context.Context, conta domain.Conta, s domain.SolicitacaoRecorrencia) (domain.SolicitacaoRecorrencia, error)
 	// ConfigurarWebhookRec registra a URL do webhook de recorrência (PUT /webhookrec).
 	ConfigurarWebhookRec(ctx context.Context, conta domain.Conta, url string) error
 	// InterpretarWebhookRec lê o aviso de recorrência que o PSP enviou. Quem

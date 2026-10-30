@@ -76,7 +76,18 @@ curl -X POST http://localhost:8080/solicrec \
   -d '{"idRec":"'$ID_REC'","calendario":{"dataExpiracaoSolicitacao":"'$EXPIRA'"},"destinatario":{"conta":"123456","ispbParticipante":"18236120","agencia":"0001"}}'
 ```
 
-A solicitação fica pendente por no máximo 30 dias e depois expira.
+A solicitação fica pendente por no máximo 30 dias e depois expira. Enquanto o pagador
+não responde, você pode consultar e desistir. A recorrência continua `CRIADA` e pode
+pedir outra confirmação:
+
+```bash
+curl http://localhost:8080/solicrec/$ID_SOLIC -H "Authorization: Bearer $VINTEM_TOKEN"
+curl -X PATCH http://localhost:8080/solicrec/$ID_SOLIC \
+  -H "Authorization: Bearer $VINTEM_TOKEN" -H "Content-Type: application/json" \
+  -d '{"status":"CANCELADA"}'
+```
+
+O cancelamento publica de novo `recorrencia.solicitacao`, com o status `CANCELADA`.
 
 ## 3. Saber a resposta
 
