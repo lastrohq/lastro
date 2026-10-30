@@ -19,6 +19,7 @@ import (
 const (
 	contaSandbox = "sandbox"
 	chaveSandbox = "sandbox@vintem.dev"
+	urlPadrao    = "http://localhost:8080"
 )
 
 // sandboxCmd sobe o Vintém pronto para testar, sem configurar nada (#20): banco
@@ -57,6 +58,11 @@ func sandboxCmd(ctx context.Context, amb Ambiente) error {
 		dados += " (chave mestra em " + arquivoChave + ")"
 	}
 	url := urlLocal(getenv(amb, "VINTEM_ADDR", ":8080"))
+	// Fora da porta padrão, o MCP precisa da URL: sem ela ele tenta :8080.
+	mcp := "-e VINTEM_TOKEN=" + token + " -e VINTEM_CHAVE_PIX=" + chaveSandbox
+	if url != urlPadrao {
+		mcp += " -e VINTEM_URL=" + url
+	}
 	_, err = fmt.Fprintf(amb.Saida, `
 🧪 Vintém em modo sandbox: nenhum banco e nenhum dinheiro de verdade.
 
@@ -75,9 +81,14 @@ Crie uma cobrança:
     -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"%[3]s"}'
 
 Em 5 s o "pagador" paga. Consulte com GET %[1]s/cob/{txid} e veja CONCLUIDA.
+
+Use com seu agente (Claude Code):
+
+  claude mcp add vintem %[6]s -- vintem mcp
+
 Valores mágicos e o que o sandbox simula: docs/SANDBOX.md
 
-`, url, contaSandbox, chaveSandbox, token, dados)
+`, url, contaSandbox, chaveSandbox, token, dados, mcp)
 	if err != nil {
 		return err
 	}
