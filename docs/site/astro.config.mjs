@@ -2,8 +2,8 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import starlightOpenAPI, { openAPISidebarGroups } from "starlight-openapi";
 
-// Publicado no GitHub Pages (.github/workflows/site.yml), no domínio próprio
-// vintem.dev (DNS no Cloudflare apontando para o Pages).
+// Publicado no Cloudflare Workers pelo Workers Builds (wrangler.jsonc), na
+// raiz de https://vintem.dev.
 export default defineConfig({
   site: "https://vintem.dev",
   base: "/",

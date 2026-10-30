@@ -1,0 +1,18 @@
+// Site de docs no Cloudflare Workers, só com assets estáticos (o astro build
+// gera dist/). Deploy pelo Workers Builds, com diretório raiz docs/site:
+// build "npm run build", deploy "npx wrangler deploy", branch de produção develop.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vintem-site",
+  "compatibility_date": "2026-10-29",
+  "assets": {
+    "directory": "./dist",
+    // Endereço que não existe mostra o 404 do Starlight
+    "not_found_handling": "404-page"
+  },
+  // O deploy liga o domínio e cria o registro DNS na zona vintem.dev
+  "routes": [{ "pattern": "vintem.dev", "custom_domain": true }],
+  // Cada branch ganha um link próprio de preview
+  "preview_urls": true,
+  "previews": {}
+}
