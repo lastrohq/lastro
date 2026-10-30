@@ -443,6 +443,12 @@ Certificados, chaves privadas e client secrets são cifrados com AES-256-GCM
 usando `VINTEM_MASTER_KEY`. Sem a master key, o Vintém não sobe. Nada disso é
 escrito em log — nem mascarado parcialmente.
 
+- **Chave diferente é recusada ao abrir o banco:** todo segredo guardado é decifrado
+  na abertura, e a falha diz qual conta ou destino não abriu. Sem isso, o erro só
+  apareceria na primeira chamada ao banco.
+- **Troca de chave:** `vintem chave trocar` recifra credenciais e segredos com
+  `VINTEM_MASTER_KEY_NOVA` numa transação só, com o servidor parado.
+
 ### RN-62 · Certificados
 
 - O certificado do mTLS é **conferido no cadastro** da conta, pela CLI ou pela API:

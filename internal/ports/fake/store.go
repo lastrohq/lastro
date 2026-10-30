@@ -652,6 +652,18 @@ func (r destinos) Criar(_ context.Context, d domain.Destino) error {
 	return nil
 }
 
+func (r destinos) AtualizarSegredo(_ context.Context, id string, cifrado []byte) error {
+	r.s.lock()
+	defer r.s.unlock()
+	d, ok := r.s.d.destinos[id]
+	if !ok {
+		return fmt.Errorf("destino %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	d.SegredoCifrado = slices.Clone(cifrado)
+	r.s.d.destinos[id] = d
+	return nil
+}
+
 func (r destinos) Listar(_ context.Context) ([]domain.Destino, error) {
 	r.s.lock()
 	defer r.s.unlock()

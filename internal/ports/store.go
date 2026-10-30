@@ -218,6 +218,8 @@ type DestinoRepo interface {
 	Listar(ctx context.Context) ([]domain.Destino, error)
 	// DaConta devolve os destinos da conta e os globais (ContaID vazio).
 	DaConta(ctx context.Context, contaID string) ([]domain.Destino, error)
+	// AtualizarSegredo grava o segredo recifrado. ErrNaoEncontrado se não existir.
+	AtualizarSegredo(ctx context.Context, id string, cifrado []byte) error
 	Remover(ctx context.Context, id string) error
 }
 

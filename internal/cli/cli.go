@@ -57,6 +57,8 @@ const uso = `uso: vintem <comando>
                                  em VINTEM_URL com a API key de VINTEM_TOKEN
   version                        imprime a versão
   chave gerar                    gera uma VINTEM_MASTER_KEY nova
+  chave trocar                   recifra tudo com a chave de VINTEM_MASTER_KEY_NOVA
+                                 (pare o serve antes)
   conta criar  [flags]           cadastra uma conta recebedora
   conta listar                   lista as contas
   conta desativar <id>           impede novas cobranças na conta
@@ -80,7 +82,8 @@ escopos: cob:read cob:write cobv:read cobv:write pix:read devolucao:write
 variáveis: VINTEM_DB (padrão vintem.db), VINTEM_MASTER_KEY, VINTEM_ADDR (padrão :8080),
            VINTEM_CONCILIACAO_INTERVALO (padrão 5m; 0 desliga), VINTEM_CONCILIACAO_JANELA (padrão 2h),
            VINTEM_WEBHOOK_INTERVALO (padrão 2s; 0 desliga a entrega de eventos),
-           VINTEM_CERTIFICADO_INTERVALO (padrão 1h; 0 desliga o aviso de certificado vencendo)`
+           VINTEM_CERTIFICADO_INTERVALO (padrão 1h; 0 desliga o aviso de certificado vencendo),
+           VINTEM_MASTER_KEY_NOVA (só para chave trocar)`
 
 // Run executa o comando em args.
 func Run(ctx context.Context, args []string, amb Ambiente) error {
@@ -101,8 +104,11 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 	case "mcp":
 		return mcpCmd(ctx, amb)
 	case "chave":
+		if len(args) >= 2 && args[1] == "trocar" {
+			return chaveTrocar(ctx, amb)
+		}
 		if len(args) < 2 || args[1] != "gerar" {
-			return errors.New("use: vintem chave gerar")
+			return errors.New("use: vintem chave gerar|trocar")
 		}
 		_, err := fmt.Fprintln(amb.Saida, vault.NovaChave())
 		return err
@@ -181,16 +187,64 @@ func abrir(ctx context.Context, amb Ambiente) (app.Contas, func(), error) {
 	if err != nil {
 		return app.Contas{}, nil, err
 	}
+	if err := recusarBancoDoLastro(amb); err != nil {
+		return app.Contas{}, nil, err
+	}
 	store, err := sqlite.Open(ctx, getenv(amb, "VINTEM_DB", "vintem.db"))
 	if err != nil {
 		return app.Contas{}, nil, err
 	}
 	contas := app.Contas{Store: store, Vault: v, PSPs: amb.PSPs, Certificados: leitorCertificados{}, Clock: amb.Clock}
+	if err := contas.ConferirChaveMestra(ctx); err != nil {
+		_ = store.Close()
+		return app.Contas{}, nil, fmt.Errorf("VINTEM_MASTER_KEY não abre os dados de %s (%w): use a chave com que eles foram gravados", getenv(amb, "VINTEM_DB", "vintem.db"), err)
+	}
 	if amb.MontarPSPs != nil {
 		// Contas.Credenciais só usa Store e Vault, já prontos aqui.
 		contas.PSPs = amb.MontarPSPs(Fontes{Credenciais: contas, Store: store})
 	}
 	return contas, func() { _ = store.Close() }, nil
+}
+
+// recusarBancoDoLastro evita o engano de quem atualizou do Lastro sem renomear o
+// banco: o Vintém criaria um vintem.db vazio e pareceria que os dados sumiram.
+func recusarBancoDoLastro(amb Ambiente) error {
+	if amb.Getenv("VINTEM_DB") != "" {
+		return nil
+	}
+	if _, err := os.Stat("vintem.db"); err == nil {
+		return nil
+	}
+	if _, err := os.Stat("lastro.db"); err != nil {
+		return nil
+	}
+	return errors.New("encontrei lastro.db e nenhum vintem.db: pare o processo e renomeie o arquivo (com o -wal e o -shm, se existirem) ou defina VINTEM_DB=lastro.db")
+}
+
+// chaveTrocar recifra as credenciais e os segredos com VINTEM_MASTER_KEY_NOVA.
+func chaveTrocar(ctx context.Context, amb Ambiente) error {
+	textoNova := amb.Getenv("VINTEM_MASTER_KEY_NOVA")
+	if textoNova == "" {
+		return errors.New("defina VINTEM_MASTER_KEY_NOVA (gere uma com `vintem chave gerar`)")
+	}
+	if textoNova == amb.Getenv("VINTEM_MASTER_KEY") {
+		return errors.New("VINTEM_MASTER_KEY_NOVA é igual à VINTEM_MASTER_KEY: gere outra com `vintem chave gerar`")
+	}
+	nova, err := vault.New(textoNova)
+	if err != nil {
+		return fmt.Errorf("VINTEM_MASTER_KEY_NOVA: %w", err)
+	}
+	contas, fechar, err := abrir(ctx, amb)
+	if err != nil {
+		return err
+	}
+	defer fechar()
+	nContas, nDestinos, err := contas.TrocarChaveMestra(ctx, nova)
+	if err != nil {
+		return err
+	}
+	_, err = fmt.Fprintf(amb.Saida, "%d contas e %d destinos recifrados.\nAgora a chave é a nova: troque VINTEM_MASTER_KEY e suba o Vintém.\n", nContas, nDestinos)
+	return err
 }
 
 func conta(ctx context.Context, args []string, amb Ambiente) error {
