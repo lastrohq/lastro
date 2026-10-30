@@ -165,3 +165,66 @@ func TestMascaraPessoas(t *testing.T) {
 		}
 	}
 }
+
+// O Inter manda client_id e client_secret no corpo do formulário do token: a
+// fita não pode guardar o segredo, e a reprodução compara com ele trocado.
+func TestCredencialNoCorpoNaoVaiParaAFita(t *testing.T) {
+	srv := banco(t)
+	arquivo := filepath.Join(t.TempDir(), "fita.json")
+	t.Run("gravar", func(t *testing.T) {
+		f := Abrir(t, arquivo, true)
+		c := &http.Client{Transport: f.Envolver(http.DefaultTransport)}
+		req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, srv.URL+"/oauth/token",
+			strings.NewReader("client_id=id-real&client_secret=segredo-real&grant_type=client_credentials"))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		resp, err := c.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
+		req, _ = http.NewRequestWithContext(context.Background(), http.MethodPost, srv.URL+"/login", strings.NewReader(`{"client_secret":"segredo-json","x":1}`))
+		req.Header.Set("Content-Type", "application/json")
+		if resp, err = c.Do(req); err != nil {
+			t.Fatal(err)
+		}
+		_ = resp.Body.Close()
+	})
+	b, _ := os.ReadFile(arquivo) //nolint:gosec // G304: arquivo do próprio teste
+	for _, segredo := range []string{"segredo-real", "id-real", "segredo-json"} {
+		if strings.Contains(string(b), segredo) {
+			t.Fatalf("a fita guardou %q:\n%s", segredo, b)
+		}
+	}
+	f := Abrir(t, arquivo, false)
+	c := &http.Client{Transport: f.Envolver(nil)}
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "http://x/oauth/token",
+		strings.NewReader("client_id=outro&client_secret=outro&grant_type=client_credentials"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if resp, err := c.Do(req); err != nil {
+		t.Fatalf("reprodução com outra credencial: %v", err)
+	} else {
+		_ = resp.Body.Close()
+	}
+	if st, _ := chamar(t, c, http.MethodPost, "http://x/login", `{"x":1,"client_secret":"outro"}`); st == 0 {
+		t.Fatal("reprodução do JSON com outra credencial falhou")
+	}
+}
+
+func TestChaveNaURLNaoVaiParaAFita(t *testing.T) {
+	srv := banco(t)
+	arquivo := filepath.Join(t.TempDir(), "fita.json")
+	t.Run("gravar", func(t *testing.T) {
+		c := &http.Client{Transport: Abrir(t, arquivo, true).Envolver(http.DefaultTransport)}
+		if st, _ := chamar(t, c, http.MethodGet, srv.URL+"/pix/v2/cob/abc?gw-dev-app-key=chave-real&x=1", ""); st == 0 {
+			t.Fatal("gravação falhou")
+		}
+	})
+	b, _ := os.ReadFile(arquivo) //nolint:gosec // G304: arquivo do próprio teste
+	if strings.Contains(string(b), "chave-real") {
+		t.Fatalf("a fita guardou a chave de aplicação:\n%s", b)
+	}
+	c := &http.Client{Transport: Abrir(t, arquivo, false).Envolver(nil)}
+	if st, _ := chamar(t, c, http.MethodGet, "http://x/pix/v2/cob/abc?gw-dev-app-key=outra&x=1", ""); st == 0 {
+		t.Fatal("reprodução com outra chave falhou")
+	}
+}

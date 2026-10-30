@@ -1227,6 +1227,11 @@ components:
                 respondem 400.
             senhaCertificado:
               type: string
+            chaveAplicacao:
+              type: string
+              description: >-
+                Chave de aplicação (developer_application_key) do portal do Banco do
+                Brasil. Só o adapter bb usa.
     Health:
       type: object
       required: [status, version]

@@ -218,10 +218,11 @@ func contaCriar(ctx context.Context, contas app.Contas, args []string, amb Ambie
 	var cred domain.Credenciais
 	fs.StringVar(&c.ID, "id", "", "identificador da conta ([a-z0-9-])")
 	fs.StringVar(&c.Nome, "nome", "", "nome para exibição")
-	fs.StringVar(&c.PSP, "psp", "", "adapter do banco (sandbox, efi, inter...)")
+	fs.StringVar(&c.PSP, "psp", "", "adapter do banco (sandbox, efi, inter, sicoob, bb)")
 	fs.StringVar(&c.ChavePix, "chave", "", "chave Pix que recebe as cobranças")
 	fs.StringVar(&ambiente, "ambiente", string(domain.Homologacao), "homologacao ou producao")
 	fs.StringVar(&cred.ClientID, "client-id", "", "client id do OAuth2 do banco")
+	fs.StringVar(&cred.ChaveAplicacao, "chave-aplicacao", "", "chave de aplicação do portal do BB (gw-dev-app-key); só para o bb")
 	// Segredos vêm de arquivo, nunca de flag: flag fica no histórico do shell.
 	fs.StringVar(&secretArq, "client-secret-arquivo", "", "arquivo com o client secret")
 	fs.StringVar(&certArq, "certificado", "", "arquivo do certificado do mTLS (.p12 ou .pem)")

@@ -28,7 +28,8 @@ comunidade sem medo.
 | `internal/app` | Casos de uso (`CriarCobranca`, `Devolver`, `CriarRecorrencia`...) | `domain`, `ports` |
 | `internal/ports` | Interfaces `PSP`, `Store`, `Notifier`, `Vault`, `Certificados`, `Credenciais`, `Clock` | `domain` |
 | `internal/adapters/httpapi` | API BCB-compatível, admin, webhooks de entrada | `app`, `ports`, `domain` |
-| `internal/adapters/psp/*` | Um pacote por banco + `sandbox` | `ports`, `domain`, `platform`, o registry `adapters/psp`, `pkg` |
+| `internal/adapters/psp/pixapi` | Cliente da API Pix da spec do BCB (mTLS, OAuth2, cob, cobv, Pix, devolução, webhook), configurado por banco | `ports`, `domain`, `platform`, `adapters/psp` |
+| `internal/adapters/psp/*` | Um pacote por banco (a configuração do `pixapi` e os desvios dele) + `sandbox` | `pixapi`, `ports`, `domain`, `platform`, o registry `adapters/psp`, `pkg` |
 | `internal/adapters/store/*` | `sqlite` (padrão), `postgres` (v0.3) | `ports`, `domain` |
 | `internal/adapters/notifier` | Outbox, entrega, retry, DLQ, assinatura | `ports`, `domain` |
 | `internal/adapters/mcp` | Ferramentas MCP sobre a API HTTP, com a API key do agente ([ADR-008](adr/008-mcp-como-cliente-da-api.md)) | SDK MCP, `net/http` |

@@ -563,6 +563,8 @@ export interface components {
                  */
                 certificado?: string;
                 senhaCertificado?: string;
+                /** @description Chave de aplicação (developer_application_key) do portal do Banco do Brasil. Só o adapter bb usa. */
+                chaveAplicacao?: string;
             };
         };
         Health: {

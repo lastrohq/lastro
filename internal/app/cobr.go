@@ -217,8 +217,9 @@ func (s CobrancasRecorrentes) sincronizar(ctx context.Context, c domain.Cobranca
 // tentativa nova ou que mudou e cobranca_recorrente.atualizada se o status
 // mudou. Devolve se algo mudou.
 //
-// Aviso repetido não muda nada. Aviso que a RN-42 não permite, como uma volta
-// de CONCLUIDA para ATIVA, é ignorado com registro no log. Cobrança de outra
+// Aviso repetido não muda nada. O status vale se for alcançável pela RN-42,
+// mesmo pulando o aviso perdido; o que volta no diagrama, como de CONCLUIDA
+// para ATIVA, é ignorado com registro no log. Cobrança de outra
 // conta é ErrNaoEncontrado.
 func (s CobrancasRecorrentes) RegistrarAtualizacao(ctx context.Context, contaID string, a domain.AtualizacaoCobrancaRecorrente) (bool, error) {
 	mudou := false

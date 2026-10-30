@@ -83,12 +83,15 @@ that is the whole bill. How much you save depends on the bank:
 **Be honest with yourself:** with Efí, the fee is the same as Stripe's. What
 you gain today is ownership — your data, your webhooks, no lock-in, and moving
 to another bank without rewriting your integration. The fee drops with banks
-that cap or flatten the Pix fee for business accounts; those adapters (Inter,
-Sicoob, Banco do Brasil) are next on the board.
+that cap or flatten the Pix fee for business accounts. The Inter adapter is
+ready to try (Inter has publicly stated 0.9% capped at R$ 1.50 for dynamic QR
+codes, but we could not confirm it on a current official price page). So are
+Sicoob, where the Pix fee is whatever your credit union negotiates, and Banco
+do Brasil.
 
 ## What it does
 
-- **One API, many banks** — Efí today; Inter, Sicoob and Banco do Brasil next. Every adapter passes the same [conformance suite](./CONTRIBUTING.md#suíte-de-conformidade).
+- **One API, many banks** — Efí, Inter, Sicoob and Banco do Brasil today. Every adapter passes the same [conformance suite](./CONTRIBUTING.md#suíte-de-conformidade).
 - **Charges** — immediate (`cob`) and with due date (`cobv`), BR Code / QR generation built in.
 - **Pix Automático** — `rec`, `solicrec`, `cobr` and recurring webhooks.
 - **Webhooks that don't get lost** — normalized, signed ([Standard Webhooks](https://www.standardwebhooks.com/)), retried, plus a reconciliation job that recovers missed payments.
@@ -104,7 +107,9 @@ Sicoob, Banco do Brasil) are next on the board.
 |---|---|---|---|---|---|---|
 | Lastro sandbox | `sandbox` | ✅ | ✅ | ✅ | ✅ | For testing without a business account ([guide, pt-BR](./docs/SANDBOX.md)) |
 | Efí | `efi` | ✅ | ✅ | ✅ | ✅ | Tested against Efí's homologation (charges, payment, refund); webhook registration still untested ([guide, pt-BR](./docs/EFI.md)) |
-| Inter, Sicoob, Banco do Brasil | — | | | | | Planned |
+| Banco Inter | `inter` | ✅ | ✅ | ✅ | ✅ | Written from Inter's official API spec; **not yet tested against Inter's sandbox** ([guide, pt-BR](./docs/INTER.md)) |
+| Sicoob | `sicoob` | ✅ | ✅ | ✅ | ✅ | Written from the BCB spec and public sandbox reports; **not yet tested with a member account** ([guide, pt-BR](./docs/SICOOB.md)) |
+| Banco do Brasil | `bb` | ✅ | ✅ | ✅ | ✅ | Written from the BCB spec and public homologation reports; **not yet tested by Lastro against BB's homologation** ([guide, pt-BR](./docs/BB.md)) |
 
 ## Non-custodial
 

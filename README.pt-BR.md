@@ -84,12 +84,14 @@ O Lastro é gratuito e não cobra nada por Pix. Você paga a tarifa de Pix do
 **Sem ilusão:** com a Efí, a taxa é a mesma da Stripe. O que você ganha hoje é
 ser dono do processo: seus dados, seus webhooks, nenhuma amarra e a liberdade
 de trocar de banco sem reescrever a integração. A taxa cai com bancos que
-limitam ou fixam a tarifa de Pix da conta PJ; os adapters do Inter, do Sicoob e
-do Banco do Brasil são os próximos do board.
+limitam ou fixam a tarifa de Pix da conta PJ. O adapter do Inter já pode ser
+testado (o Inter já informou 0,9% com teto de R$ 1,50 no QR Code dinâmico, mas
+não achamos isso numa tabela oficial atual). Os do Sicoob, onde a tarifa de Pix
+é a que a sua cooperativa negociar, e do Banco do Brasil também.
 
 ## O que ele faz
 
-- **Uma API, vários bancos** — Efí hoje; Inter, Sicoob e Banco do Brasil em seguida. Todo adapter passa pela mesma [suíte de conformidade](./CONTRIBUTING.md#suíte-de-conformidade).
+- **Uma API, vários bancos** — Efí, Inter, Sicoob e Banco do Brasil hoje. Todo adapter passa pela mesma [suíte de conformidade](./CONTRIBUTING.md#suíte-de-conformidade).
 - **Cobranças** — imediata (`cob`) e com vencimento (`cobv`), com BR Code / QR embutido.
 - **Pix Automático** — `rec`, `solicrec`, `cobr` e webhooks de recorrência.
 - **Webhook que não se perde** — normalizado, assinado, com retry e um job de conciliação que recupera pagamento cujo aviso sumiu.
@@ -105,7 +107,9 @@ do Banco do Brasil são os próximos do board.
 |---|---|---|---|---|---|---|
 | Sandbox do Lastro | `sandbox` | ✅ | ✅ | ✅ | ✅ | Para testar sem conta PJ ([guia](./docs/SANDBOX.md)) |
 | Efí | `efi` | ✅ | ✅ | ✅ | ✅ | Testado na homologação da Efí (cobranças, pagamento, devolução); falta testar o cadastro do webhook ([guia](./docs/EFI.md)) |
-| Inter, Sicoob, Banco do Brasil | — | | | | | Planejado |
+| Banco Inter | `inter` | ✅ | ✅ | ✅ | ✅ | Escrito pela documentação oficial do Inter; **ainda não testado no sandbox do Inter** ([guia](./docs/INTER.md)) |
+| Sicoob | `sicoob` | ✅ | ✅ | ✅ | ✅ | Escrito pela spec do BCB e por relatos públicos do sandbox; **ainda não testado com conta de cooperado** ([guia](./docs/SICOOB.md)) |
+| Banco do Brasil | `bb` | ✅ | ✅ | ✅ | ✅ | Escrito pela spec do BCB e por relatos públicos da homologação; **ainda não testado pelo Lastro na homologação do BB** ([guia](./docs/BB.md)) |
 
 ## Não custodial
 
