@@ -6,10 +6,10 @@
 
 </div>
 
-> ⚠️ **O adapter ainda não foi testado na homologação do Efí.** Ele foi escrito pela
-> [documentação oficial](https://dev.efipay.com.br/docs/api-pix/credenciais/) e
-> testado contra um Efí simulado. Os pontos que só a homologação confirma estão
-> marcados abaixo. Acompanhe pela [#27](https://github.com/vintemhq/vintem/issues/27).
+> ✅ **Testado em produção em 30/10/2026**, com uma conta Efí Pro (CPF): cobrança real
+> paga, conciliação e devolução. A suíte de conformidade roda sobre fitas da
+> homologação. O webhook do banco é o que ainda falta testar. Acompanhe pela
+> [#27](https://github.com/vintemhq/vintem/issues/27).
 
 ## 1. Conta e credenciais
 
@@ -79,6 +79,17 @@ cada 5 minutos (RN-31). Nenhum pagamento depende só do aviso.
 - **Só cobranças de R$ 0,01 a R$ 10,00 são confirmadas e geram webhook.** Acima
   disso, a cobrança fica ATIVA para sempre.
 - **Devolução de R$ 0,01 é rejeitada** de propósito (simulação de falha).
+
+## O que observamos em produção
+
+- **A tarifa sai do valor recebido, e isso limita a devolução.** Num Pix de R$ 1,00, o Efí
+  cobrou R$ 0,01 e a conta ficou com R$ 0,99. A devolução de R$ 1,00 foi aceita e depois
+  terminou `NAO_REALIZADO`, sem motivo, e a de R$ 0,50 foi `DEVOLVIDO`. Sem outro saldo na
+  conta, não dá para devolver o valor integral. O valor não realizado volta a ficar
+  disponível para outra devolução. Acompanhe o resultado pelo evento
+  `devolucao.atualizada`, não pela resposta do `PUT`. Confira a tarifa da sua conta no
+  painel do Efí: um único Pix não diz se ela é fixa ou percentual.
+- **A descrição da devolução não vai ao Efí,** que recusa o campo. Ela fica só no Vintém.
 
 ## Desvios do Efí tratados pelo adapter
 

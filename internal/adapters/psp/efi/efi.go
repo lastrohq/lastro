@@ -43,6 +43,8 @@ func New(credenciais ports.Credenciais, clock ports.Clock, opcoes ...Opcao) *PSP
 		// pede o skip-mTLS (veja ConfigurarWebhook em webhook.go).
 		HeadersWebhook: map[string]string{"x-skip-mtls-checking": "true"},
 	}
+	// O PUT da devolução com descricao responde 400 json_invalido (produção, 30/10/2026).
+	banco.DevolucaoSemDescricao = true
 	// PUT /v2/cobv/:txid num txid existente sobrescreve a cobv (homologação, 29/10/2026).
 	banco.ConsultarAntesDeCriar.Cobv = true
 	return &PSP{API: pixapi.New(banco, credenciais, clock, opcoes...)}

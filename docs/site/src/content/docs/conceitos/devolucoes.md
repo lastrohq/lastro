@@ -75,6 +75,12 @@ O banco é a fonte da verdade. O resultado chega junto com o aviso de Pix, ou a
 devolução ainda `EM_PROCESSAMENTO`. Assim, o resultado da devolução de um Pix antigo
 também aparece sem aviso.
 
+:::caution[Aceita não quer dizer devolvida]
+O banco pode aceitar o pedido e depois responder `NAO_REALIZADO`, por exemplo se a conta
+estiver sem saldo. A tarifa do banco sai do valor recebido, então devolver o valor integral
+pode exigir outro saldo na conta. Confie no resultado final, não na resposta do `PUT`.
+:::
+
 ## Eventos
 
 | Evento | Quando |
