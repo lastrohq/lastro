@@ -67,6 +67,8 @@ type cobvJSON struct {
 	PixCopiaECola string   `json:"pixCopiaECola,omitempty"`
 	// Brcode é onde o Sicoob devolve o BR Code, em vez do pixCopiaECola.
 	Brcode string `json:"brcode,omitempty"`
+	// TextoImagemQRcode é onde o BB devolve o BR Code.
+	TextoImagemQRcode string `json:"textoImagemQRcode,omitempty"`
 }
 
 // locJSON é o payload location que o banco devolve dentro da cobrança.
@@ -149,6 +151,8 @@ func paraCobv(conta domain.Conta, r cobvJSON, base domain.CobrancaVencimento) (d
 		c.BRCode = r.PixCopiaECola
 	case r.Brcode != "":
 		c.BRCode = r.Brcode
+	case r.TextoImagemQRcode != "":
+		c.BRCode = r.TextoImagemQRcode
 	}
 	if r.Revisao != nil {
 		c.Revisao = *r.Revisao

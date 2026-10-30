@@ -5,7 +5,8 @@
 //
 // A fita não guarda cabeçalhos (lá vão o Basic do client secret e o Bearer),
 // troca as credenciais que o banco pede no corpo (o Inter manda client_secret
-// no formulário do token) por "gravado",
+// no formulário do token) e as que vão na URL (a chave de aplicação do BB) por
+// "gravado",
 // troca o access_token das respostas de OAuth por "gravado" e troca os dados
 // de pessoas (recebedor e pagador, com nome, CPF e endereço) por fictícios.
 package fita
@@ -115,7 +116,7 @@ func (tr transporte) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		return nil, err
 	}
-	pedido := Interacao{Metodo: req.Method, URL: req.URL.RequestURI(), Corpo: jsonOuNada(semCredencial(req.Header.Get("Content-Type"), corpo))}
+	pedido := Interacao{Metodo: req.Method, URL: urlSemCredencial(req.URL), Corpo: jsonOuNada(semCredencial(req.Header.Get("Content-Type"), corpo))}
 	if tr.f.gravar {
 		return tr.gravar(req, pedido)
 	}
@@ -303,6 +304,27 @@ func trocarPessoas(v any) any {
 // camposDeCredencial são trocados por "gravado" no corpo dos pedidos, em
 // formulário ou em JSON. A troca vale também na reprodução, para comparar.
 var camposDeCredencial = []string{"client_id", "client_secret", "password", "senha"}
+
+// parametrosDeCredencial são trocados por "gravado" na query: a chave de
+// aplicação do BB vai na URL de toda chamada.
+var parametrosDeCredencial = []string{"gw-dev-app-key", "gw-app-key"}
+
+func urlSemCredencial(u *url.URL) string {
+	q := u.Query()
+	trocou := false
+	for _, p := range parametrosDeCredencial {
+		if q.Has(p) {
+			q.Set(p, "gravado")
+			trocou = true
+		}
+	}
+	if !trocou {
+		return u.RequestURI()
+	}
+	c := *u
+	c.RawQuery = q.Encode()
+	return c.RequestURI()
+}
 
 func semCredencial(contentType string, corpo []byte) []byte {
 	if strings.HasPrefix(contentType, "application/x-www-form-urlencoded") {

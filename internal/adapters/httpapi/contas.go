@@ -13,7 +13,7 @@ func (s *Server) CriarConta(ctx context.Context, r gen.CriarContaRequestObject) 
 	c := domain.Conta{ID: b.Id, Nome: b.Nome, PSP: b.Psp, ChavePix: b.Chave, Ambiente: domain.Ambiente(b.Ambiente)}
 	var cred domain.Credenciais
 	if b.Credenciais != nil {
-		cred = domain.Credenciais{ClientID: deref(b.Credenciais.ClientId), ClientSecret: deref(b.Credenciais.ClientSecret), SenhaCertificado: deref(b.Credenciais.SenhaCertificado)}
+		cred = domain.Credenciais{ClientID: deref(b.Credenciais.ClientId), ClientSecret: deref(b.Credenciais.ClientSecret), SenhaCertificado: deref(b.Credenciais.SenhaCertificado), ChaveAplicacao: deref(b.Credenciais.ChaveAplicacao)}
 		if b.Credenciais.Certificado != nil {
 			cred.Certificado = *b.Credenciais.Certificado
 		}

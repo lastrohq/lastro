@@ -14,6 +14,7 @@ const paginas = [
   ["docs/EFI.md", "efi"],
   ["docs/INTER.md", "inter"],
   ["docs/SICOOB.md", "sicoob"],
+  ["docs/BB.md", "bb"],
   ["docs/REGRAS-DE-NEGOCIO.md", "regras-de-negocio"],
   ["docs/ARQUITETURA.md", "arquitetura"],
   ["CONTRIBUTING.md", "contribuir"],
