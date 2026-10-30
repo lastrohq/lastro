@@ -73,7 +73,7 @@ func TestConformidade(t *testing.T) {
 
 // Em produção o BB exige mTLS e a chave vai em gw-app-key.
 func TestProducaoComMTLSEGwAppKey(t *testing.T) {
-	par := certificadotest.Gerar(t, "loja", agora.Add(365*24*time.Hour))
+	par := certificadotest.Gerar(t, "loja", time.Now().Add(365*24*time.Hour))
 	srv := bbtest.Novo(t, par.Certificado, clientID, clientSecret, chaveAplicacao)
 	conta := domain.Conta{ID: "loja", PSP: "bb", ChavePix: "loja@example.com", Ambiente: domain.Producao, Ativa: true}
 	ctx := context.Background()

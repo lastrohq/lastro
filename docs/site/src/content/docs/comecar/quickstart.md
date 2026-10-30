@@ -47,7 +47,7 @@ Cinco segundos depois de criada, o status é `CONCLUIDA`. Abra também
 
 ## Próximos passos
 
-- [Valores mágicos do sandbox](/vintem/gerado/sandbox/): erro do banco, cobrança que expira, pagamento divergente, Pix duplicado.
-- [Receber pela sua conta Efí](/vintem/gerado/efi/).
-- Integrar pela [SDK TypeScript](/vintem/integrar/sdk/) ou pelo [seu agente de IA](/vintem/integrar/mcp/).
-- A [referência da API](/vintem/api/), gerada do `openapi.yaml`.
+- [Valores mágicos do sandbox](/gerado/sandbox/): erro do banco, cobrança que expira, pagamento divergente, Pix duplicado.
+- [Receber pela sua conta Efí](/gerado/efi/).
+- Integrar pela [SDK TypeScript](/integrar/sdk/) ou pelo [seu agente de IA](/integrar/mcp/).
+- A [referência da API](/api/), gerada do `openapi.yaml`.

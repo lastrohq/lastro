@@ -2,11 +2,11 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import starlightOpenAPI, { openAPISidebarGroups } from "starlight-openapi";
 
-// Publicado no GitHub Pages (.github/workflows/site.yml). Com domínio próprio,
-// troque site/base por https://vintem.dev e "/".
+// Publicado no Cloudflare Workers pelo Workers Builds (wrangler.jsonc), na
+// raiz de https://vintem.dev.
 export default defineConfig({
-  site: "https://vintemhq.github.io",
-  base: "/vintem",
+  site: "https://vintem.dev",
+  base: "/",
   integrations: [
     starlight({
       title: "Vintém",
@@ -22,6 +22,7 @@ export default defineConfig({
         { label: "Bancos", items: ["gerado/efi", "gerado/inter", "gerado/sicoob", "gerado/bb"] },
         { label: "Integrar", items: ["integrar/sdk", "integrar/mcp", "integrar/painel"] },
         ...openAPISidebarGroups,
+        { label: "Referência", items: ["referencia/erros", { label: "Tipos de erro", collapsed: true, items: [{ autogenerate: { directory: "erros" } }] }] },
         { label: "Projeto", collapsed: true, items: ["gerado/regras-de-negocio", "gerado/arquitetura", "gerado/contribuir", { label: "Decisões (ADR)", items: [{ autogenerate: { directory: "gerado/adr" } }] }] },
       ],
     }),

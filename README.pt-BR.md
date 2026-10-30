@@ -12,7 +12,7 @@ cuida dos certificados mTLS e normaliza os webhooks.
 
 <img src="docs/demo/sandbox.gif" alt="vintem sandbox: uma cobrança Pix é criada e paga em poucos segundos" width="820">
 
-[English](./README.md) · [Docs](https://vintemhq.github.io/vintem/) · [Board](https://github.com/orgs/vintemhq/projects/1)
+[English](./README.md) · [Docs](https://vintem.dev/) · [Board](https://github.com/orgs/vintemhq/projects/1)
 
 </div>
 

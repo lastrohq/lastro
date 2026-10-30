@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const destino = join(dirname(fileURLToPath(import.meta.url)), "src/content/docs/gerado");
-const base = "/vintem";
+const base = "";
 
 const paginas = [
   ["docs/SANDBOX.md", "sandbox"],

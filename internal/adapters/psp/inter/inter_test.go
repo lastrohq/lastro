@@ -46,7 +46,7 @@ type cenario struct {
 // .crt e o .key do Inter num arquivo só, como o cadastro da conta pede).
 func novo(t *testing.T, relogio ports.Clock) cenario {
 	t.Helper()
-	par := certificadotest.Gerar(t, "loja", agora.Add(365*24*time.Hour))
+	par := certificadotest.Gerar(t, "loja", time.Now().Add(365*24*time.Hour))
 	srv := intertest.Novo(t, par.Certificado, clientID, clientSecret)
 	cred := credenciais{"loja": {ClientID: clientID, ClientSecret: clientSecret, Certificado: par.PEM}}
 	conta := domain.Conta{ID: "loja", Nome: "Loja", PSP: "inter", ChavePix: "loja@example.com", Ambiente: domain.Homologacao, Ativa: true}
@@ -94,7 +94,7 @@ func TestTokenPorFormularioComEscoposEReusado(t *testing.T) {
 }
 
 func TestCredencialErradaExplicaOQueConferir(t *testing.T) {
-	par := certificadotest.Gerar(t, "loja", agora.Add(time.Hour*24))
+	par := certificadotest.Gerar(t, "loja", time.Now().Add(365*24*time.Hour))
 	srv := intertest.Novo(t, par.Certificado, clientID, clientSecret)
 	cred := credenciais{"loja": {ClientID: clientID, ClientSecret: "errado", Certificado: par.PEM}}
 	p := inter.New(cred, fake.NewClock(agora), inter.ComURLs("https://x.invalid/pix/v2", srv.URL), inter.ComRaizes(srv.Raizes))
