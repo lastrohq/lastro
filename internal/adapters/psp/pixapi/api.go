@@ -45,6 +45,9 @@ type Banco struct {
 	// para o banco que não sinaliza id de devolução repetido: mesma devolução
 	// (mesmo valor) é devolvida de novo; valor diferente é ErrJaExiste.
 	ConsultarAntesDeDevolver bool
+	// DevolucaoSemDescricao é para o banco que recusa o campo descricao no PUT da
+	// devolução (o Efí): ela não vai ao banco, mas continua gravada no Vintém.
+	DevolucaoSemDescricao bool
 	// HeadersWebhook vão no PUT do webhook (ex.: o skip-mTLS do Efí).
 	HeadersWebhook map[string]string
 	// SemClientSecret é para o banco que identifica a aplicação pelo

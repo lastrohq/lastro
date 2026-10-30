@@ -431,10 +431,16 @@ func (s *Servidor) devolucao(w http.ResponseWriter, r *http.Request, e2e, id str
 		return
 	}
 	var corpo struct {
-		Valor string `json:"valor"`
+		Valor     string `json:"valor"`
+		Descricao string `json:"descricao"`
 	}
 	if b, _ := io.ReadAll(r.Body); json.Unmarshal(b, &corpo) != nil {
 		erro(w, http.StatusBadRequest, "json_invalido", "corpo não é JSON")
+		return
+	}
+	// Como em produção (30/10/2026): o campo descricao é recusado.
+	if corpo.Descricao != "" {
+		erro(w, http.StatusBadRequest, "json_invalido", "Valores ou tipos de campo inválidos")
 		return
 	}
 	pedido, _ := strconv.ParseFloat(corpo.Valor, 64)

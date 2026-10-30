@@ -185,3 +185,18 @@ func TestConsultarDevolucao(t *testing.T) {
 		t.Fatalf("inexistente: err = %v; quer ErrNaoEncontrado", err)
 	}
 }
+
+// O Efí recusa descricao no PUT da devolução: ela fica só no Vintém.
+func TestDevolucaoComDescricaoNaoVaiAoEfi(t *testing.T) {
+	c := novo(t)
+	ctx := context.Background()
+	criada, _ := c.psp.CriarCob(ctx, c.conta, cob("efi00000000000000000000012"))
+	e2e := c.efi.Pagar(string(criada.Txid), agora)
+	d, err := c.psp.Devolver(ctx, c.conta, domain.Devolucao{ID: "d1", EndToEndID: e2e, Valor: 100, Natureza: domain.DevolucaoOriginal, Descricao: "Troca"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Descricao != "Troca" {
+		t.Fatalf("a descrição se perdeu: %+v", d)
+	}
+}
