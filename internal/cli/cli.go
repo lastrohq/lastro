@@ -11,6 +11,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"text/tabwriter"
@@ -86,6 +87,9 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 	if len(args) == 0 {
 		args = []string{"serve"}
 	}
+	if len(args) > 1 && slices.ContainsFunc(args[1:], pedeAjuda) {
+		return ajuda(ctx, args, amb)
+	}
 	switch args[0] {
 	case "version":
 		_, err := fmt.Fprintln(amb.Saida, amb.Versao)
@@ -118,6 +122,46 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 	default:
 		return fmt.Errorf("comando desconhecido %q\n\n%s", args[0], uso)
 	}
+}
+
+func pedeAjuda(arg string) bool { return arg == "-h" || arg == "--help" }
+
+// ajuda mostra o uso de um comando sem rodá-lo: nada de subir o sandbox nem
+// pedir a LASTRO_MASTER_KEY só para ler a ajuda. Mostra as linhas do uso que
+// começam pelo comando e, no conta criar, as flags.
+func ajuda(ctx context.Context, args []string, amb Ambiente) error {
+	prefixo := "  " + args[0]
+	if len(args) > 2 && !pedeAjuda(args[1]) && !strings.HasPrefix(args[1], "-") {
+		prefixo += " " + args[1]
+	}
+	var linhas []string
+	continua := false
+	for _, l := range strings.Split(uso, "\n") {
+		switch {
+		case strings.HasPrefix(l, prefixo+" ") || l == prefixo:
+			linhas, continua = append(linhas, l), true
+		case continua && strings.HasPrefix(l, "      "):
+			linhas = append(linhas, l)
+		default:
+			continua = false
+		}
+	}
+	if len(linhas) == 0 {
+		_, err := fmt.Fprintln(amb.Saida, uso)
+		return err
+	}
+	if _, err := fmt.Fprintln(amb.Saida, "uso: lastro <comando>\n\n"+strings.Join(linhas, "\n")); err != nil {
+		return err
+	}
+	if prefixo == "  conta criar" {
+		// As flags vêm do próprio FlagSet: o -h faz o Parse imprimir e parar
+		// antes de usar as contas.
+		_, _ = fmt.Fprintln(amb.Saida)
+		if err := contaCriar(ctx, app.Contas{}, []string{"-h"}, amb); !errors.Is(err, flag.ErrHelp) {
+			return err
+		}
+	}
+	return nil
 }
 
 func getenv(amb Ambiente, chave, padrao string) string {

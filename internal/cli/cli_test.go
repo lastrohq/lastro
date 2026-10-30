@@ -232,3 +232,32 @@ func TestMontarPSPsRecebeAsCredenciaisDasContas(t *testing.T) {
 		t.Fatalf("Credenciais = %q, %v", cred.ClientID, err)
 	}
 }
+
+// -h mostra a ajuda do comando sem rodá-lo: o sandbox não sobe e o conta
+// criar não pede a LASTRO_MASTER_KEY.
+func TestAjudaDosSubcomandosNaoRodaNada(t *testing.T) {
+	db := filepath.Join(t.TempDir(), "x.db")
+	casos := map[string][]string{
+		"sandbox":         {"sandbox", "-h"},
+		"conta criar":     {"conta", "criar", "--help"},
+		"apikey criar":    {"apikey", "criar", "-h"},
+		"conta webhook":   {"conta", "webhook", "-h"},
+		"destino remover": {"destino", "remover", "-h"},
+	}
+	for quer, args := range casos {
+		amb, out := ambiente(t, map[string]string{"LASTRO_DB": db})
+		if err := Run(context.Background(), args, amb); err != nil {
+			t.Fatalf("%v: %v", args, err)
+		}
+		if !strings.Contains(out.String(), "  "+quer) {
+			t.Errorf("%v: ajuda sem %q:\n%s", args, quer, out)
+		}
+	}
+	amb, out := ambiente(t, map[string]string{"LASTRO_DB": db})
+	if err := Run(context.Background(), []string{"conta", "criar", "-h"}, amb); err != nil || !strings.Contains(out.String(), "-chave-aplicacao") {
+		t.Fatalf("flags do conta criar: %v\n%s", err, out)
+	}
+	if _, err := os.Stat(db); !os.IsNotExist(err) {
+		t.Fatalf("a ajuda abriu o banco: %v", err)
+	}
+}
