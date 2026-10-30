@@ -65,6 +65,8 @@ type cobvJSON struct {
 	// não repete a location no topo.
 	Loc           *locJSON `json:"loc,omitempty"`
 	PixCopiaECola string   `json:"pixCopiaECola,omitempty"`
+	// Brcode é onde o Sicoob devolve o BR Code, em vez do pixCopiaECola.
+	Brcode string `json:"brcode,omitempty"`
 }
 
 // locJSON é o payload location que o banco devolve dentro da cobrança.
@@ -142,8 +144,11 @@ func paraCobv(conta domain.Conta, r cobvJSON, base domain.CobrancaVencimento) (d
 	case r.Loc != nil && r.Loc.Location != "":
 		c.Location = r.Loc.Location
 	}
-	if r.PixCopiaECola != "" {
+	switch {
+	case r.PixCopiaECola != "":
 		c.BRCode = r.PixCopiaECola
+	case r.Brcode != "":
+		c.BRCode = r.Brcode
 	}
 	if r.Revisao != nil {
 		c.Revisao = *r.Revisao

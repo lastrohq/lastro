@@ -19,7 +19,7 @@ export default defineConfig({
       plugins: [starlightOpenAPI([{ base: "api", schema: "../../api/openapi.yaml", sidebar: { label: "Referência da API" } }])],
       sidebar: [
         { label: "Começar", items: ["comecar/quickstart", "gerado/sandbox"] },
-        { label: "Bancos", items: ["gerado/efi", "gerado/inter"] },
+        { label: "Bancos", items: ["gerado/efi", "gerado/inter", "gerado/sicoob"] },
         { label: "Integrar", items: ["integrar/sdk", "integrar/mcp", "integrar/painel"] },
         ...openAPISidebarGroups,
         { label: "Projeto", collapsed: true, items: ["gerado/regras-de-negocio", "gerado/arquitetura", "gerado/contribuir", { label: "Decisões (ADR)", items: [{ autogenerate: { directory: "gerado/adr" } }] }] },

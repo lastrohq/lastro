@@ -46,6 +46,13 @@ type Banco struct {
 	ConsultarAntesDeDevolver bool
 	// HeadersWebhook vão no PUT do webhook (ex.: o skip-mTLS do Efí).
 	HeadersWebhook map[string]string
+	// SemClientSecret é para o banco que identifica a aplicação pelo
+	// certificado e só pede o client id (o Sicoob): a conta não precisa de
+	// client secret.
+	SemClientSecret bool
+	// HeaderClientID, se não vazio, é o header que leva o client id em toda
+	// chamada à API Pix (o Sicoob usa "client_id").
+	HeaderClientID string
 }
 
 // API é o cliente da API Pix de um banco. Guarda um cliente HTTP (mTLS +
@@ -109,9 +116,10 @@ func (a *API) InterpretarWebhook(conta domain.Conta, corpo []byte) ([]domain.Pix
 
 // cliente é a ligação com o banco de uma conta, com as credenciais de quando foi montado.
 type cliente struct {
-	http   *http.Client
-	base   string
-	versao [32]byte // resumo das credenciais e do ambiente; mudou, monta de novo
+	http     *http.Client
+	base     string
+	clientID string
+	versao   [32]byte // resumo das credenciais e do ambiente; mudou, monta de novo
 }
 
 // clienteDa devolve o cliente da conta, montando de novo se as credenciais ou o
@@ -133,7 +141,11 @@ func (a *API) clienteDa(ctx context.Context, conta domain.Conta) (*cliente, erro
 	if c := a.clientes[conta.ID]; c != nil && c.versao == versao {
 		return c, nil
 	}
-	if cred.ClientID == "" || cred.ClientSecret == "" || len(cred.Certificado) == 0 {
+	if a.cfg.SemClientSecret {
+		if cred.ClientID == "" || len(cred.Certificado) == 0 {
+			return nil, fmt.Errorf("%s: a conta %s precisa de client id e certificado", nome, conta.ID)
+		}
+	} else if cred.ClientID == "" || cred.ClientSecret == "" || len(cred.Certificado) == 0 {
 		return nil, fmt.Errorf("%s: a conta %s precisa de client id, client secret e certificado", nome, conta.ID)
 	}
 	par, err := certificado.TLS(cred.Certificado, cred.SenhaCertificado)
@@ -152,9 +164,10 @@ func (a *API) clienteDa(ctx context.Context, conta domain.Conta) (*cliente, erro
 	chaveToken := fmt.Sprintf("%s/%x", conta.ID, versao[:8])
 	buscar := a.cfg.BuscarToken(&http.Client{Transport: mtls, Timeout: a.timeout}, base, cred, a.clock)
 	c := &cliente{
-		http:   &http.Client{Transport: &oauth.Transport{Base: mtls, Cache: a.tokens, Chave: chaveToken, Buscar: buscar}, Timeout: a.timeout},
-		base:   base,
-		versao: versao,
+		http:     &http.Client{Transport: &oauth.Transport{Base: mtls, Cache: a.tokens, Chave: chaveToken, Buscar: buscar}, Timeout: a.timeout},
+		base:     base,
+		clientID: cred.ClientID,
+		versao:   versao,
 	}
 	if antigo := a.clientes[conta.ID]; antigo != nil {
 		antigo.http.CloseIdleConnections()
