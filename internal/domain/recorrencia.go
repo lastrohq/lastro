@@ -142,12 +142,13 @@ const (
 	SolicitacaoCancelada StatusSolicitacao = "CANCELADA"
 )
 
-// TransicoesSolicitacao segue a RN-41. A spec lista os status, não as
-// transições: esta tabela segue a ordem dos nomes e precisa ser conferida no
-// Manual de Fluxos do BCB. Expirar e cancelar valem enquanto não houve resposta.
+// TransicoesSolicitacao segue a RN-41, conferida no diagrama de estados da
+// SolicRec do Manual de Padrões para Iniciação do Pix 2.10.0 (seção 3.2 do Pix
+// Automático). Expirar e cancelar valem enquanto não houve resposta; o PSP do
+// pagador rejeita já em ENVIADA (conta inexistente, por exemplo).
 var TransicoesSolicitacao = Transicoes[StatusSolicitacao]{
 	SolicitacaoCriada:   {SolicitacaoEnviada, SolicitacaoExpirada, SolicitacaoCancelada},
-	SolicitacaoEnviada:  {SolicitacaoRecebida, SolicitacaoExpirada, SolicitacaoCancelada},
+	SolicitacaoEnviada:  {SolicitacaoRecebida, SolicitacaoRejeitada, SolicitacaoExpirada, SolicitacaoCancelada},
 	SolicitacaoRecebida: {SolicitacaoAceita, SolicitacaoRejeitada, SolicitacaoExpirada, SolicitacaoCancelada},
 }
 

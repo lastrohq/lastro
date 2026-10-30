@@ -188,8 +188,14 @@ EM_PROCESSAMENTO ──▶ DEVOLVIDO
 CRIADA ──▶ APROVADA ──▶ CANCELADA
    │          └───────▶ EXPIRADA
    ├──▶ REJEITADA
-   └──▶ EXPIRADA
+   ├──▶ EXPIRADA
+   └──▶ CANCELADA
 ```
+
+Os diagramas da RN-40 a RN-42 seguem a seção 3 (Estados das entidades) do Pix
+Automático no *Manual de Padrões para Iniciação do Pix* 2.10.0 do BCB,
+conferida em 29/10/2026 (#99). `REJEITADA` só acontece na jornada 1; nas
+jornadas com QR Code não há aviso de negativa.
 
 - Os status são os da API Pix do BCB (`RecStatus`, 2.10.0): `CRIADA`, `APROVADA`,
   `REJEITADA`, `EXPIRADA`, `CANCELADA`.
@@ -231,13 +237,16 @@ próprios, separados dos da recorrência (`SolicRecStatus`, 2.10.0):
 
 ```
 CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
-   │          │           ├────────▶ REJEITADA
-   │          │           └────────▶ EXPIRADA
-   └──────────┴───────────────────▶ CANCELADA
+   │          ├───────────┼────────▶ REJEITADA
+   ├──────────┼───────────┼────────▶ EXPIRADA
+   └──────────┴───────────┴────────▶ CANCELADA
 ```
 
-- A spec lista os status, não as transições: o diagrama segue a ordem dos nomes
-  e precisa ser conferido no *Manual de Fluxos* do BCB ao implementar (#31).
+- `CRIADA` não vai direto a `REJEITADA`. Em `ENVIADA` o PSP do pagador já pode
+  rejeitar (conta inexistente, por exemplo); em `RECEBIDA`, o usuário pagador.
+- Cancela quando a recorrência é cancelada ou aprovada por outra jornada, quando
+  o recebedor desiste antes da resposta, ou por timeout: sem a confirmação de
+  recebimento (pain.012) em 1 minuto, o PSP do recebedor cancela.
 - `ACEITA` leva a recorrência a `APROVADA`; `REJEITADA`, a `REJEITADA` (RN-40).
 - Fica pendente no app do pagador por **no máximo 30 dias**; o recebedor pode
   definir menos. Passado o prazo, expira.
@@ -252,14 +261,17 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
   ```
   CRIADA ──▶ ATIVA ──▶ CONCLUIDA
      │         ├─────▶ EXPIRADA
-     ├─────────┼─────▶ REJEITADA
+     │         ├─────▶ REJEITADA
      └─────────┴─────▶ CANCELADA
   ```
 
-  `CRIADA` é a cobrança registrada no PSP do recebedor; `ATIVA`, a instrução
-  aceita pelo PSP do pagador. Ela **continua `ATIVA` durante as retentativas**,
-  como no exemplo da spec. A spec lista os status, não as transições: o
-  diagrama precisa ser conferido no *Manual de Fluxos*, como o da RN-41.
+  `CRIADA` é a cobrança registrada no PSP do recebedor; `ATIVA`, a enviada ao
+  PSP do pagador para agendamento. A partir daí o andamento fica nas
+  tentativas (`SOLICITADA → AGENDADA → PAGA`, ou `REJEITADA`, `CANCELADA`,
+  `EXPIRADA`), e a cobrança **continua `ATIVA` durante as retentativas**. A
+  rejeição pelo PSP do pagador passa por `ATIVA`; só alguns códigos da pain.014
+  rejeitam a cobrança (os listados em `encerramento.rejeicao.codigo`), os
+  outros rejeitam só a tentativa.
 - **Só nasce de recorrência `APROVADA`**, com o vencimento dentro da vigência
   dela e, se a recorrência tem valor fixo, **com esse valor**. A cobrança é da
   conta da recorrência; key restrita a outra conta recebe 404 (RN-60).
@@ -287,7 +299,9 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
   mudou e `cobranca_recorrente.atualizada` se o status mudou. O banco é a fonte
   da verdade sobre cada tentativa (identificada pela data e pelo tipo); a
   retentativa que só o Lastro conhece continua até o banco avisar. Aviso
-  repetido não muda nada; aviso fora do diagrama (uma volta de `CONCLUIDA` para
+  repetido não muda nada. O status do banco vale se for **alcançável** pelo
+  diagrama, mesmo pulando passos: se o aviso de `ATIVA` se perdeu, `CONCLUIDA`
+  vale direto de `CRIADA`. Aviso que volta no diagrama (de `CONCLUIDA` para
   `ATIVA`, por exemplo) é ignorado com registro no log; cobrança desconhecida é
   ignorada, para o banco não reenviar para sempre.
 - **Sem aviso, a consulta e a conciliação acham a mudança:** `GET /cobr/{txid}`
