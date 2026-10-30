@@ -139,34 +139,55 @@
   box-shadow: none;
 }
 
-/* Botão de esconder o menu lateral, só no computador. */
+/* Aba na borda do menu lateral, no meio da altura, só no computador. A seta aponta
+   para onde o menu vai: para dentro com ele aberto, e para fora com ele escondido. */
 .alternar-menu {
   display: none;
 }
 @media (min-width: 50rem) {
+  /* A margem do conteúdo deixa espaço para a aba, para ela nunca cobrir o texto. */
+  :root {
+    --sl-content-pad-x: 1.75rem;
+  }
   .alternar-menu {
+    position: fixed;
+    top: calc(50% + var(--sl-nav-height) / 2);
+    left: var(--sl-sidebar-width);
+    transform: translateY(-50%);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
-    width: 2.5rem;
-    height: 2.5rem;
-    margin-inline-end: 0.5rem;
+    width: 1.25rem;
+    height: 3.5rem;
     padding: 0;
-    border: 0;
-    border-radius: 4px;
-    background: transparent;
+    border: 1px solid var(--sl-color-gray-5);
+    border-inline-start: 0;
+    border-radius: 0 8px 8px 0;
+    background-color: var(--sl-color-bg-nav);
     color: var(--sl-color-gray-2);
     cursor: pointer;
   }
   .alternar-menu:hover {
-    color: var(--sl-color-white);
-    background-color: var(--sl-color-gray-6);
+    color: var(--sl-color-text-accent);
+  }
+  .alternar-menu svg {
+    transition: transform 150ms ease-out;
+  }
+  :root[data-menu-oculto] .alternar-menu {
+    left: 0;
+  }
+  :root[data-menu-oculto] .alternar-menu svg {
+    transform: rotate(180deg);
   }
   :root[data-has-sidebar][data-menu-oculto] {
     --sl-content-inline-start: 0rem;
   }
   :root[data-menu-oculto] .sidebar-pane {
     display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .alternar-menu svg {
+    transition: none;
   }
 }
