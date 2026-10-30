@@ -15,6 +15,10 @@ export default defineConfig({
       locales: { root: { label: "Português", lang: "pt-BR" } },
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/vintemhq/vintem" }],
       customCss: ["./src/styles/marca.css"],
+      head: [
+        { tag: "meta", attrs: { property: "og:image", content: "https://vintem.dev/social-preview.png" } },
+        { tag: "meta", attrs: { name: "twitter:image", content: "https://vintem.dev/social-preview.png" } },
+      ],
       editLink: { baseUrl: "https://github.com/vintemhq/vintem/edit/develop/docs/" },
       plugins: [starlightOpenAPI([{ base: "api", schema: "../../api/openapi.yaml", sidebar: { label: "Referência da API" } }])],
       sidebar: [
@@ -24,7 +28,7 @@ export default defineConfig({
         { label: "Integrar", items: ["integrar/sdk", "integrar/mcp", "integrar/painel"] },
         { label: "Operar", items: ["operar/instalacao", "operar/producao", "operar/configuracao", "operar/cli", "operar/seguranca", "operar/backup-e-atualizacao"] },
         ...openAPISidebarGroups,
-        { label: "Referência", items: ["referencia/erros", { label: "Tipos de erro", collapsed: true, items: [{ autogenerate: { directory: "erros" } }] }] },
+        { label: "Referência", items: ["referencia/faq", "referencia/glossario", "referencia/erros", { label: "Tipos de erro", collapsed: true, items: [{ autogenerate: { directory: "erros" } }] }] },
         { label: "Projeto", collapsed: true, items: ["gerado/regras-de-negocio", "gerado/arquitetura", "gerado/contribuir", { label: "Decisões (ADR)", items: [{ autogenerate: { directory: "gerado/adr" } }] }] },
       ],
     }),
