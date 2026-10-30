@@ -43,6 +43,23 @@ func (q *Queries) AtualizarEntrega(ctx context.Context, arg AtualizarEntregaPara
 	return result.RowsAffected()
 }
 
+const atualizarSegredoDestino = `-- name: AtualizarSegredoDestino :execrows
+UPDATE destinos_webhook SET segredo_cifrado = ? WHERE id = ?
+`
+
+type AtualizarSegredoDestinoParams struct {
+	SegredoCifrado []byte
+	ID             string
+}
+
+func (q *Queries) AtualizarSegredoDestino(ctx context.Context, arg AtualizarSegredoDestinoParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, atualizarSegredoDestino, arg.SegredoCifrado, arg.ID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const criarDestino = `-- name: CriarDestino :exec
 INSERT INTO destinos_webhook (id, conta_id, url, segredo_cifrado, criado_em) VALUES (?, ?, ?, ?, ?)
 `

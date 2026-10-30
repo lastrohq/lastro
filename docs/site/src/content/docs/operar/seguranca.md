@@ -16,16 +16,29 @@ credenciais do seu banco, que permitem criar cobranças e devolver Pix em seu no
 - **Não a coloque no mesmo backup do banco.** Quem tiver os dois tem as credenciais.
 - **Não a versione.** O `.env` com ela fica com permissão `600` e fora do git.
 
-Sem a chave, o Vintém não sobe, e uma chave mal formada é recusada na hora. Já uma chave
-válida, mas **diferente**, não é detectada ao subir: o servidor sobe e lista as contas, e
-as chamadas ao banco respondem [`PSPIndisponivel`](/erros/pspindisponivel/) com
-`não foi possível decifrar: dado corrompido ou master key diferente`.
+Sem a chave, o Vintém não sobe. Uma chave mal formada, ou diferente da que gravou os
+dados, também é recusada ao abrir o banco, com o nome da conta ou do destino que não abriu.
 
-:::caution[Não há troca de chave mestra]
-O Vintém não tem comando para recifrar as credenciais com uma chave nova. Se a chave
-vazar, gere outra, cadastre as contas em um banco novo com ela e troque as credenciais
-no portal de cada banco.
-:::
+### Trocar a chave mestra
+
+O comando recifra as credenciais e os segredos numa transação só: ou tudo passa para a
+chave nova, ou nada muda.
+
+1. [Faça o backup](/operar/backup-e-atualizacao/#fazer-backup).
+2. Gere a chave nova com `vintem chave gerar` e guarde em lugar seguro.
+3. Pare o Vintém. Um servidor no ar continuaria com a chave antiga na memória.
+4. Rode a troca:
+
+```bash
+docker compose stop vintem
+docker compose run --rm -e VINTEM_MASTER_KEY_NOVA=a-chave-nova vintem chave trocar
+```
+
+5. Troque `VINTEM_MASTER_KEY` no `.env` e suba com `docker compose up -d vintem`.
+
+Backups antigos continuam presos à chave antiga. Se a troca foi por vazamento, troque
+também as credenciais no portal de cada banco: quem tinha a chave antiga e um backup
+ainda consegue abri-lo.
 
 ## O que fica cifrado
 

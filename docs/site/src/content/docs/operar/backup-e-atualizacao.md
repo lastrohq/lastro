@@ -84,11 +84,8 @@ banco e as credenciais continuam valendo, mas estes nomes mudaram:
 | `ghcr.io/lastrohq/lastro` | `ghcr.io/vintemhq/vintem` | Troque a imagem |
 | `@lastrohq/sdk` | `@vintemhq/sdk` | Troque o pacote. A classe `Lastro` virou `Vintem` |
 
-:::caution
-Sem o passo do `lastro.db`, o Vintém cria um `vintem.db` **vazio** e sobe sem erro. Se as
-contas sumirem depois da troca, é isso: o banco antigo continua intacto ao lado.
-:::
-
-Pare o processo antes de renomear, e renomeie junto o `-wal` e o `-shm`, se existirem.
+Se você esquecer o `lastro.db`, o Vintém não sobe e diz o que fazer, em vez de criar um
+banco vazio. Pare o processo antes de renomear, e renomeie junto o `-wal` e o `-shm`, se
+existirem.
 
 As URLs de webhook e os segredos dos destinos continuam valendo.

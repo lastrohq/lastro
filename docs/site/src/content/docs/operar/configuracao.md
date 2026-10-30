@@ -11,6 +11,7 @@ Go: `10s`, `5m`, `2h`.
 | Variável | Padrão | O que faz |
 |---|---|---|
 | `VINTEM_MASTER_KEY` | Obrigatória | Cifra as credenciais dos bancos. Gere com `vintem chave gerar`. Veja [Segurança](/operar/seguranca/) |
+| `VINTEM_MASTER_KEY_NOVA` | Nenhum | A chave de destino de `vintem chave trocar`. Só serve para esse comando |
 | `VINTEM_DB` | `vintem.db` | Caminho do banco SQLite. O arquivo é criado se não existir |
 | `VINTEM_ADDR` | `:8080` | Endereço em que a API escuta |
 

@@ -261,3 +261,93 @@ func TestAjudaDosSubcomandosNaoRodaNada(t *testing.T) {
 		t.Fatalf("a ajuda abriu o banco: %v", err)
 	}
 }
+
+func TestChaveTrocarRecifraTudo(t *testing.T) {
+	ctx := context.Background()
+	env := envComBanco(t)
+	amb, out := ambiente(t, env)
+	if err := Run(ctx, []string{"conta", "criar", "--id", "loja", "--nome", "Loja", "--psp", "sandbox", "--chave", "loja@exemplo.com"}, amb); err != nil {
+		t.Fatal(err)
+	}
+	if err := Run(ctx, []string{"destino", "criar", "--url", "https://exemplo.com/h"}, amb); err != nil {
+		t.Fatal(err)
+	}
+
+	env["VINTEM_MASTER_KEY_NOVA"] = env["VINTEM_MASTER_KEY"]
+	if err := Run(ctx, []string{"chave", "trocar"}, amb); err == nil || !strings.Contains(err.Error(), "igual") {
+		t.Fatalf("chave nova igual à atual: %v", err)
+	}
+	env["VINTEM_MASTER_KEY_NOVA"] = "curta"
+	if err := Run(ctx, []string{"chave", "trocar"}, amb); err == nil || !strings.Contains(err.Error(), "VINTEM_MASTER_KEY_NOVA") {
+		t.Fatalf("chave nova inválida: %v", err)
+	}
+	delete(env, "VINTEM_MASTER_KEY_NOVA")
+	if err := Run(ctx, []string{"chave", "trocar"}, amb); err == nil || !strings.Contains(err.Error(), "defina") {
+		t.Fatalf("sem chave nova: %v", err)
+	}
+
+	antiga, nova := env["VINTEM_MASTER_KEY"], vault.NovaChave()
+	env["VINTEM_MASTER_KEY_NOVA"] = nova
+	out.Reset()
+	if err := Run(ctx, []string{"chave", "trocar"}, amb); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "1 contas e 1 destinos") {
+		t.Fatalf("saída: %s", out)
+	}
+
+	// A antiga deixa de abrir o banco, e rodar de novo não estraga nada.
+	if err := Run(ctx, []string{"conta", "listar"}, amb); err == nil || !strings.Contains(err.Error(), "não abre os dados") {
+		t.Fatalf("chave antiga depois da troca: %v", err)
+	}
+	if err := Run(ctx, []string{"chave", "trocar"}, amb); err == nil || !strings.Contains(err.Error(), "não abre os dados") {
+		t.Fatalf("trocar de novo com a antiga: %v", err)
+	}
+	env["VINTEM_MASTER_KEY"], env["VINTEM_MASTER_KEY_NOVA"] = nova, antiga
+	if err := Run(ctx, []string{"conta", "listar"}, amb); err != nil {
+		t.Fatalf("chave nova: %v", err)
+	}
+}
+
+func TestChaveMestraDiferenteRecusadaAoAbrir(t *testing.T) {
+	ctx := context.Background()
+	env := envComBanco(t)
+	amb, _ := ambiente(t, env)
+	if err := Run(ctx, []string{"conta", "criar", "--id", "loja", "--nome", "Loja", "--psp", "sandbox", "--chave", "loja@exemplo.com"}, amb); err != nil {
+		t.Fatal(err)
+	}
+	env["VINTEM_MASTER_KEY"] = vault.NovaChave()
+	for _, comando := range [][]string{{"conta", "listar"}, {"serve"}} {
+		if err := Run(ctx, comando, amb); err == nil || !strings.Contains(err.Error(), "não abre os dados") {
+			t.Fatalf("%v: %v", comando, err)
+		}
+	}
+}
+
+func TestBancoDoLastroNaoViraBancoVazio(t *testing.T) {
+	t.Chdir(t.TempDir())
+	if err := os.WriteFile("lastro.db", nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	env := envComBanco(t)
+	delete(env, "VINTEM_DB")
+	amb, _ := ambiente(t, env)
+	ctx := context.Background()
+	if err := Run(ctx, []string{"conta", "listar"}, amb); err == nil || !strings.Contains(err.Error(), "lastro.db") {
+		t.Fatalf("banco do Lastro esquecido: %v", err)
+	}
+	if _, err := os.Stat("vintem.db"); err == nil {
+		t.Fatal("criou um vintem.db vazio")
+	}
+	env["VINTEM_DB"] = "lastro.db"
+	if err := Run(ctx, []string{"conta", "listar"}, amb); err != nil {
+		t.Fatalf("com VINTEM_DB: %v", err)
+	}
+	delete(env, "VINTEM_DB")
+	if err := os.Rename("lastro.db", "vintem.db"); err != nil {
+		t.Fatal(err)
+	}
+	if err := Run(ctx, []string{"conta", "listar"}, amb); err != nil {
+		t.Fatalf("depois de renomear: %v", err)
+	}
+}

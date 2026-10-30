@@ -24,6 +24,7 @@ a [configuração](/operar/configuracao/).
 | `vintem mcp` | Servidor [MCP](/integrar/mcp/) para agentes, por stdio |
 | `vintem version` | Mostra a versão |
 | `vintem chave gerar` | Gera uma `VINTEM_MASTER_KEY` nova |
+| `vintem chave trocar` | Recifra as credenciais e os segredos com `VINTEM_MASTER_KEY_NOVA`. Veja [como trocar](/operar/seguranca/#trocar-a-chave-mestra) |
 
 ## Contas
 

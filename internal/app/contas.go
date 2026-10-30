@@ -163,6 +163,77 @@ func (s Contas) Listar(ctx context.Context) ([]domain.Conta, error) {
 	return s.Store.Contas().Listar(ctx)
 }
 
+// ConferirChaveMestra decifra as credenciais das contas e os segredos dos
+// destinos. Uma chave válida, mas diferente, passaria despercebida até a primeira
+// chamada ao banco; assim, o erro aparece ao abrir o banco.
+func (s Contas) ConferirChaveMestra(ctx context.Context) error {
+	return s.percorrerSegredos(ctx, s.Store, func(string, []byte) error { return nil }, func(string, []byte) error { return nil })
+}
+
+// TrocarChaveMestra recifra as credenciais e os segredos com a chave nova, numa
+// transação só: ou tudo passa para a nova, ou nada muda. Devolve quantas contas e
+// quantos destinos foram recifrados.
+func (s Contas) TrocarChaveMestra(ctx context.Context, nova ports.Vault) (contas, destinos int, err error) {
+	err = s.Store.WithTx(ctx, func(tx ports.Store) error {
+		contas, destinos = 0, 0
+		return s.percorrerSegredos(ctx, tx, func(id string, plano []byte) error {
+			cifrado, err := nova.Cifrar(ctx, plano)
+			if err != nil {
+				return fmt.Errorf("cifrando as credenciais da conta %s: %w", id, err)
+			}
+			contas++
+			return tx.Contas().SalvarCredenciais(ctx, id, cifrado)
+		}, func(id string, plano []byte) error {
+			cifrado, err := nova.Cifrar(ctx, plano)
+			if err != nil {
+				return fmt.Errorf("cifrando o segredo do destino %s: %w", id, err)
+			}
+			destinos++
+			return tx.Destinos().AtualizarSegredo(ctx, id, cifrado)
+		})
+	})
+	return contas, destinos, err
+}
+
+// percorrerSegredos decifra cada segredo guardado e o entrega à função da conta
+// ou do destino. Conta sem credenciais fica de fora.
+func (s Contas) percorrerSegredos(ctx context.Context, store ports.Store, daConta, doDestino func(id string, plano []byte) error) error {
+	lista, err := store.Contas().Listar(ctx)
+	if err != nil {
+		return err
+	}
+	for _, c := range lista {
+		cifrado, err := store.Contas().BuscarCredenciais(ctx, c.ID)
+		if errors.Is(err, ports.ErrNaoEncontrado) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		plano, err := s.Vault.Decifrar(ctx, cifrado)
+		if err != nil {
+			return fmt.Errorf("credenciais da conta %s: %w", c.ID, err)
+		}
+		if err := daConta(c.ID, plano); err != nil {
+			return err
+		}
+	}
+	destinos, err := store.Destinos().Listar(ctx)
+	if err != nil {
+		return err
+	}
+	for _, d := range destinos {
+		plano, err := s.Vault.Decifrar(ctx, d.SegredoCifrado)
+		if err != nil {
+			return fmt.Errorf("segredo do destino %s: %w", d.ID, err)
+		}
+		if err := doDestino(d.ID, plano); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Credenciais decifra as credenciais da conta, para uso exclusivo do adapter de PSP.
 func (s Contas) Credenciais(ctx context.Context, id string) (domain.Credenciais, error) {
 	var cred domain.Credenciais
