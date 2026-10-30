@@ -1,8 +1,14 @@
 ---
 title: Vintém
 description: Gateway Pix self-hosted e multi-banco. Sua conta, sua infraestrutura, nenhuma taxa de intermediário.
-template: splash
+head:
+  - tag: title
+    content: "Vintém: gateway Pix self-hosted e multi-banco"
 hero:
+  image:
+    light: ../../assets/moeda-claro.svg
+    dark: ../../assets/moeda-escuro.svg
+    alt: ""
   tagline: Gateway Pix self-hosted e multi-banco. Sua conta no banco, sua infraestrutura, nenhuma taxa de intermediário.
   actions:
     - text: Do zero ao Pix pago
@@ -11,15 +17,11 @@ hero:
     - text: Perguntas frequentes
       link: /referencia/faq/
       variant: secondary
-    - text: GitHub
-      link: https://github.com/vintemhq/vintem
-      icon: github
-      variant: minimal
 ---
 
 import { Card, CardGrid, LinkCard } from "@astrojs/starlight/components";
 
-![vintem sandbox: uma cobrança Pix é criada e paga em poucos segundos](https://raw.githubusercontent.com/vintemhq/vintem/develop/docs/demo/sandbox.gif)
+<img class="demo" src="https://raw.githubusercontent.com/vintemhq/vintem/develop/docs/demo/sandbox.gif" width="900" height="539" alt="vintem sandbox: uma cobrança Pix é criada e paga em poucos segundos" />
 
 :::caution[Alpha]
 O sandbox funciona, e o adapter da Efí já recebeu Pix de verdade. A API ainda pode mudar antes da `v1.0.0`, e os outros bancos ainda não foram testados contra o banco real. Veja a [situação de cada banco](#bancos).
@@ -50,14 +52,14 @@ O sandbox funciona, e o adapter da Efí já recebeu Pix de verdade. A API ainda 
 
 O Vintém é gratuito e não cobra nada por Pix. Você paga a tarifa de Pix do **seu** banco, e é só isso.
 
-| Por onde o Pix passa | Taxa por Pix | Venda de R$ 50 | Venda de R$ 500 |
+| Por onde o Pix passa | Taxa | Em R$ 50 | Em R$ 500 |
 |---|---|---|---|
-| [Stripe](https://stripe.com/br/pricing) (Pix, só por convite) | 1,19% | R$ 0,60 | R$ 5,95 |
-| [Mercado Pago](https://www.mercadopago.com.br/ferramentas-para-vender/check-out) (checkout, recebimento na hora) | 0,99% | R$ 0,50 | R$ 4,95 |
-| [Asaas](https://www.asaas.com/precos-e-taxas) | R$ 2,15 fixos (R$ 1,08 nos 3 primeiros meses) | R$ 2,15 | R$ 2,15 |
-| **Vintém + [Efí](https://sejaefi.com.br/tarifas)** | 1,19% (tarifa da Efí; o Vintém soma 0) | R$ 0,60 | R$ 5,95 |
+| [Stripe](https://stripe.com/br/pricing) | 1,19% | R$ 0,60 | R$ 5,95 |
+| [Mercado Pago](https://www.mercadopago.com.br/ferramentas-para-vender/check-out) | 0,99% | R$ 0,50 | R$ 4,95 |
+| [Asaas](https://www.asaas.com/precos-e-taxas) | R$ 2,15 | R$ 2,15 | R$ 2,15 |
+| **Vintém + [Efí](https://sejaefi.com.br/tarifas)** | 1,19% | R$ 0,60 | R$ 5,95 |
 
-Páginas de preço públicas, consultadas em 29/10/2026. A taxa negociada da sua conta pode ser outra. No nosso teste com dinheiro real, numa conta Efí Pro, a Efí cobrou R$ 0,01 num Pix de R$ 1,00 e R$ 0,12 num de R$ 10,00, o que bate com esse 1,19%.
+No Vintém + Efí, a taxa é toda da Efí, e o Vintém soma 0. O Pix na Stripe é só por convite, o Mercado Pago é o checkout com recebimento na hora, e o Asaas cobra R$ 1,08 nos 3 primeiros meses. Páginas de preço públicas, consultadas em 29/10/2026. A taxa negociada da sua conta pode ser outra. No nosso teste com dinheiro real, numa conta Efí Pro, a Efí cobrou R$ 0,01 num Pix de R$ 1,00 e R$ 0,12 num de R$ 10,00, o que bate com esse 1,19%.
 
 **Sem ilusão:** com a Efí, a taxa é a mesma da Stripe. O que você ganha hoje é ser dono do processo: seus dados, seus webhooks, nenhuma amarra e a liberdade de trocar de banco sem reescrever a integração. A taxa só cai com um banco que limite ou fixe a tarifa de Pix, e esses adapters ainda não foram testados contra o banco real.
 
