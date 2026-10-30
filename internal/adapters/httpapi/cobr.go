@@ -69,6 +69,9 @@ func (s *Server) CancelarCobr(ctx context.Context, r gen.CancelarCobrRequestObje
 	if s.cobrs.Store == nil {
 		return nil, errSemCobr
 	}
+	if r.Body.Status != gen.CobRRevisadaStatusCANCELADA {
+		return nil, statusSoCancelada(string(r.Body.Status))
+	}
 	c, err := s.cobrs.Cancelar(ctx, domain.Txid(r.Txid))
 	if err != nil {
 		return nil, err
@@ -114,4 +117,10 @@ func cobrGen(c domain.CobrancaRecorrente) gen.CobRGerada {
 		}
 	}
 	return g
+}
+
+// statusSoCancelada recusa o PATCH que pede outra coisa: sem isso, qualquer
+// status no corpo cancelaria.
+func statusSoCancelada(recebido string) error {
+	return &app.ErroValidacao{Violacoes: []app.Violacao{{Propriedade: "status", Razao: "o recebedor só cancela: use CANCELADA", Valor: recebido}}}
 }

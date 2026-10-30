@@ -170,6 +170,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/solicrec/{idSolicRec}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idSolicRec: string;
+            };
+            cookie?: never;
+        };
+        /** Consultar a solicitação de confirmação */
+        get: operations["consultarSolicRec"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Cancelar a solicitação de confirmação
+         * @description O recebedor só cancela, enquanto o pagador não respondeu (RN-41).
+         */
+        patch: operations["cancelarSolicRec"];
+        trace?: never;
+    };
     "/cob": {
         parameters: {
             query?: never;
@@ -624,6 +647,10 @@ export interface components {
             idSolicRec: string;
             /** @enum {string} */
             status: "CRIADA" | "ENVIADA" | "RECEBIDA" | "ACEITA" | "REJEITADA" | "EXPIRADA" | "CANCELADA";
+        };
+        SolicRecRevisada: {
+            /** @enum {string} */
+            status: "CANCELADA";
         };
         CobRSolicitada: {
             idRec: components["schemas"]["IdRec"];
@@ -1415,6 +1442,64 @@ export interface operations {
         responses: {
             /** @description Solicitação criada. */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SolicRecGerada"];
+                };
+            };
+            400: components["responses"]["RequisicaoInvalida"];
+            401: components["responses"]["NaoAutenticado"];
+            403: components["responses"]["AcessoNegado"];
+            404: components["responses"]["NaoEncontrado"];
+            501: components["responses"]["NaoSuportado"];
+            default: components["responses"]["Erro"];
+        };
+    };
+    consultarSolicRec: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idSolicRec: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Solicitação encontrada. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SolicRecGerada"];
+                };
+            };
+            401: components["responses"]["NaoAutenticado"];
+            403: components["responses"]["AcessoNegado"];
+            404: components["responses"]["NaoEncontrado"];
+            default: components["responses"]["Erro"];
+        };
+    };
+    cancelarSolicRec: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                idSolicRec: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SolicRecRevisada"];
+            };
+        };
+        responses: {
+            /** @description Solicitação cancelada. */
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -62,13 +62,44 @@ func (s *Server) CriarSolicRec(ctx context.Context, r gen.CriarSolicRecRequestOb
 	if err != nil {
 		return nil, err
 	}
-	out := gen.CriarSolicRec201JSONResponse{IdRec: sol.RecorrenciaID, IdSolicRec: sol.ID, Status: gen.SolicRecGeradaStatus(sol.Status)}
+	return gen.CriarSolicRec201JSONResponse(solicRecGen(sol)), nil
+}
+
+// ConsultarSolicRec devolve a solicitação, se a API key enxergar a conta dela.
+func (s *Server) ConsultarSolicRec(ctx context.Context, r gen.ConsultarSolicRecRequestObject) (gen.ConsultarSolicRecResponseObject, error) {
+	if s.recorrencias.Store == nil {
+		return nil, errSemRecorrencias
+	}
+	sol, err := s.recorrencias.ConsultarSolicitacao(ctx, r.IdSolicRec)
+	if err != nil {
+		return nil, err
+	}
+	return gen.ConsultarSolicRec200JSONResponse(solicRecGen(sol)), nil
+}
+
+// CancelarSolicRec leva a solicitação a CANCELADA: é a única revisão que a spec permite.
+func (s *Server) CancelarSolicRec(ctx context.Context, r gen.CancelarSolicRecRequestObject) (gen.CancelarSolicRecResponseObject, error) {
+	if s.recorrencias.Store == nil {
+		return nil, errSemRecorrencias
+	}
+	if r.Body.Status != gen.SolicRecRevisadaStatusCANCELADA {
+		return nil, statusSoCancelada(string(r.Body.Status))
+	}
+	sol, err := s.recorrencias.CancelarSolicitacao(ctx, r.IdSolicRec)
+	if err != nil {
+		return nil, err
+	}
+	return gen.CancelarSolicRec200JSONResponse(solicRecGen(sol)), nil
+}
+
+func solicRecGen(sol domain.SolicitacaoRecorrencia) gen.SolicRecGerada {
+	out := gen.SolicRecGerada{IdRec: sol.RecorrenciaID, IdSolicRec: sol.ID, Status: gen.SolicRecGeradaStatus(sol.Status)}
 	out.Calendario.DataExpiracaoSolicitacao = sol.ExpiraEm
 	out.Destinatario.Conta, out.Destinatario.IspbParticipante = sol.Destinatario.Conta, sol.Destinatario.ISPB
 	if sol.Destinatario.Agencia != "" {
 		out.Destinatario.Agencia = ptr(sol.Destinatario.Agencia)
 	}
-	return out, nil
+	return out
 }
 
 func dataDe(d openapi_types.Date) domain.Data {

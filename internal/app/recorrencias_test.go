@@ -287,3 +287,8 @@ func pspDaLoja(t *testing.T, svc app.Recorrencias) *pspRec {
 	}
 	return p.(*pspRec)
 }
+
+func (p *pspRec) CancelarSolicitacao(_ context.Context, _ domain.Conta, s domain.SolicitacaoRecorrencia) (domain.SolicitacaoRecorrencia, error) {
+	s.Status = domain.SolicitacaoCancelada
+	return s, nil
+}
