@@ -12,10 +12,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 // TestRecorrenciaAprovadaPeloWebhookNoSandbox é o critério da #31: a
@@ -35,7 +35,7 @@ func TestRecorrenciaAprovadaPeloWebhookNoSandbox(t *testing.T) {
 	_ = l.Close()
 
 	env := envComBanco(t)
-	env["LASTRO_ADDR"], env["LASTRO_CONCILIACAO_INTERVALO"], env["LASTRO_WEBHOOK_INTERVALO"] = addr, "0", "0"
+	env["VINTEM_ADDR"], env["VINTEM_CONCILIACAO_INTERVALO"], env["VINTEM_WEBHOOK_INTERVALO"] = addr, "0", "0"
 	amb, out := ambiente(t, env)
 	relogio := fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC))
 	amb.Clock = relogio
@@ -50,7 +50,7 @@ func TestRecorrenciaAprovadaPeloWebhookNoSandbox(t *testing.T) {
 	if err := Run(ctx, []string{"apikey", "criar", "--nome", "rec", "--conta", "loja", "--escopo", "rec:write", "--escopo", "rec:read"}, amb); err != nil {
 		t.Fatal(err)
 	}
-	token := regexp.MustCompile(`lst_\S+`).FindString(out.String())
+	token := regexp.MustCompile(`vtm_\S+`).FindString(out.String())
 
 	servindo, parar := context.WithCancel(ctx)
 	feito := make(chan error, 1)

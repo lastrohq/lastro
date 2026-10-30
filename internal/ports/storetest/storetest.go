@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 var base = time.Date(2026, 10, 28, 12, 0, 0, 0, time.UTC)
@@ -58,7 +58,7 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 	t.Run("conta: guarda os dados públicos do certificado", func(t *testing.T) {
 		s, ctx := novo(t), context.Background()
 		c := domain.Conta{ID: "c1", Nome: "Loja", PSP: "sandbox", ChavePix: "x@example.com", Ambiente: domain.Producao, Ativa: true,
-			Certificado: &domain.Certificado{Sujeito: "CN=loja,O=Lastro", ImpressaoDigital: "ab12", Validade: time.Date(2027, 6, 30, 23, 59, 59, 0, time.UTC)}}
+			Certificado: &domain.Certificado{Sujeito: "CN=loja,O=Vintém", ImpressaoDigital: "ab12", Validade: time.Date(2027, 6, 30, 23, 59, 59, 0, time.UTC)}}
 		// Validade "sem data definida" do RFC 5280: não cabe em nanossegundos int64.
 		sem := domain.Conta{ID: "c2", Nome: "Outra", PSP: "sandbox", ChavePix: "y@example.com", Ambiente: domain.Producao, Ativa: true,
 			Certificado: &domain.Certificado{Sujeito: "CN=outra", ImpressaoDigital: "cd34", Validade: time.Date(9999, 12, 31, 23, 59, 59, 0, time.UTC)}}

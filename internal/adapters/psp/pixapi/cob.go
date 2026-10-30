@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // segundos aceita número ou string: há banco (o Efí) que envia expiracao como string no GET.
@@ -179,7 +179,7 @@ func (a *API) caminhoCob(txid domain.Txid) string {
 	return a.cfg.Prefixo + "/cob/" + url.PathEscape(string(txid))
 }
 
-// CriarCob cria a cobrança com o txid do Lastro (PUT /cob/:txid). Com
+// CriarCob cria a cobrança com o txid do Vintém (PUT /cob/:txid). Com
 // ConsultarAntesDeCriar.Cob, consulta o txid antes: txid repetido é
 // ErrJaExiste mesmo no banco que sobrescreveria ou não sinalizaria.
 func (a *API) CriarCob(ctx context.Context, conta domain.Conta, c domain.Cobranca) (domain.Cobranca, error) {

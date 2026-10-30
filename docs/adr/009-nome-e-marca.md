@@ -1,6 +1,6 @@
 # ADR-009 · Nome do projeto e uso da marca Pix
 
-**Status:** Proposta (a decisão do nome é do mantenedor) · **Data:** 30/10/2026
+**Status:** Aceita · **Data:** 30/10/2026
 
 ## Contexto
 
@@ -78,15 +78,33 @@ Regra para o README, as docs, o painel e o site, valendo já:
 4. O aviso de marca fica no fim dos READMEs: Pix é marca do BCB e o Lastro é
    independente, sem vínculo nem endosso do BCB.
 
-**O nome fica para o mantenedor decidir antes do lançamento (#42).** A
-recomendação é trocar antes de o projeto ganhar estrelas e links. Hoje a troca
-é barata: org e repositório no GitHub (o GitHub redireciona o antigo), módulo
-Go, nome do binário, imagem no ghcr.io e site. O SDK ainda não saiu no npm.
+**O projeto passa a se chamar Vintém**, antes do lançamento (#42). Vintém era
+uma moeda de pouco valor, e "não perder um vintém" para intermediário é a
+promessa do projeto. Na triagem, não tinha marca ativa nas classes 09, 35, 36,
+38 e 42 (com e sem acento), e `vintem.dev`, a org `vintemhq` no GitHub e no
+npm estavam livres.
+
+| Antes | Depois |
+|---|---|
+| Lastro | Vintém (em código e caminhos, `vintem`) |
+| `github.com/lastrohq/lastro` | `github.com/vintemhq/vintem` |
+| binário `lastro`, `cmd/lastro` | `vintem`, `cmd/vintem` |
+| `LASTRO_*` | `VINTEM_*` |
+| API key `lst_...` | `vtm_...` |
+| extensão `x-lastro` no OpenAPI | `x-vintem` |
+| `@lastrohq/sdk`, classe `Lastro` | `@vintemhq/sdk`, classe `Vintem` |
+| `ghcr.io/lastrohq/lastro` | `ghcr.io/vintemhq/vintem` |
+| `lastrohq.github.io/lastro` | `vintemhq.github.io/vintem` |
+
+As ADRs 001 a 008 e as levas antigas do arquivo do board continuam com o nome
+antigo, porque ADR não se reescreve e o arquivo é histórico.
 
 ## Consequências
 
 - **Melhor:** o lançamento não carrega um conflito de marca conhecido, e as
   docs seguem o manual do BCB.
-- **Pior:** trocar o nome mexe em tudo que tem "lastro": módulo Go, imports,
-  binário, org, imagem, site, README, board e textos do lançamento.
-- O `lastro.dev` sai de qualquer plano; o domínio acompanha o nome escolhido.
+- **Pior:** a troca quebra quem já usava o alpha: variáveis de ambiente, prefixo
+  das API keys (as `lst_` antigas deixam de valer; gere outras), nome do banco
+  padrão (`vintem.db`) e caminho do `go install`.
+- O `lastro.dev` sai de qualquer plano; o domínio passa a ser `vintem.dev`, a
+  registrar.

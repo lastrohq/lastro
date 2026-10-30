@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // Erros comuns a todo Store.

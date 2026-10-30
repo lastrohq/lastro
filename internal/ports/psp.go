@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // ErrNaoSuportado indica que o PSP da conta não oferece a capacidade pedida (RN-50).

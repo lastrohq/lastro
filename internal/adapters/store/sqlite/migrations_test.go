@@ -11,7 +11,7 @@ import (
 // valendo, na ida e na volta.
 func TestMigrationDaCobrPreservaOsTxids(t *testing.T) {
 	ctx := t.Context()
-	s, err := Open(ctx, filepath.Join(t.TempDir(), "lastro.db"))
+	s, err := Open(ctx, filepath.Join(t.TempDir(), "vintem.db"))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 type calendarioV struct {

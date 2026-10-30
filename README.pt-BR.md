@@ -1,6 +1,6 @@
 <div align="center">
 
-# Lastro
+# Vintém
 
 ### Pix sem gateway: sua conta no banco, sua infraestrutura, nenhuma taxa de intermediário.
 
@@ -8,9 +8,11 @@
 Um binário que fala a API Pix do Banco Central, traz um adaptador por banco,
 cuida dos certificados mTLS e normaliza os webhooks.
 
-<img src="docs/demo/sandbox.gif" alt="lastro sandbox: uma cobrança Pix é criada e paga em poucos segundos" width="820">
+<sub>Vintém era uma moeda de 20 réis, quase nada. A ideia é não perder nem um vintém para intermediário.</sub>
 
-[English](./README.md) · [Docs](https://lastrohq.github.io/lastro/) · [Board](https://github.com/orgs/lastrohq/projects/1)
+<img src="docs/demo/sandbox.gif" alt="vintem sandbox: uma cobrança Pix é criada e paga em poucos segundos" width="820">
+
+[English](./README.md) · [Docs](https://vintemhq.github.io/vintem/) · [Board](https://github.com/orgs/vintemhq/projects/1)
 
 </div>
 
@@ -19,38 +21,38 @@ cuida dos certificados mTLS e normaliza os webhooks.
 ## Teste em 10 segundos
 
 ```bash
-docker run --rm -p 8080:8080 ghcr.io/lastrohq/lastro sandbox
+docker run --rm -p 8080:8080 ghcr.io/vintemhq/vintem sandbox
 ```
 
 Ele imprime uma API key de teste e um `curl` que cria uma cobrança Pix. Cole no
 terminal: cinco segundos depois o "pagador" de mentira paga e a cobrança vira
 `CONCLUIDA`. Sem conta PJ, sem configurar nada. Sem Docker:
-`go run github.com/lastrohq/lastro/cmd/lastro@latest sandbox`. Valores mágicos no [guia do sandbox](./docs/SANDBOX.md).
+`go run github.com/vintemhq/vintem/cmd/vintem@latest sandbox`. Valores mágicos no [guia do sandbox](./docs/SANDBOX.md).
 
 ## Use com seu agente
 
-`lastro mcp` é um servidor MCP para agentes de IA: cria, consulta, lista e
-cancela cobranças Pix, e devolve pagamentos. Ele fala com a API do Lastro usando
+`vintem mcp` é um servidor MCP para agentes de IA: cria, consulta, lista e
+cancela cobranças Pix, e devolve pagamentos. Ele fala com a API do Vintém usando
 uma API key, então os escopos da key valem: uma key só de leitura dá um agente
 que só consulta.
 
 ```bash
-lastro sandbox   # copie a key lst_... que ele imprime
-claude mcp add lastro -e LASTRO_TOKEN=lst_... -e LASTRO_CHAVE_PIX=sandbox@lastro.dev -- lastro mcp
+vintem sandbox   # copie a key vtm_... que ele imprime
+claude mcp add vintem -e VINTEM_TOKEN=vtm_... -e VINTEM_CHAVE_PIX=sandbox@vintem.dev -- vintem mcp
 ```
 
 Depois peça: *"cobre R$ 49,90 do pedido 42 e me mostre o Pix copia e cola"*.
-Qualquer cliente MCP funciona igual: rode `lastro mcp` por stdio com
-`LASTRO_URL` (padrão `http://localhost:8080`), `LASTRO_TOKEN` e, se quiser,
-`LASTRO_CHAVE_PIX`.
+Qualquer cliente MCP funciona igual: rode `vintem mcp` por stdio com
+`VINTEM_URL` (padrão `http://localhost:8080`), `VINTEM_TOKEN` e, se quiser,
+`VINTEM_CHAVE_PIX`.
 
 ## Use com TypeScript
 
 ```ts
-import { Lastro } from "@lastrohq/sdk";
+import { Vintem } from "@vintemhq/sdk";
 
-const lastro = new Lastro({ url: "http://localhost:8080", token: process.env.LASTRO_TOKEN! });
-const cob = await lastro.cob.criar({ calendario: { expiracao: 3600 }, valor: { original: "49.90" }, chave: "sandbox@lastro.dev" });
+const vintem = new Vintem({ url: "http://localhost:8080", token: process.env.VINTEM_TOKEN! });
+const cob = await vintem.cob.criar({ calendario: { expiracao: 3600 }, valor: { original: "49.90" }, chave: "sandbox@vintem.dev" });
 console.log(cob.pixCopiaECola);
 ```
 
@@ -64,12 +66,12 @@ o seu dinheiro. Todo banco já expõe a
 [API Pix do BCB](https://github.com/bacen/pix-api), mas cada um desvia dela do
 seu jeito, exige o seu ritual de certificado mTLS e manda webhook no seu formato.
 
-O Lastro é a camada que falta: você roda, pluga as credenciais do **seu** banco,
+O Vintém é a camada que falta: você roda, pluga as credenciais do **seu** banco,
 e a sua aplicação fala com **uma** API só, qualquer que seja o banco que recebe.
 
 ## Quanto você paga
 
-O Lastro é gratuito e não cobra nada por Pix. Você paga a tarifa de Pix do
+O Vintém é gratuito e não cobra nada por Pix. Você paga a tarifa de Pix do
 **seu** banco, e é só isso. Quanto você economiza depende do banco:
 
 | Por onde o Pix passa | Taxa por Pix | Venda de R$ 50 | Venda de R$ 500 |
@@ -77,7 +79,7 @@ O Lastro é gratuito e não cobra nada por Pix. Você paga a tarifa de Pix do
 | [Stripe](https://stripe.com/br/pricing) (Pix, só por convite) | 1,19% | R$ 0,60 | R$ 5,95 |
 | [Mercado Pago](https://www.mercadopago.com.br/ferramentas-para-vender/check-out) (checkout, recebimento na hora) | 0,99% | R$ 0,50 | R$ 4,95 |
 | [Asaas](https://www.asaas.com/precos-e-taxas) | R$ 2,15 fixos (R$ 1,08 nos 3 primeiros meses) | R$ 2,15 | R$ 2,15 |
-| **Lastro + [Efí Empresas](https://sejaefi.com.br/tarifas)** | 1,19% (tarifa da Efí; o Lastro soma 0) | R$ 0,60 | R$ 5,95 |
+| **Vintém + [Efí Empresas](https://sejaefi.com.br/tarifas)** | 1,19% (tarifa da Efí; o Vintém soma 0) | R$ 0,60 | R$ 5,95 |
 
 <sub>Páginas de preço públicas, consultadas em 29/10/2026. A taxa negociada da sua conta pode ser outra.</sub>
 
@@ -99,21 +101,21 @@ não achamos isso numa tabela oficial atual). Os do Sicoob, onde a tarifa de Pix
 - **Sandbox com estado** — teste o fluxo inteiro sem conta PJ.
 - **Binário único** — `docker run` e pronto; SQLite por padrão.
 - **Painel** — `/painel/`: quanto entrou, cobranças ativas, quanto um gateway teria cobrado e cada cobrança com o QR Code. Entre com uma API key.
-- **Use com seu agente** — servidor MCP embutido (`lastro mcp`).
+- **Use com seu agente** — servidor MCP embutido (`vintem mcp`).
 
 ## Bancos
 
 | Banco | `--psp` | cob | cobv | Devolução | Webhook | Situação |
 |---|---|---|---|---|---|---|
-| Sandbox do Lastro | `sandbox` | ✅ | ✅ | ✅ | ✅ | Para testar sem conta PJ ([guia](./docs/SANDBOX.md)) |
+| Sandbox do Vintém | `sandbox` | ✅ | ✅ | ✅ | ✅ | Para testar sem conta PJ ([guia](./docs/SANDBOX.md)) |
 | Efí | `efi` | ✅ | ✅ | ✅ | ✅ | Testado na homologação da Efí (cobranças, pagamento, devolução); falta testar o cadastro do webhook ([guia](./docs/EFI.md)) |
 | Banco Inter | `inter` | ✅ | ✅ | ✅ | ✅ | Escrito pela documentação oficial do Inter; **ainda não testado no sandbox do Inter** ([guia](./docs/INTER.md)) |
 | Sicoob | `sicoob` | ✅ | ✅ | ✅ | ✅ | Escrito pela spec do BCB e por relatos públicos do sandbox; **ainda não testado com conta de cooperado** ([guia](./docs/SICOOB.md)) |
-| Banco do Brasil | `bb` | ✅ | ✅ | ✅ | ✅ | Escrito pela spec do BCB e por relatos públicos da homologação; **ainda não testado pelo Lastro na homologação do BB** ([guia](./docs/BB.md)) |
+| Banco do Brasil | `bb` | ✅ | ✅ | ✅ | ✅ | Escrito pela spec do BCB e por relatos públicos da homologação; **ainda não testado pelo Vintém na homologação do BB** ([guia](./docs/BB.md)) |
 
 ## Não custodial
 
-O Lastro nunca guarda nem movimenta dinheiro. Ele roda com as **suas**
+O Vintém nunca guarda nem movimenta dinheiro. Ele roda com as **suas**
 credenciais contra a **sua** conta. Isto não é aconselhamento jurídico ou
 regulatório.
 
@@ -121,7 +123,7 @@ regulatório.
 
 | Documento | Para quê |
 |---|---|
-| [Regras de negócio](./docs/REGRAS-DE-NEGOCIO.md) | O que o Lastro garante e o que recusa |
+| [Regras de negócio](./docs/REGRAS-DE-NEGOCIO.md) | O que o Vintém garante e o que recusa |
 | [Arquitetura](./docs/ARQUITETURA.md) | Hexagonal, pastas, padrões, testes |
 | [Sandbox](./docs/SANDBOX.md) | Testar sem conta PJ, com valores mágicos |
 | [Efí](./docs/EFI.md) | Ligar uma conta Efí: credenciais, certificado e webhook |
@@ -132,5 +134,5 @@ regulatório.
 
 ## Licença
 
-[Apache-2.0](./LICENSE). Pix é marca do Banco Central do Brasil; o Lastro é
+[Apache-2.0](./LICENSE). Pix é marca do Banco Central do Brasil; o Vintém é
 um projeto independente, sem vínculo nem endosso do BCB.

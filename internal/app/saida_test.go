@@ -13,11 +13,11 @@ import (
 
 	standardwebhooks "github.com/standard-webhooks/standard-webhooks/libraries/go"
 
-	"github.com/lastrohq/lastro/internal/adapters/notifier"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/vault"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/adapters/notifier"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/vault"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 type recebido struct {
@@ -103,7 +103,7 @@ func TestAssinaturaVerificaComABibliotecaOficial(t *testing.T) {
 	if err := wh.Verify(got.corpo, got.cab); err != nil {
 		t.Fatalf("a lib oficial recusou a assinatura: %v", err)
 	}
-	if got.cab.Get("webhook-id") != "evt_1" || got.cab.Get("Content-Type") != "application/json" || got.cab.Get("User-Agent") != "Lastro/test" {
+	if got.cab.Get("webhook-id") != "evt_1" || got.cab.Get("Content-Type") != "application/json" || got.cab.Get("User-Agent") != "Vintém/test" {
 		t.Fatalf("cabeçalhos: %v", got.cab)
 	}
 	var env struct {
@@ -216,8 +216,8 @@ func TestDestinoRemovidoVaiParaDLQ(t *testing.T) {
 // usa: se a assinatura do servidor mudar, o SDK precisa mudar junto.
 func TestAssinarBateComOSDK(t *testing.T) {
 	corpo := `{"type":"cobranca.paga","timestamp":"2026-10-29T12:00:00Z","data":{"txid":"abc"}}`
-	h := app.Assinar([]byte("chave-de-teste-do-lastro-32bytes"), "msg_1", time.Unix(1793300400, 0), []byte(corpo))
-	if h["webhook-signature"] != "v1,uYfx++wcj86kg41EcTQl+oKOa6l+fLvHdIoZsrwhaEg=" || h["webhook-timestamp"] != "1793300400" {
+	h := app.Assinar([]byte("chave-de-teste-do-vintem-32bytes"), "msg_1", time.Unix(1793300400, 0), []byte(corpo))
+	if h["webhook-signature"] != "v1,RoW5MkBxA0viWaW7V2Jk+xNcKIoVoB13Y14TDeAScyM=" || h["webhook-timestamp"] != "1793300400" {
 		t.Fatalf("cabeçalhos: %v", h)
 	}
 }

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/platform/oauth"
+	"github.com/vintemhq/vintem/internal/platform/oauth"
 )
 
 func TestLerResposta(t *testing.T) {

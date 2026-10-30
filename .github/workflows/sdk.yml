@@ -35,17 +35,17 @@ jobs:
         run: |
           npm run gerar
           git diff --exit-code -- src/schema.ts
-      - name: Sobe o lastro sandbox
+      - name: Sobe o vintem sandbox
         working-directory: .
         run: |
-          go build -o /tmp/lastro ./cmd/lastro
-          (cd /tmp && exec env LASTRO_ADDR=127.0.0.1:8080 ./lastro sandbox > banner.txt 2>&1) &
+          go build -o /tmp/vintem ./cmd/vintem
+          (cd /tmp && exec env VINTEM_ADDR=127.0.0.1:8080 ./vintem sandbox > banner.txt 2>&1) &
           for _ in $(seq 50); do curl -sf localhost:8080/health >/dev/null && break; sleep 0.2; done
-          echo "LASTRO_TOKEN=$(grep -o 'lst_[^ ]*' /tmp/banner.txt | head -1)" >> "$GITHUB_ENV"
+          echo "VINTEM_TOKEN=$(grep -o 'vtm_[^ ]*' /tmp/banner.txt | head -1)" >> "$GITHUB_ENV"
       - name: Testes (inclui o exemplo do README)
         run: npm test
         env:
-          LASTRO_URL: http://127.0.0.1:8080
+          VINTEM_URL: http://127.0.0.1:8080
 
   publicar:
     name: Publica no npm

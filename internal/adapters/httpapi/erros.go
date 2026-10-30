@@ -6,13 +6,13 @@ import (
 	"log/slog"
 	"net/http"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
-func tipoErro(nome string) string { return "https://lastro.dev/erros/" + nome }
+func tipoErro(nome string) string { return "https://vintem.dev/erros/" + nome }
 
 func ptr[T any](v T) *T { return &v }
 
@@ -33,7 +33,7 @@ func problemaDe(ctx context.Context, err error) gen.Problema {
 		pr.Violacoes = &vs
 		return pr
 	case errors.Is(err, domain.ErrNaoAutenticado):
-		pr := p(http.StatusUnauthorized, "NaoAutenticado", "Envie uma API key válida em Authorization: Bearer lst_...")
+		pr := p(http.StatusUnauthorized, "NaoAutenticado", "Envie uma API key válida em Authorization: Bearer vtm_...")
 		pr.Detail = nil // não diz se a chave existe, está revogada ou malformada
 		return pr
 	case errors.Is(err, domain.ErrSemEscopo):

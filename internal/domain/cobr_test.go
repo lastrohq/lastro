@@ -242,7 +242,7 @@ func TestAplicarAtualizacao(t *testing.T) {
 			t.Fatalf("repetido: %v %+v %v", mudou, ts, err)
 		}
 	})
-	t.Run("tentativa muda pela data e pelo tipo, e a que só o Lastro conhece continua", func(t *testing.T) {
+	t.Run("tentativa muda pela data e pelo tipo, e a que só o Vintém conhece continua", func(t *testing.T) {
 		c := base()
 		c.Status = CobrAtiva
 		pedida := Tentativa{DataLiquidacao: NovaData(2026, 11, 7), Tipo: TipoNovaTentativa, Status: TentativaSolicitada}

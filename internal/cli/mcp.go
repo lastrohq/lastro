@@ -5,11 +5,11 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/lastrohq/lastro/internal/adapters/mcp"
+	"github.com/vintemhq/vintem/internal/adapters/mcp"
 )
 
 // mcpCmd roda o servidor MCP pela entrada e saída padrão (#38). Ele fala com a
-// API HTTP do Lastro, então os escopos da API key valem como para qualquer
+// API HTTP do Vintém, então os escopos da API key valem como para qualquer
 // cliente (ADR-008). Nada pode ir para a saída padrão além do protocolo.
 func mcpCmd(ctx context.Context, amb Ambiente) error {
 	api := mcpAPI(amb)
@@ -21,8 +21,8 @@ func mcpCmd(ctx context.Context, amb Ambiente) error {
 
 func mcpAPI(amb Ambiente) mcp.API {
 	return mcp.API{
-		URL:      getenv(amb, "LASTRO_URL", urlLocal(getenv(amb, "LASTRO_ADDR", ":8080"))),
-		Token:    amb.Getenv("LASTRO_TOKEN"),
-		ChavePix: amb.Getenv("LASTRO_CHAVE_PIX"),
+		URL:      getenv(amb, "VINTEM_URL", urlLocal(getenv(amb, "VINTEM_ADDR", ":8080"))),
+		Token:    amb.Getenv("VINTEM_TOKEN"),
+		ChavePix: amb.Getenv("VINTEM_CHAVE_PIX"),
 	}
 }

@@ -12,8 +12,8 @@ import (
 	"github.com/pressly/goose/v3"
 	_ "modernc.org/sqlite" // registra o driver "sqlite"
 
-	"github.com/lastrohq/lastro/internal/adapters/store/sqlite/db"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/store/sqlite/db"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 //go:embed migrations/*.sql

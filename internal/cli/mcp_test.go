@@ -13,14 +13,14 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/lastrohq/lastro/internal/adapters/mcp"
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/adapters/mcp"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
-// conectarMCP liga um cliente MCP ao servidor do Lastro em memória.
+// conectarMCP liga um cliente MCP ao servidor do Vintém em memória.
 func conectarMCP(t *testing.T, api mcp.API) *sdk.ClientSession {
 	t.Helper()
 	ctx := context.Background()
@@ -68,9 +68,9 @@ func jsonDe(t *testing.T, s string) map[string]any {
 func TestMCPCobraConsultaEDevolve(t *testing.T) {
 	dir := t.TempDir()
 	relogio := fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC))
-	url, token, parar := subirSandbox(t, filepath.Join(dir, "lastro-sandbox.db"), relogio)
+	url, token, parar := subirSandbox(t, filepath.Join(dir, "vintem-sandbox.db"), relogio)
 	defer parar()
-	cs := conectarMCP(t, mcp.API{URL: url, Token: token, ChavePix: "sandbox@lastro.dev"})
+	cs := conectarMCP(t, mcp.API{URL: url, Token: token, ChavePix: "sandbox@vintem.dev"})
 
 	lista, err := cs.ListTools(context.Background(), nil)
 	if err != nil {
@@ -92,7 +92,7 @@ func TestMCPCobraConsultaEDevolve(t *testing.T) {
 	}
 
 	relogio.Avancar(sandbox.AtrasoPadrao + time.Second)
-	// O Pix pago entra em pix[] quando o Lastro o registra (webhook do banco ou
+	// O Pix pago entra em pix[] quando o Vintém o registra (webhook do banco ou
 	// conciliação). O sandbox não chama webhook, e o serve concilia a cada 10 s
 	// de relógio de verdade: aqui a conciliação roda na hora.
 	conciliarSandbox(t, dir, relogio)
@@ -127,14 +127,14 @@ func TestMCPCobraConsultaEDevolve(t *testing.T) {
 	}
 }
 
-// conciliarSandbox roda `lastro conciliar` no banco do sandbox, com o mesmo relógio.
+// conciliarSandbox roda `vintem conciliar` no banco do sandbox, com o mesmo relógio.
 func conciliarSandbox(t *testing.T, dir string, relogio *fake.Clock) {
 	t.Helper()
-	chave, err := os.ReadFile(filepath.Join(dir, "lastro-sandbox.key")) //nolint:gosec // G304: arquivo do próprio teste
+	chave, err := os.ReadFile(filepath.Join(dir, "vintem-sandbox.key")) //nolint:gosec // G304: arquivo do próprio teste
 	if err != nil {
 		t.Fatal(err)
 	}
-	env := map[string]string{"LASTRO_DB": filepath.Join(dir, "lastro-sandbox.db"), "LASTRO_MASTER_KEY": strings.TrimSpace(string(chave))}
+	env := map[string]string{"VINTEM_DB": filepath.Join(dir, "vintem-sandbox.db"), "VINTEM_MASTER_KEY": strings.TrimSpace(string(chave))}
 	amb := Ambiente{
 		Saida: io.Discard, Getenv: func(k string) string { return env[k] }, Clock: relogio, Versao: "v-test",
 		MontarPSPs: func(f Fontes) ports.Registry {
@@ -150,29 +150,29 @@ func conciliarSandbox(t *testing.T, dir string, relogio *fake.Clock) {
 // consulta, mas não cria cobrança nem devolve.
 func TestMCPRespeitaOsEscoposDaAPIKey(t *testing.T) {
 	dir := t.TempDir()
-	db := filepath.Join(dir, "lastro-sandbox.db")
+	db := filepath.Join(dir, "vintem-sandbox.db")
 	url, token, parar := subirSandbox(t, db, fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)))
 	defer parar()
 
-	chave, err := os.ReadFile(filepath.Join(dir, "lastro-sandbox.key")) //nolint:gosec // G304: arquivo do próprio teste
+	chave, err := os.ReadFile(filepath.Join(dir, "vintem-sandbox.key")) //nolint:gosec // G304: arquivo do próprio teste
 	if err != nil {
 		t.Fatal(err)
 	}
-	amb, out := ambiente(t, map[string]string{"LASTRO_DB": db, "LASTRO_MASTER_KEY": strings.TrimSpace(string(chave))})
+	amb, out := ambiente(t, map[string]string{"VINTEM_DB": db, "VINTEM_MASTER_KEY": strings.TrimSpace(string(chave))})
 	if err := Run(context.Background(), []string{"apikey", "criar", "--nome", "agente", "--escopo", "cob:read"}, amb); err != nil {
 		t.Fatal(err)
 	}
-	leitura := regexp.MustCompile(`lst_\S+`).FindString(out.String())
+	leitura := regexp.MustCompile(`vtm_\S+`).FindString(out.String())
 	if leitura == "" {
 		t.Fatalf("token não impresso: %s", out)
 	}
 
 	// Uma cobrança criada com a key completa, para a de leitura consultar.
-	completo := conectarMCP(t, mcp.API{URL: url, Token: token, ChavePix: "sandbox@lastro.dev"})
+	completo := conectarMCP(t, mcp.API{URL: url, Token: token, ChavePix: "sandbox@vintem.dev"})
 	texto, _ := ferramenta(t, completo, "criar_cobranca", map[string]any{"valor": "20.00"})
 	txid := jsonDe(t, texto)["txid"].(string)
 
-	agente := conectarMCP(t, mcp.API{URL: url, Token: leitura, ChavePix: "sandbox@lastro.dev"})
+	agente := conectarMCP(t, mcp.API{URL: url, Token: leitura, ChavePix: "sandbox@vintem.dev"})
 	if texto, erro := ferramenta(t, agente, "consultar_cobranca", map[string]any{"txid": txid}); erro {
 		t.Fatalf("leitura deveria passar: %s", texto)
 	}
@@ -190,11 +190,11 @@ func TestMCPRespeitaOsEscoposDaAPIKey(t *testing.T) {
 
 func TestMCPSemChaveNemTokenExplicaOQueFalta(t *testing.T) {
 	cs := conectarMCP(t, mcp.API{URL: "http://127.0.0.1:1", Token: "x"})
-	if texto, erro := ferramenta(t, cs, "criar_cobranca", map[string]any{"valor": "1.00"}); !erro || !strings.Contains(texto, "LASTRO_CHAVE_PIX") {
+	if texto, erro := ferramenta(t, cs, "criar_cobranca", map[string]any{"valor": "1.00"}); !erro || !strings.Contains(texto, "VINTEM_CHAVE_PIX") {
 		t.Fatalf("sem chave: %v %s", erro, texto)
 	}
 	amb, _ := ambiente(t, map[string]string{})
-	if err := Run(context.Background(), []string{"mcp"}, amb); err == nil || !strings.Contains(err.Error(), "LASTRO_TOKEN") {
+	if err := Run(context.Background(), []string{"mcp"}, amb); err == nil || !strings.Contains(err.Error(), "VINTEM_TOKEN") {
 		t.Fatalf("sem token: %v", err)
 	}
 }

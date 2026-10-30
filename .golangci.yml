@@ -20,139 +20,139 @@ linters:
           files: ["**/internal/domain/**"]
           allow:
             - $gostd
-            - github.com/lastrohq/lastro/internal/domain
+            - github.com/vintemhq/vintem/internal/domain
         pkg:
           list-mode: strict
           files: ["**/pkg/**"]
           allow:
             - $gostd
-            - github.com/lastrohq/lastro/pkg
+            - github.com/vintemhq/vintem/pkg
         ports:
           files: ["**/internal/ports/**", "!$test"]
           deny:
-            - pkg: github.com/lastrohq/lastro/internal/app
+            - pkg: github.com/vintemhq/vintem/internal/app
               desc: ports só conhece domain
-            - pkg: github.com/lastrohq/lastro/internal/adapters
+            - pkg: github.com/vintemhq/vintem/internal/adapters
               desc: ports só conhece domain
-            - pkg: github.com/lastrohq/lastro/internal/platform
+            - pkg: github.com/vintemhq/vintem/internal/platform
               desc: ports só conhece domain
-            - pkg: github.com/lastrohq/lastro/internal/cli
+            - pkg: github.com/vintemhq/vintem/internal/cli
               desc: ports só conhece domain
         app:
           files: ["**/internal/app/**", "!$test"]
           deny:
-            - pkg: github.com/lastrohq/lastro/internal/adapters
+            - pkg: github.com/vintemhq/vintem/internal/adapters
               desc: caso de uso fala com o mundo pelos ports, não pelos adapters
-            - pkg: github.com/lastrohq/lastro/internal/platform
+            - pkg: github.com/vintemhq/vintem/internal/platform
               desc: caso de uso fala com o mundo pelos ports
-            - pkg: github.com/lastrohq/lastro/internal/cli
+            - pkg: github.com/vintemhq/vintem/internal/cli
               desc: caso de uso não conhece a CLI
         platform:
           files: ["**/internal/platform/**", "!$test"]
           deny:
-            - pkg: github.com/lastrohq/lastro/internal/domain
+            - pkg: github.com/vintemhq/vintem/internal/domain
               desc: platform é infraestrutura genérica (stdlib e libs)
-            - pkg: github.com/lastrohq/lastro/internal/ports
+            - pkg: github.com/vintemhq/vintem/internal/ports
               desc: platform é infraestrutura genérica; a checagem de interface vai no teste
-            - pkg: github.com/lastrohq/lastro/internal/app
+            - pkg: github.com/vintemhq/vintem/internal/app
               desc: platform é infraestrutura genérica (stdlib e libs)
-            - pkg: github.com/lastrohq/lastro/internal/adapters
+            - pkg: github.com/vintemhq/vintem/internal/adapters
               desc: platform é infraestrutura genérica (stdlib e libs)
-            - pkg: github.com/lastrohq/lastro/internal/cli
+            - pkg: github.com/vintemhq/vintem/internal/cli
               desc: platform é infraestrutura genérica (stdlib e libs)
         adapters-psp:
           files: ["**/internal/adapters/psp/**", "!$test"]
           deny:
-            - pkg: github.com/lastrohq/lastro/internal/app
+            - pkg: github.com/vintemhq/vintem/internal/app
               desc: adapter de PSP implementa ports.PSP e não chama caso de uso
-            - pkg: github.com/lastrohq/lastro/internal/cli
+            - pkg: github.com/vintemhq/vintem/internal/cli
               desc: adapter não conhece a CLI
-            - pkg: github.com/lastrohq/lastro/internal/adapters/httpapi
+            - pkg: github.com/vintemhq/vintem/internal/adapters/httpapi
               desc: adapter de PSP não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/store
+            - pkg: github.com/vintemhq/vintem/internal/adapters/store
               desc: adapter de PSP não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/notifier
+            - pkg: github.com/vintemhq/vintem/internal/adapters/notifier
               desc: adapter de PSP não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/mcp
+            - pkg: github.com/vintemhq/vintem/internal/adapters/mcp
               desc: adapter de PSP não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/jobs
+            - pkg: github.com/vintemhq/vintem/internal/adapters/jobs
               desc: adapter de PSP não depende de outro adapter
         adapters-store:
           files: ["**/internal/adapters/store/**", "!$test"]
           deny:
-            - pkg: github.com/lastrohq/lastro/internal/app
+            - pkg: github.com/vintemhq/vintem/internal/app
               desc: store implementa ports.Store e não chama caso de uso
-            - pkg: github.com/lastrohq/lastro/internal/cli
+            - pkg: github.com/vintemhq/vintem/internal/cli
               desc: adapter não conhece a CLI
-            - pkg: github.com/lastrohq/lastro/internal/platform
+            - pkg: github.com/vintemhq/vintem/internal/platform
               desc: store só conhece ports e domain
-            - pkg: github.com/lastrohq/lastro/internal/adapters/httpapi
+            - pkg: github.com/vintemhq/vintem/internal/adapters/httpapi
               desc: store não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/psp
+            - pkg: github.com/vintemhq/vintem/internal/adapters/psp
               desc: store não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/notifier
+            - pkg: github.com/vintemhq/vintem/internal/adapters/notifier
               desc: store não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/mcp
+            - pkg: github.com/vintemhq/vintem/internal/adapters/mcp
               desc: store não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/jobs
+            - pkg: github.com/vintemhq/vintem/internal/adapters/jobs
               desc: store não depende de outro adapter
         adapters-notifier:
           files: ["**/internal/adapters/notifier/**", "!$test"]
           deny:
-            - pkg: github.com/lastrohq/lastro/internal/app
+            - pkg: github.com/vintemhq/vintem/internal/app
               desc: notifier implementa ports.Notifier e não chama caso de uso
-            - pkg: github.com/lastrohq/lastro/internal/cli
+            - pkg: github.com/vintemhq/vintem/internal/cli
               desc: adapter não conhece a CLI
-            - pkg: github.com/lastrohq/lastro/internal/platform
+            - pkg: github.com/vintemhq/vintem/internal/platform
               desc: notifier só conhece ports e domain
-            - pkg: github.com/lastrohq/lastro/internal/adapters/httpapi
+            - pkg: github.com/vintemhq/vintem/internal/adapters/httpapi
               desc: notifier não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/psp
+            - pkg: github.com/vintemhq/vintem/internal/adapters/psp
               desc: notifier não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/store
+            - pkg: github.com/vintemhq/vintem/internal/adapters/store
               desc: notifier não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/mcp
+            - pkg: github.com/vintemhq/vintem/internal/adapters/mcp
               desc: notifier não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/jobs
+            - pkg: github.com/vintemhq/vintem/internal/adapters/jobs
               desc: notifier não depende de outro adapter
         adapters-httpapi:
           files: ["**/internal/adapters/httpapi/**", "!$test"]
           deny:
-            - pkg: github.com/lastrohq/lastro/internal/cli
+            - pkg: github.com/vintemhq/vintem/internal/cli
               desc: adapter não conhece a CLI
-            - pkg: github.com/lastrohq/lastro/internal/platform
+            - pkg: github.com/vintemhq/vintem/internal/platform
               desc: httpapi chega na infraestrutura pelos casos de uso
-            - pkg: github.com/lastrohq/lastro/internal/adapters/psp
+            - pkg: github.com/vintemhq/vintem/internal/adapters/psp
               desc: httpapi chega no banco pelos casos de uso, não pelo adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/store
+            - pkg: github.com/vintemhq/vintem/internal/adapters/store
               desc: httpapi chega no storage pelos casos de uso, não pelo adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/notifier
+            - pkg: github.com/vintemhq/vintem/internal/adapters/notifier
               desc: httpapi não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/mcp
+            - pkg: github.com/vintemhq/vintem/internal/adapters/mcp
               desc: httpapi não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/jobs
+            - pkg: github.com/vintemhq/vintem/internal/adapters/jobs
               desc: httpapi não depende de outro adapter
         adapters-mcp:
           files: ["**/internal/adapters/mcp/**", "!$test"]
           deny:
-            - pkg: github.com/lastrohq/lastro/internal/cli
+            - pkg: github.com/vintemhq/vintem/internal/cli
               desc: adapter não conhece a CLI
-            - pkg: github.com/lastrohq/lastro/internal/platform
+            - pkg: github.com/vintemhq/vintem/internal/platform
               desc: mcp chega na infraestrutura pelos casos de uso
-            - pkg: github.com/lastrohq/lastro/internal/adapters/httpapi
+            - pkg: github.com/vintemhq/vintem/internal/adapters/httpapi
               desc: mcp não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/psp
+            - pkg: github.com/vintemhq/vintem/internal/adapters/psp
               desc: mcp chega no banco pelos casos de uso, não pelo adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/store
+            - pkg: github.com/vintemhq/vintem/internal/adapters/store
               desc: mcp chega no storage pelos casos de uso, não pelo adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/notifier
+            - pkg: github.com/vintemhq/vintem/internal/adapters/notifier
               desc: mcp não depende de outro adapter
-            - pkg: github.com/lastrohq/lastro/internal/adapters/jobs
+            - pkg: github.com/vintemhq/vintem/internal/adapters/jobs
               desc: mcp não depende de outro adapter
         adapters-jobs:
           files: ["**/internal/adapters/jobs/**", "!$test"]
           deny:
-            - pkg: github.com/lastrohq/lastro/internal
+            - pkg: github.com/vintemhq/vintem/internal
               desc: jobs é só o laço periódico; quem chama passa a função a rodar
   exclusions:
     rules:

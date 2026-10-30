@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/inter"
-	"github.com/lastrohq/lastro/internal/adapters/psp/inter/intertest"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
-	"github.com/lastrohq/lastro/test/conformance"
-	"github.com/lastrohq/lastro/test/conformance/fita"
+	"github.com/vintemhq/vintem/internal/adapters/psp/inter"
+	"github.com/vintemhq/vintem/internal/adapters/psp/inter/intertest"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/certificado/certificadotest"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
+	"github.com/vintemhq/vintem/test/conformance"
+	"github.com/vintemhq/vintem/test/conformance/fita"
 )
 
 const (
@@ -126,10 +126,10 @@ func TestSimularPagamentoNoSandbox(t *testing.T) {
 
 func TestWebhookRegistradoNaChave(t *testing.T) {
 	c := novo(t, fake.NewClock(agora))
-	if err := c.psp.ConfigurarWebhook(context.Background(), c.conta, "https://lastro.example.com/webhooks/pix/loja/token"); err != nil {
+	if err := c.psp.ConfigurarWebhook(context.Background(), c.conta, "https://vintem.example.com/webhooks/pix/loja/token"); err != nil {
 		t.Fatal(err)
 	}
-	if got := c.srv.Webhook("loja@example.com"); got != "https://lastro.example.com/webhooks/pix/loja/token" {
+	if got := c.srv.Webhook("loja@example.com"); got != "https://vintem.example.com/webhooks/pix/loja/token" {
 		t.Fatalf("webhook: %q", got)
 	}
 }
@@ -139,14 +139,14 @@ const dirFitas = "../../../../test/fixtures/inter"
 // TestConformidadeGravada roda a suíte contra as fitas do sandbox do Inter
 // (RN-51). Para gravar, com uma integração de sandbox do Inter Empresas:
 //
-//	LASTRO_GRAVAR_INTER=1 INTER_CLIENT_ID=... INTER_CLIENT_SECRET=... \
+//	VINTEM_GRAVAR_INTER=1 INTER_CLIENT_ID=... INTER_CLIENT_SECRET=... \
 //	INTER_CERTIFICADO=inter.pem INTER_CHAVE_PIX=... \
 //	go test -run TestConformidadeGravada ./internal/adapters/psp/inter/
 //
 // inter.pem é o .crt e o .key da integração num arquivo só. O pagamento usa a
 // simulação do sandbox (POST /sandbox/cob/pagamento).
 func TestConformidadeGravada(t *testing.T) {
-	gravar := os.Getenv("LASTRO_GRAVAR_INTER") != ""
+	gravar := os.Getenv("VINTEM_GRAVAR_INTER") != ""
 	if !gravar {
 		if fitas, _ := filepath.Glob(filepath.Join(dirFitas, "*.json")); len(fitas) == 0 {
 			t.Skip("nenhuma fita do sandbox do Inter gravada ainda")

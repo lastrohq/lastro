@@ -3,7 +3,7 @@ package app
 import (
 	"context"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 type chaveAcesso struct{}

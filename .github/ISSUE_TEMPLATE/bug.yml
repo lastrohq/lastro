@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        ⚠️ **Nunca cole certificado, client secret, API key ou dado de pagador real.** Falha de segurança vai pelo [SECURITY.md](https://github.com/lastrohq/lastro/blob/develop/SECURITY.md), não por issue pública.
+        ⚠️ **Nunca cole certificado, client secret, API key ou dado de pagador real.** Falha de segurança vai pelo [SECURITY.md](https://github.com/vintemhq/vintem/blob/develop/SECURITY.md), não por issue pública.
 
   - type: textarea
     id: esperado
@@ -36,8 +36,8 @@ body:
   - type: input
     id: versao
     attributes:
-      label: Versão do Lastro
-      description: Saída de `lastro version`
+      label: Versão do Vintém
+      description: Saída de `vintem version`
     validations:
       required: true
 
@@ -62,7 +62,7 @@ body:
       options:
         - Produção
         - Homologação
-        - Sandbox do Lastro
+        - Sandbox do Vintém
     validations:
       required: true
 

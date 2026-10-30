@@ -1,9 +1,9 @@
 package efi
 
 import (
-	"github.com/lastrohq/lastro/internal/adapters/psp/pixapi"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/psp/pixapi"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // URLs da API Pix do Efí por ambiente.
@@ -39,7 +39,7 @@ func New(credenciais ports.Credenciais, clock ports.Clock, opcoes ...Opcao) *PSP
 		Prefixo:     "/v2",
 		BuscarToken: buscarToken,
 		Traduzir:    traduzir,
-		// O Efí exige mTLS no servidor do webhook; o Lastro não termina TLS e
+		// O Efí exige mTLS no servidor do webhook; o Vintém não termina TLS e
 		// pede o skip-mTLS (veja ConfigurarWebhook em webhook.go).
 		HeadersWebhook: map[string]string{"x-skip-mtls-checking": "true"},
 	}

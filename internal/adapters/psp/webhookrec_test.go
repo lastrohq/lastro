@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // O exemplo recWebhookNotification1 da API Pix 2.10.0.

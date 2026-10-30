@@ -1,2 +1,2 @@
-// Package mcp expõe o Lastro como servidor MCP para agentes de IA.
+// Package mcp expõe o Vintém como servidor MCP para agentes de IA.
 package mcp

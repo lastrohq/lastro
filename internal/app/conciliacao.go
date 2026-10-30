@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // JanelaConciliacaoPadrao é quanto tempo para trás a conciliação olha (RN-31).

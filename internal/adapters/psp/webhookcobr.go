@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // encerramento é o motivo da rejeição ou do cancelamento, no formato da spec.
@@ -24,7 +24,7 @@ func (e *encerramento) texto() string {
 }
 
 // CobrBCB é a cobrança recorrente como a spec a devolve na consulta (GET
-// /cobr/{txid}) e no callback (CobRNotification), só com o que o Lastro usa.
+// /cobr/{txid}) e no callback (CobRNotification), só com o que o Vintém usa.
 type CobrBCB struct {
 	IDRec        string `json:"idRec"`
 	Txid         string `json:"txid"`

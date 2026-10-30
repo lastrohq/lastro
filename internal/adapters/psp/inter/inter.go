@@ -11,10 +11,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/pixapi"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/oauth"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/psp/pixapi"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/oauth"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // URLs da API Pix do Inter por ambiente (servers do swagger-api-pix.yaml).

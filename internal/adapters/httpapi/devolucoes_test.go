@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // pixPago cria uma cob de R$ 123,45 pela API, deixa o sandbox pagá-la e grava

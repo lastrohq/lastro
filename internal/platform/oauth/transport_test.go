@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/platform/oauth"
+	"github.com/vintemhq/vintem/internal/platform/oauth"
 )
 
 // api simula a API Pix do banco: só aceita o token da lista e guarda o que recebeu.

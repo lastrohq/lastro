@@ -1,4 +1,4 @@
-# 🏗️ Lastro — Arquitetura
+# 🏗️ Vintém — Arquitetura
 
 ## Em uma tela
 
@@ -8,7 +8,7 @@ mesma suíte de conformidade — é isso que permite adapter escrito pela
 comunidade sem medo.
 
 ```
- App do cliente ──REST (BCB-compatível + Idempotency-Key)──▶ ┌─────────────── lastro ───────────────┐
+ App do cliente ──REST (BCB-compatível + Idempotency-Key)──▶ ┌─────────────── vintem ───────────────┐
  Agente de IA  ──MCP──────────────────────────────────────▶ │ httpapi · admin · mcp · painel(embed)│
                                                              │          ▼ app (casos de uso)        │
  App do cliente ◀── webhook normalizado e assinado ──────────│ domain: cobrança, devolução, rec...  │
@@ -22,7 +22,7 @@ comunidade sem medo.
 
 | Caminho | O que vive ali | Pode importar |
 |---|---|---|
-| `cmd/lastro` | `main`: monta o registry de PSPs e chama a CLI | tudo |
+| `cmd/vintem` | `main`: monta o registry de PSPs e chama a CLI | tudo |
 | `internal/cli` | Comandos (`serve`, `conta`, `chave`, `version`...), testáveis sem processo; monta as peças | tudo, menos `cmd` |
 | `internal/domain` | Entidades, máquinas de estado, `Money`, `Txid` | só stdlib |
 | `internal/app` | Casos de uso (`CriarCobranca`, `Devolver`, `CriarRecorrencia`...) | `domain`, `ports` |
@@ -67,8 +67,8 @@ Mudou a tabela? Mude o `.golangci.yml` no mesmo PR.
 | Fila | Tabela outbox + workers | Sem Redis; transação única com a escrita |
 | Log | `slog` (JSON) | stdlib |
 | Painel | React + Vite + TS, via `go:embed` | Continua binário único |
-| Release | goreleaser → binários + `ghcr.io/lastrohq/lastro` multi-arch | |
-| SDK | `@lastro/sdk` gerado do OpenAPI | |
+| Release | goreleaser → binários + `ghcr.io/vintemhq/vintem` multi-arch | |
+| SDK | `@vintem/sdk` gerado do OpenAPI | |
 | MCP | `modelcontextprotocol/go-sdk` | |
 
 ## Padrões

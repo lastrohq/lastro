@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
 )
 
 // TestDevolucaoEntreProcessos: a cob é paga no sandbox, a conciliação grava o
@@ -14,7 +14,7 @@ import (
 // de memória vazia, o par repetido devolve a mesma devolução e o saldo
 // continua descontado.
 func TestDevolucaoEntreProcessos(t *testing.T) {
-	p := novoLastroEmProcessos(t, "cob:write", "pix:read", "devolucao:write")
+	p := novoVintemEmProcessos(t, "cob:write", "pix:read", "devolucao:write")
 	const txid = "devcli0000000000000000000001"
 	p.servir(func(pedir pedir) {
 		corpo := `{"calendario":{"expiracao":3600},"valor":{"original":"50.00"},"chave":"loja@example.com"}`

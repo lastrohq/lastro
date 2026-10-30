@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // webhookRec é o corpo do callback de recorrência da spec do BCB: POST {webhookUrl}/rec.

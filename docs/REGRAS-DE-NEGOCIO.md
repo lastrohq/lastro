@@ -1,11 +1,11 @@
-# 📜 Lastro — Regras de negócio
+# 📜 Vintém — Regras de negócio
 
-O que o Lastro **garante**, o que ele **recusa** e por quê. Toda regra tem um
+O que o Vintém **garante**, o que ele **recusa** e por quê. Toda regra tem um
 número estável (`RN-xx`) para ser citada em issue, teste e commit. Regra que
 muda ganha nota com data; regra que cai fica riscada, não some.
 
 > Os nomes de estado e campo seguem a [spec da API Pix do BCB](https://github.com/bacen/pix-api)
-> (v2.10.0). Onde o Lastro estende a spec, isso está dito explicitamente.
+> (v2.10.0). Onde o Vintém estende a spec, isso está dito explicitamente.
 
 ---
 
@@ -13,7 +13,7 @@ muda ganha nota com data; regra que cai fica riscada, não some.
 
 ### RN-01 · Não custodial
 
-O Lastro nunca guarda, recebe nem movimenta dinheiro. Ele roda na
+O Vintém nunca guarda, recebe nem movimenta dinheiro. Ele roda na
 infraestrutura do dono da conta, com as credenciais do dono da conta, contra a
 API Pix do banco do dono da conta. Nenhuma funcionalidade pode exigir que o
 dinheiro passe por uma conta que não seja a do recebedor.
@@ -34,7 +34,7 @@ separador de milhar ou casas a mais ou a menos. Máximo: R$ 9.999.999.999,99.
 
 ### RN-03 · Uma instância, N contas
 
-Uma instância do Lastro atende várias **contas recebedoras**. Conta = PSP +
+Uma instância do Vintém atende várias **contas recebedoras**. Conta = PSP +
 chave Pix + credenciais (client id/secret e certificado) + ambiente
 (homologação ou produção). Toda cobrança pertence a exatamente uma conta
 (chave estrangeira no banco).
@@ -42,8 +42,8 @@ chave Pix + credenciais (client id/secret e certificado) + ambiente
 - O ID da conta é `[a-z0-9-]`, até 63 caracteres, e não muda. O PSP também não.
 - Conta nasce ativa. **Conta desativada recusa novas cobranças**; as existentes
   continuam valendo e recebendo webhook.
-- O cadastro é pela CLI (`lastro conta criar|listar|desativar`). As rotas
-  `/lastro/v1/contas` entram junto com as API keys (#16), com o escopo `conta:admin`.
+- O cadastro é pela CLI (`vintem conta criar|listar|desativar`). As rotas
+  `/vintem/v1/contas` entram junto com as API keys (#16), com o escopo `conta:admin`.
 - Segredos vêm de **arquivo**, nunca de flag, porque flag fica no histórico do shell.
 
 ---
@@ -53,8 +53,8 @@ chave Pix + credenciais (client id/secret e certificado) + ambiente
 ### RN-10 · txid
 
 - Em `cob`, `cobv` e `cobr`: de **26 a 35** caracteres, `[a-zA-Z0-9]`.
-- Se o cliente não informar, o Lastro gera (aleatório criptográfico, 32 caracteres).
-- Se informar, o Lastro valida antes de chamar o banco — erro de formato nunca
+- Se o cliente não informar, o Vintém gera (aleatório criptográfico, 32 caracteres).
+- Se informar, o Vintém valida antes de chamar o banco — erro de formato nunca
   vira chamada de rede.
 - txid é único **na instância inteira** — mais estrito que a spec (que exige
   unicidade por recebedor), para que `GET /cob/{txid}` não precise saber a conta.
@@ -76,7 +76,7 @@ Toda criação ou alteração (`POST`, `PUT`, `PATCH`) aceita o header `Idempote
   **2 minutos** é considerada abandonada (processo que caiu) e liberada.
 - Resposta **5xx não é guardada**: o cliente mandou a chave justamente para
   poder tentar de novo.
-- O header é obrigatório no `POST /cob` (o txid é gerado pelo Lastro) e opcional
+- O header é obrigatório no `POST /cob` (o txid é gerado pelo Vintém) e opcional
   no `PUT /cob/{txid}` (o txid já identifica a criação).
 - Corpo acima de 1 MiB com a chave → **413**.
 
@@ -98,7 +98,7 @@ chamada da API do cliente.
 
 - Expiração padrão: **86400 s** (24 h, o default da spec), configurável por cobrança.
 - Valor pode ser fixo ou permitir alteração pelo pagador (`modalidadeAlteracao`).
-- Cobrança expirada continua `ATIVA` na spec do BCB; o Lastro expõe o campo
+- Cobrança expirada continua `ATIVA` na spec do BCB; o Vintém expõe o campo
   derivado `expirada: true` (extensão) para não obrigar o cliente a calcular.
 
 ### RN-14 · Cobrança com vencimento (`cobv`)
@@ -111,7 +111,7 @@ chamada da API do cliente.
 - Usa a mesma máquina de estados da cob (RN-12) e compartilha o **txid** com ela:
   um txid usado numa cob não serve para uma cobv, e vice-versa (garantido por
   gatilho no banco).
-- O Lastro **valida** as combinações; o **cálculo final é do banco**, e o valor que
+- O Vintém **valida** as combinações; o **cálculo final é do banco**, e o valor que
   vale é o que o banco liquidou:
 
 | Campo | Modalidades | Regras |
@@ -131,7 +131,7 @@ chamada da API do cliente.
   CRC16-CCITT (`0xFFFF`, polinômio `0x1021`).
 - Dinâmico (URL de location do banco) para `cob`/`cobv`; estático para uso
   avulso via `pkg/brcode`.
-- O Lastro **nunca** gera BR Code dinâmico com location própria: a location é
+- O Vintém **nunca** gera BR Code dinâmico com location própria: a location é
   sempre a do PSP da conta.
 
 ---
@@ -150,7 +150,7 @@ EM_PROCESSAMENTO ──▶ DEVOLVIDO
   que consulta `GET /pix/{e2eid}/devolucao/{id}` de cada devolução ainda
   `EM_PROCESSAMENTO`. Cada mudança grava status, motivo, `rtrId` e liquidação e
   publica `devolucao.atualizada`. Aviso repetido não publica de novo.
-- Devolução que o Lastro não pediu, de outra conta ou com status que volta
+- Devolução que o Vintém não pediu, de outra conta ou com status que volta
   atrás é ignorada com aviso no log, sem erro: responder erro faria o banco
   reenviar para sempre.
 
@@ -165,10 +165,10 @@ EM_PROCESSAMENTO ──▶ DEVOLVIDO
 - Rotas da spec: `PUT /pix/{e2eid}/devolucao/{id}` (escopo `devolucao:write`) e
   `GET /pix/{e2eid}/devolucao/{id}` (escopo `pix:read`).
 - Natureza `ORIGINAL` (o default). `RETIRADA` é a devolução de Pix Saque ou
-  Troco, que o Lastro não recebe, e é recusada. Descrição até 140 caracteres.
+  Troco, que o Vintém não recebe, e é recusada. Descrição até 140 caracteres.
 - Tudo isso é conferido **antes de chamar o banco**. Devoluções simultâneas do
   mesmo Pix são feitas uma de cada vez, para que juntas não passem do valor.
-- O Pix precisa estar gravado no Lastro (webhook ou conciliação) e ser da conta
+- O Pix precisa estar gravado no Vintém (webhook ou conciliação) e ser da conta
   da API key restrita; senão, 404. Conta desativada continua devolvendo: o Pix
   já entrou.
 - Cada devolução aceita pelo banco é gravada com o evento `devolucao.solicitada`.
@@ -211,11 +211,11 @@ jornadas com QR Code não há aviso de negativa.
   ela que identifica o recebedor, como a credencial do cliente na spec do BCB;
   key irrestrita responde 400. Consultar e pedir confirmação seguem a RN-60:
   recorrência de outra conta responde 404.
-- Rejeição pelo pagador vem com motivo; o Lastro guarda o motivo (código e
+- Rejeição pelo pagador vem com motivo; o Vintém guarda o motivo (código e
   descrição do encerramento).
 - **Mudanças chegam pelo webhook de recorrência** (`/webhooks/rec/{conta}/{token}`,
   com ou sem o `/rec` que a spec manda acrescentar), registrado por
-  `lastro conta webhook` com o mesmo token do aviso de Pix. Cada mudança grava a
+  `vintem conta webhook` com o mesmo token do aviso de Pix. Cada mudança grava a
   recorrência, encerra as solicitações pendentes dela (RN-41) e publica
   `recorrencia.atualizada`, numa transação só. Aviso repetido não muda nada;
   aviso fora da RN-40 (uma volta de `APROVADA` para `CRIADA`, por exemplo) é
@@ -282,7 +282,7 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
   cancelar publica `cobranca_recorrente.atualizada`. Se o aviso do banco chegou
   antes da resposta do PSP, nada é publicado de novo.
 - **Antecedência:** a instrução de pagamento chega ao PSP do pagador **de 2 a 10
-  dias corridos** antes da data prevista de liquidação. O Lastro recusa enviar
+  dias corridos** antes da data prevista de liquidação. O Vintém recusa enviar
   fora dessa janela, em vez de deixar o banco recusar.
 - **Retentativa** (`POST /cobr/{txid}/retentativa/{data}`), só se a recorrência
   for `PERMITE_3R_7D`: no máximo **3 datas** diferentes, em até **7 dias corridos**
@@ -293,12 +293,12 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
   dele (31/01 → 28/02 → 31/03).
 - **Mudanças chegam pelo webhook de cobrança recorrente**
   (`/webhooks/cobr/{conta}/{token}`, com ou sem o `/cobr` que a spec manda
-  acrescentar), separado do de recorrência e registrado por `lastro conta
+  acrescentar), separado do de recorrência e registrado por `vintem conta
   webhook` com o mesmo token. Cada aviso grava a cobrança e publica, numa
   transação só, `cobranca_recorrente.tentativa` para cada tentativa nova ou que
   mudou e `cobranca_recorrente.atualizada` se o status mudou. O banco é a fonte
   da verdade sobre cada tentativa (identificada pela data e pelo tipo); a
-  retentativa que só o Lastro conhece continua até o banco avisar. Aviso
+  retentativa que só o Vintém conhece continua até o banco avisar. Aviso
   repetido não muda nada. O status do banco vale se for **alcançável** pelo
   diagrama, mesmo pulando passos: se o aviso de `ATIVA` se perdeu, `CONCLUIDA`
   vale direto de `CRIADA`. Aviso que volta no diagrama (de `CONCLUIDA` para
@@ -306,7 +306,7 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
   ignorada, para o banco não reenviar para sempre.
 - **Sem aviso, a consulta e a conciliação acham a mudança:** `GET /cobr/{txid}`
   pergunta ao PSP enquanto a cobrança está aberta (se o PSP falhar, devolve a
-  gravada), e `lastro conciliar` confere todas as abertas de cada conta pelo
+  gravada), e `vintem conciliar` confere todas as abertas de cada conta pelo
   mesmo caminho do webhook.
 
 ### RN-43 · Prazos versionados
@@ -332,11 +332,11 @@ Valores de partida, do *Guia de implementação do Pix Automático* v1.3
 
 ## Webhooks
 
-### RN-30 · Entrada (banco → Lastro)
+### RN-30 · Entrada (banco → Vintém)
 
 - A URL de aviso é **por conta**, com um token secreto:
-  `https://<seu-lastro>/webhooks/pix/{conta}/{token}`. Ela é gerada por
-  `lastro conta webhook <id> --url-publica https://...`, que também a registra no
+  `https://<seu-vintem>/webhooks/pix/{conta}/{token}`. Ela é gerada por
+  `vintem conta webhook <id> --url-publica https://...`, que também a registra no
   PSP. Só o hash do token é gravado; rodar de novo troca o token (e o antigo para
   de valer). O token faz parte da URL: trate a URL como segredo.
 - A spec do BCB manda o banco acrescentar `/pix` à URL: os dois caminhos são aceitos.
@@ -347,7 +347,7 @@ Valores de partida, do *Guia de implementação do Pix Automático* v1.3
   item inválido recusa o lote inteiro (**400**): melhor o banco reenviar que
   perder um Pix em silêncio.
 - O evento é **persistido antes** de responder 200. Se a persistência falhar, o
-  Lastro responde 5xx e deixa o banco reenviar.
+  Vintém responde 5xx e deixa o banco reenviar.
 - Deduplicação por `endToEndId`: o mesmo Pix avisado duas vezes gera um registro
   e um evento só.
 - Pix com `txid` de uma cob ou cobv **ativa da mesma conta** conclui a cobrança
@@ -373,7 +373,7 @@ Assim, o resultado da devolução de um Pix antigo, que já saiu da janela do
 `GET /pix`, também chega mesmo sem aviso.
 
 - Padrão: a cada **5 min**, olhando as últimas **2 h**
-  (`LASTRO_CONCILIACAO_INTERVALO`, `LASTRO_CONCILIACAO_JANELA`). Intervalo `0`
+  (`VINTEM_CONCILIACAO_INTERVALO`, `VINTEM_CONCILIACAO_JANELA`). Intervalo `0`
   desliga, com aviso no log; janela zero é recusada.
 - A janela é `[agora − janela, agora)`. Um Pix no instante exato de `agora` entra
   na rodada seguinte: as janelas se sobrepõem.
@@ -382,11 +382,11 @@ Assim, o resultado da devolução de um Pix antigo, que já saiu da janela do
   vai para o log e a rodada seguinte tenta de novo.
 - As rodadas nunca se sobrepõem, e um atraso aleatório de até 10% evita que
   várias instâncias consultem o banco no mesmo segundo.
-- `lastro conciliar` roda uma rodada sob demanda (útil depois de uma indisponibilidade).
+- `vintem conciliar` roda uma rodada sob demanda (útil depois de uma indisponibilidade).
 
-### RN-32 · Saída (Lastro → aplicação do cliente)
+### RN-32 · Saída (Vintém → aplicação do cliente)
 
-- **Destinos:** `lastro destino criar --url https://... [--conta ID]`. Sem `--conta`,
+- **Destinos:** `vintem destino criar --url https://... [--conta ID]`. Sem `--conta`,
   o destino recebe os eventos de todas as contas. O segredo `whsec_...` aparece
   **uma vez**, na criação, e fica cifrado pelo Vault (é preciso tê-lo em claro
   para assinar). https obrigatório (http só para localhost).
@@ -401,7 +401,7 @@ Assim, o resultado da devolução de um Pix antigo, que já saiu da janela do
 - **Assinatura** no padrão [Standard Webhooks](https://www.standardwebhooks.com/):
   `webhook-id` (o id do evento), `webhook-timestamp` e `webhook-signature`
   (`v1,` + HMAC-SHA256). Verificável com as bibliotecas oficiais — o teste usa a
-  de Go para conferir o que o Lastro envia.
+  de Go para conferir o que o Vintém envia.
 - **Entrega *at-least-once*:** o cliente deve deduplicar pelo `webhook-id`, que é
   o mesmo em todas as tentativas. O corpo também é o mesmo, byte a byte.
 - **Distribuição:** cada evento do outbox vira uma entrega por destino que casa
@@ -410,9 +410,9 @@ Assim, o resultado da devolução de um Pix antigo, que já saiu da janela do
 - **Retry:** sucesso é qualquer 2xx; redirecionamento não é seguido (conta como
   falha). Esperas de 5 s, 30 s, 2 min, 10 min, 30 min, 1 h, 2 h e depois 4 h, com
   até 10% de jitter, até **24 h** depois do evento; então a entrega vai para a
-  **DLQ** (`lastro dlq listar`) e volta à fila com `lastro dlq reenviar <evento>`.
+  **DLQ** (`vintem dlq listar`) e volta à fila com `vintem dlq reenviar <evento>`.
 - Até 8 entregas em paralelo e 10 s de timeout por tentativa: um destino lento não
-  trava os outros. O job roda a cada 2 s (`LASTRO_WEBHOOK_INTERVALO`; `0` desliga).
+  trava os outros. O job roda a cada 2 s (`VINTEM_WEBHOOK_INTERVALO`; `0` desliga).
 - Destino removido com entregas pendentes: elas vão para a DLQ.
 
 ---
@@ -421,7 +421,7 @@ Assim, o resultado da devolução de um Pix antigo, que já saiu da janela do
 
 ### RN-60 · API keys
 
-- Toda rota, exceto `/health`, exige `Authorization: Bearer lst_<id>_<segredo>`.
+- Toda rota, exceto `/health`, exige `Authorization: Bearer vtm_<id>_<segredo>`.
 - Escopos: `cob:read`, `cob:write`, `cobv:read`, `cobv:write`, `pix:read`,
   `devolucao:write`, `rec:read`, `rec:write`, `cobr:read`, `cobr:write`, `webhook:admin`, `conta:admin`.
   Cada rota exige exatamente um; rota sem escopo mapeado é **recusada** (falha
@@ -433,30 +433,30 @@ Assim, o resultado da devolução de um Pix antigo, que já saiu da janela do
   tratada como chave desconhecida. Chave restrita não pode ter `conta:admin`.
 - Revogação vale na hora. 401 não diz se a chave existe, está revogada ou
   malformada.
-- Criação e revogação de chaves é pela CLI (`lastro apikey ...`), que é também
+- Criação e revogação de chaves é pela CLI (`vintem apikey ...`), que é também
   como se cria a primeira chave de uma instância nova.
 
 ### RN-61 · Segredos em repouso
 
 Certificados, chaves privadas e client secrets são cifrados com AES-256-GCM
-usando `LASTRO_MASTER_KEY`. Sem a master key, o Lastro não sobe. Nada disso é
+usando `VINTEM_MASTER_KEY`. Sem a master key, o Vintém não sobe. Nada disso é
 escrito em log — nem mascarado parcialmente.
 
 ### RN-62 · Certificados
 
 - O certificado do mTLS é **conferido no cadastro** da conta, pela CLI ou pela API:
-  .p12 com senha, ou PEM com certificado e chave no mesmo arquivo. O Lastro
+  .p12 com senha, ou PEM com certificado e chave no mesmo arquivo. O Vintém
   recusa, com o motivo e sem mostrar o conteúdo, arquivo ilegível, senha errada,
   chave privada que não corresponde ao certificado, chave PEM cifrada e
   certificado vencido ([ADR-006](./adr/006-certificado-conferido-no-cadastro.md)).
 - Sujeito, impressão digital (SHA-256) e validade ficam visíveis na conta
-  (`conta listar`, `GET /lastro/v1/contas`). São dados públicos do certificado;
+  (`conta listar`, `GET /vintem/v1/contas`). São dados públicos do certificado;
   o certificado e a chave continuam cifrados (RN-61).
 - **Aviso de vencimento a 30 dias:** o evento `certificado.expirando` sai pelo
   mesmo caminho dos outros webhooks de saída (RN-32), assinado e com retry,
   quando faltam 30 dias ou menos para o certificado de uma conta **ativa**
   vencer. Sai também para certificado que já venceu sem ter sido avisado, caso
-  o Lastro tenha ficado desligado durante a janela.
+  o Vintém tenha ficado desligado durante a janela.
   - **Uma vez por certificado:** o aviso é guardado pela impressão digital, na
     mesma transação do evento. Rodar de novo não repete; trocar o certificado
     zera o aviso.
@@ -464,7 +464,7 @@ escrito em log — nem mascarado parcialmente.
     `diasRestantes` (arredondado para cima; zero ou negativo depois de vencer)
     e `vencido`. Nunca leva o certificado.
   - A verificação roda ao subir e depois a cada hora
-    (`LASTRO_CERTIFICADO_INTERVALO`; `0` desliga). Como todo evento, sem destino
+    (`VINTEM_CERTIFICADO_INTERVALO`; `0` desliga). Como todo evento, sem destino
     cadastrado na hora o aviso é descartado e não se repete.
   - O alerta no painel entra com o painel (F8).
   - **Contas cadastradas antes do v0.3.0**, quando o certificado não era lido
@@ -472,7 +472,7 @@ escrito em log — nem mascarado parcialmente.
     lido do blob cifrado; vencido é gravado mesmo assim (e avisado), e ilegível
     gera um aviso no log com o id da conta e o motivo, sem nada do conteúdo.
 - **Certificado de homologação não entra em conta de produção.** Nada no X.509
-  diz o ambiente; para o Lastro, é de homologação o certificado (pela impressão
+  diz o ambiente; para o Vintém, é de homologação o certificado (pela impressão
   digital) **já cadastrado numa conta de homologação**, mesmo que ela esteja
   desativada. A conta de produção é recusada com o nome da conta onde ele está.
   O contrário é aceito (certificado de produção numa conta de homologação), e

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/certificado"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/certificado"
 )
 
 // leitorCertificados é o ports.Certificados sobre platform/certificado, que não

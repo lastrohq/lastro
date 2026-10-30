@@ -1,12 +1,12 @@
 name: ✨ Funcionalidade
-description: Algo novo que quem usa o Lastro vai conseguir fazer
+description: Algo novo que quem usa o Vintém vai conseguir fazer
 labels: ["tipo:feature"]
 body:
   - type: markdown
     attributes:
       value: |
         Descreva pelo **resultado para quem usa**, não pela tarefa técnica.
-        Antes de puxar para a sprint, confira a [Definition of Ready](https://github.com/lastrohq/lastro/blob/develop/docs/EQUIPE.md#-definition-of-ready).
+        Antes de puxar para a sprint, confira a [Definition of Ready](https://github.com/vintemhq/vintem/blob/develop/docs/EQUIPE.md#-definition-of-ready).
 
   - type: textarea
     id: problema

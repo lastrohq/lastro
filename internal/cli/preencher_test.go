@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/certificado/certificadotest"
 )
 
 // TestServePreencheContaAntigaEAvisaOVencimento simula uma conta do v0.2.0 (o
@@ -28,7 +28,7 @@ func TestServePreencheContaAntigaEAvisaOVencimento(t *testing.T) {
 	defer destino.Close()
 
 	env := envComBanco(t)
-	env["LASTRO_ADDR"], env["LASTRO_CONCILIACAO_INTERVALO"], env["LASTRO_WEBHOOK_INTERVALO"] = "127.0.0.1:0", "0", "50ms"
+	env["VINTEM_ADDR"], env["VINTEM_CONCILIACAO_INTERVALO"], env["VINTEM_WEBHOOK_INTERVALO"] = "127.0.0.1:0", "0", "50ms"
 	amb, _ := ambiente(t, env) // relógio em 2026-10-29
 	ctx := context.Background()
 

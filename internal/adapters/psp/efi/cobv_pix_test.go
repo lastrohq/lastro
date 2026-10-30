@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/pkg/brcode"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/pkg/brcode"
 )
 
 func cobv(txid string) domain.CobrancaVencimento {

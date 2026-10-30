@@ -1,11 +1,11 @@
 // Fluxo crítico do painel (#35), feito só pelo teclado.
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
-const token = () => process.env.LASTRO_TOKEN!;
+const token = () => process.env.VINTEM_TOKEN!;
 async function criar(api: APIRequestContext, valor: string, descricao: string) {
   const r = await api.post("/cob", {
     headers: { Authorization: `Bearer ${token()}`, "Idempotency-Key": `e2e-${descricao}-${Date.now()}` },
-    data: { calendario: { expiracao: 3600 }, valor: { original: valor }, chave: "sandbox@lastro.dev", solicitacaoPagador: descricao },
+    data: { calendario: { expiracao: 3600 }, valor: { original: valor }, chave: "sandbox@vintem.dev", solicitacaoPagador: descricao },
   });
   expect(r.status()).toBe(201);
   return (await r.json()).txid as string;
@@ -24,7 +24,7 @@ test("entrar, ver o recebido, achar a cobrança paga e o QR da ativa", async ({ 
   await page.goto("/painel/");
   const campo = page.getByLabel("API key");
   await campo.focus();
-  await page.keyboard.type("lst_errado");
+  await page.keyboard.type("vtm_errado");
   await page.keyboard.press("Enter");
   await expect(page.getByRole("alert")).toContainText("inválida");
 

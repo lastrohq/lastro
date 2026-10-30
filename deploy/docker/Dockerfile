@@ -13,12 +13,12 @@ COPY . .
 # O painel compilado entra antes do go build, que o embute (web/embed.go).
 COPY --from=web /src/web/dist/painel ./web/dist/painel
 ARG VERSION=dev
-RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/lastro ./cmd/lastro
+RUN CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${VERSION}" -o /out/vintem ./cmd/vintem
 
 FROM gcr.io/distroless/static-debian12:nonroot
-COPY --from=build /out/lastro /lastro
-# O usuário nonroot só grava aqui: é onde ficam lastro.db e o banco do sandbox.
+COPY --from=build /out/vintem /vintem
+# O usuário nonroot só grava aqui: é onde ficam vintem.db e o banco do sandbox.
 WORKDIR /home/nonroot
 EXPOSE 8080
-ENTRYPOINT ["/lastro"]
+ENTRYPOINT ["/vintem"]
 CMD ["serve"]

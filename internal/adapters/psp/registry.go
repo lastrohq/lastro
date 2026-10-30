@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // Registry é o ports.Registry montado no main com os adapters disponíveis.

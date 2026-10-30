@@ -14,12 +14,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/vault"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/vault"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 // saidaSegura deixa o teste ler a saída enquanto o servidor ainda roda.
@@ -40,9 +40,9 @@ func (s *saidaSegura) String() string {
 	return s.buf.String()
 }
 
-var reToken = regexp.MustCompile(`export LASTRO_TOKEN=(\S+)`)
+var reToken = regexp.MustCompile(`export VINTEM_TOKEN=(\S+)`)
 
-// subirSandbox roda `lastro sandbox` até o servidor responder e devolve o token
+// subirSandbox roda `vintem sandbox` até o servidor responder e devolve o token
 // impresso e a função que derruba o processo.
 func subirSandbox(t *testing.T, db string, relogio ports.Clock) (url, token string, parar func()) {
 	t.Helper()
@@ -52,7 +52,7 @@ func subirSandbox(t *testing.T, db string, relogio ports.Clock) (url, token stri
 	}
 	addr := l.Addr().String()
 	_ = l.Close()
-	env := map[string]string{"LASTRO_DB": db, "LASTRO_ADDR": addr, "LASTRO_WEBHOOK_INTERVALO": "0", "LASTRO_CERTIFICADO_INTERVALO": "0"}
+	env := map[string]string{"VINTEM_DB": db, "VINTEM_ADDR": addr, "VINTEM_WEBHOOK_INTERVALO": "0", "VINTEM_CERTIFICADO_INTERVALO": "0"}
 	saida := &saidaSegura{}
 	amb := Ambiente{
 		Saida: saida, Getenv: func(k string) string { return env[k] }, Clock: relogio, Versao: "v-test",
@@ -116,15 +116,15 @@ func chamar(t *testing.T, metodo, url, token, corpo string) map[string]any {
 	return v
 }
 
-// TestSandboxDoZeroAUmaCobrancaPaga segue o banner do `lastro sandbox` (#20) e
+// TestSandboxDoZeroAUmaCobrancaPaga segue o banner do `vintem sandbox` (#20) e
 // confere que, depois de reiniciar, a chave mestra e o token antigo continuam valendo.
 func TestSandboxDoZeroAUmaCobrancaPaga(t *testing.T) {
 	dir := t.TempDir()
-	db := filepath.Join(dir, "lastro-sandbox.db")
+	db := filepath.Join(dir, "vintem-sandbox.db")
 	relogio := fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC))
 
 	url, token, parar := subirSandbox(t, db, relogio)
-	cob := chamar(t, http.MethodPost, url+"/cob", token, `{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"sandbox@lastro.dev"}`)
+	cob := chamar(t, http.MethodPost, url+"/cob", token, `{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"sandbox@vintem.dev"}`)
 	txid, _ := cob["txid"].(string)
 	if cob["status"] != "ATIVA" || txid == "" {
 		t.Fatalf("cobrança criada: %v", cob)
@@ -135,7 +135,7 @@ func TestSandboxDoZeroAUmaCobrancaPaga(t *testing.T) {
 	}
 	parar()
 
-	info, err := os.Stat(filepath.Join(dir, "lastro-sandbox.key"))
+	info, err := os.Stat(filepath.Join(dir, "vintem-sandbox.key"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,10 +191,10 @@ func TestSandboxGuardaChaveAoLadoDoBanco(t *testing.T) {
 	if err != nil || outra != chave {
 		t.Fatalf("segunda leitura: %q, %v", outra, err)
 	}
-	// LASTRO_MASTER_KEY definida vence o arquivo.
-	amb.Getenv = func(k string) string { return map[string]string{"LASTRO_MASTER_KEY": "x"}[k] }
+	// VINTEM_MASTER_KEY definida vence o arquivo.
+	amb.Getenv = func(k string) string { return map[string]string{"VINTEM_MASTER_KEY": "x"}[k] }
 	if c, a, _ := chaveMestraSandbox(amb, db); c != "x" || a != "" {
-		t.Fatalf("com LASTRO_MASTER_KEY: %q %q", c, a)
+		t.Fatalf("com VINTEM_MASTER_KEY: %q %q", c, a)
 	}
 }
 

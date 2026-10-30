@@ -9,23 +9,23 @@ import (
 	"os"
 	"strings"
 
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/vault"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/vault"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // Conta que o modo sandbox cria na primeira vez.
 const (
 	contaSandbox = "sandbox"
-	chaveSandbox = "sandbox@lastro.dev"
+	chaveSandbox = "sandbox@vintem.dev"
 )
 
-// sandboxCmd sobe o Lastro pronto para testar, sem configurar nada (#20): banco
+// sandboxCmd sobe o Vintém pronto para testar, sem configurar nada (#20): banco
 // separado, chave mestra guardada ao lado dele, conta sandbox e uma API key nova
 // impressa no terminal junto com um curl que já funciona.
 func sandboxCmd(ctx context.Context, amb Ambiente) error {
-	db := getenv(amb, "LASTRO_DB", "lastro-sandbox.db")
+	db := getenv(amb, "VINTEM_DB", "vintem-sandbox.db")
 	chave, arquivoChave, err := chaveMestraSandbox(amb, db)
 	if err != nil {
 		return err
@@ -33,11 +33,11 @@ func sandboxCmd(ctx context.Context, amb Ambiente) error {
 	getenvOriginal := amb.Getenv
 	amb.Getenv = func(k string) string {
 		switch k {
-		case "LASTRO_DB":
+		case "VINTEM_DB":
 			return db
-		case "LASTRO_MASTER_KEY":
+		case "VINTEM_MASTER_KEY":
 			return chave
-		case "LASTRO_CONCILIACAO_INTERVALO":
+		case "VINTEM_CONCILIACAO_INTERVALO":
 			// O sandbox não custa nada: a conciliação roda a cada 10 s e o
 			// pagamento aparece sem ninguém precisar consultar.
 			if v := getenvOriginal(k); v != "" {
@@ -56,9 +56,9 @@ func sandboxCmd(ctx context.Context, amb Ambiente) error {
 	if arquivoChave != "" {
 		dados += " (chave mestra em " + arquivoChave + ")"
 	}
-	url := urlLocal(getenv(amb, "LASTRO_ADDR", ":8080"))
+	url := urlLocal(getenv(amb, "VINTEM_ADDR", ":8080"))
 	_, err = fmt.Fprintf(amb.Saida, `
-🧪 Lastro em modo sandbox: nenhum banco e nenhum dinheiro de verdade.
+🧪 Vintém em modo sandbox: nenhum banco e nenhum dinheiro de verdade.
 
   API       %[1]s
   Painel    %[1]s/painel/ (entre com a API key abaixo)
@@ -68,9 +68,9 @@ func sandboxCmd(ctx context.Context, amb Ambiente) error {
 
 Crie uma cobrança:
 
-  export LASTRO_TOKEN=%[4]s
+  export VINTEM_TOKEN=%[4]s
   curl -s -X POST %[1]s/cob \
-    -H "Authorization: Bearer $LASTRO_TOKEN" -H "Idempotency-Key: pedido-$RANDOM" \
+    -H "Authorization: Bearer $VINTEM_TOKEN" -H "Idempotency-Key: pedido-$RANDOM" \
     -H 'Content-Type: application/json' \
     -d '{"calendario":{"expiracao":3600},"valor":{"original":"49.90"},"chave":"%[3]s"}'
 
@@ -84,14 +84,14 @@ Valores mágicos e o que o sandbox simula: docs/SANDBOX.md
 	return serve(ctx, amb)
 }
 
-// chaveMestraSandbox usa LASTRO_MASTER_KEY se definida; senão lê (ou cria) o
+// chaveMestraSandbox usa VINTEM_MASTER_KEY se definida; senão lê (ou cria) o
 // arquivo de chave ao lado do banco, para os dados sobreviverem ao restart.
 func chaveMestraSandbox(amb Ambiente, db string) (chave, arquivo string, err error) {
-	if v := amb.Getenv("LASTRO_MASTER_KEY"); v != "" {
+	if v := amb.Getenv("VINTEM_MASTER_KEY"); v != "" {
 		return v, "", nil
 	}
 	arquivo = strings.TrimSuffix(db, ".db") + ".key"
-	b, err := os.ReadFile(arquivo) //nolint:gosec // G304: caminho derivado de LASTRO_DB, escolhido pelo operador
+	b, err := os.ReadFile(arquivo) //nolint:gosec // G304: caminho derivado de VINTEM_DB, escolhido pelo operador
 	switch {
 	case err == nil:
 		return string(trimFinal(b)), arquivo, nil
@@ -122,7 +122,7 @@ func prepararSandbox(ctx context.Context, amb Ambiente, db string) (string, erro
 		// Uma API key com todos os escopos num banco com conta real seria um
 		// acidente esperando para acontecer.
 		if c.PSP != "sandbox" {
-			return "", fmt.Errorf("%s tem a conta %s do PSP %s: o modo sandbox só roda num banco sem contas reais (use outro LASTRO_DB)", db, c.ID, c.PSP)
+			return "", fmt.Errorf("%s tem a conta %s do PSP %s: o modo sandbox só roda num banco sem contas reais (use outro VINTEM_DB)", db, c.ID, c.PSP)
 		}
 		existe = existe || c.ID == contaSandbox
 	}

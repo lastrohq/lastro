@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
-	"github.com/lastrohq/lastro/test/conformance"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
+	"github.com/vintemhq/vintem/test/conformance"
 )
 
 // soCob é um adapter que só declara cob, como um banco recém-contribuído:

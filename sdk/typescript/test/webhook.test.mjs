@@ -1,11 +1,11 @@
-// Vetor calculado à parte (hmac do Python), no formato do app.Assinar do Lastro.
+// Vetor calculado à parte (hmac do Python), no formato do app.Assinar do Vintém.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { verificarWebhook, AssinaturaInvalida } from "../dist/index.js";
 
-const segredo = "whsec_Y2hhdmUtZGUtdGVzdGUtZG8tbGFzdHJvLTMyYnl0ZXM=";
+const segredo = "whsec_Y2hhdmUtZGUtdGVzdGUtZG8tdmludGVtLTMyYnl0ZXM=";
 const corpo = '{"type":"cobranca.paga","timestamp":"2026-10-29T12:00:00Z","data":{"txid":"abc"}}';
-const headers = { "webhook-id": "msg_1", "webhook-timestamp": "1793300400", "webhook-signature": "v1,uYfx++wcj86kg41EcTQl+oKOa6l+fLvHdIoZsrwhaEg=" };
+const headers = { "webhook-id": "msg_1", "webhook-timestamp": "1793300400", "webhook-signature": "v1,RoW5MkBxA0viWaW7V2Jk+xNcKIoVoB13Y14TDeAScyM=" };
 const agora = new Date(1793300400 * 1000 + 30_000);
 
 test("assinatura válida devolve o evento", async () => {

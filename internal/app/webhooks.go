@@ -12,8 +12,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // Webhooks configura a URL de aviso no banco e recebe os avisos (RN-30).
@@ -107,7 +107,7 @@ func (s Webhooks) ReceberRec(ctx context.Context, contaID, token string, corpo [
 	for _, a := range ats {
 		mudou, err := s.Recorrencias.RegistrarAtualizacao(ctx, conta.ID, a)
 		if errors.Is(err, ports.ErrNaoEncontrado) {
-			// Recorrência criada fora do Lastro, ou de outra conta: responder erro
+			// Recorrência criada fora do Vintém, ou de outra conta: responder erro
 			// faria o banco reenviar para sempre.
 			slog.WarnContext(ctx, "aviso de recorrência desconhecida ignorado", "conta", conta.ID, "idRec", a.IDRec)
 			continue
@@ -141,7 +141,7 @@ func (s Webhooks) ReceberCobr(ctx context.Context, contaID, token string, corpo 
 	for _, a := range ats {
 		mudou, err := s.CobrancasRecorrentes.RegistrarAtualizacao(ctx, conta.ID, a)
 		if errors.Is(err, ports.ErrNaoEncontrado) {
-			// Cobrança criada fora do Lastro, ou de outra conta: responder erro
+			// Cobrança criada fora do Vintém, ou de outra conta: responder erro
 			// faria o banco reenviar para sempre.
 			slog.WarnContext(ctx, "aviso de cobrança recorrente desconhecida ignorado", "conta", conta.ID, "txid", a.Txid)
 			continue

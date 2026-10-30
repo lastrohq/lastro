@@ -1,4 +1,4 @@
-// Package jobs roda tarefas periódicas dentro do processo do Lastro, sem fila
+// Package jobs roda tarefas periódicas dentro do processo do Vintém, sem fila
 // externa (ADR-005): conciliação hoje, entrega de webhooks e limpezas depois.
 package jobs
 

@@ -1,6 +1,6 @@
 package fake
 
-import "github.com/lastrohq/lastro/internal/domain"
+import "github.com/vintemhq/vintem/internal/domain"
 
 // Certificados é o ports.Certificados que devolve sempre o mesmo resultado.
 type Certificados struct {
