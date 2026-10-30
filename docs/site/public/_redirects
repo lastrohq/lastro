@@ -1,0 +1,16 @@
+# A API manda o tipo em CamelCase e o Astro gera as rotas em minúsculas.
+/erros/AcessoNegado /erros/acessonegado/ 301
+/erros/CobOperacaoInvalida /erros/coboperacaoinvalida/ 301
+/erros/ContaInativa /erros/containativa/ 301
+/erros/CorpoGrandeDemais /erros/corpograndedemais/ 301
+/erros/ErroInterno /erros/errointerno/ 301
+/erros/IdempotencyKeyReutilizada /erros/idempotencykeyreutilizada/ 301
+/erros/JaExiste /erros/jaexiste/ 301
+/erros/NaoAutenticado /erros/naoautenticado/ 301
+/erros/NaoEncontrado /erros/naoencontrado/ 301
+/erros/NaoImplementado /erros/naoimplementado/ 301
+/erros/NaoSuportado /erros/naosuportado/ 301
+/erros/PSPIndisponivel /erros/pspindisponivel/ 301
+/erros/RequisicaoEmAndamento /erros/requisicaoemandamento/ 301
+/erros/RequisicaoInvalida /erros/requisicaoinvalida/ 301
+/erros/WebhookInvalido /erros/webhookinvalido/ 301

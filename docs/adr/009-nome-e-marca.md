@@ -94,7 +94,7 @@ npm estavam livres.
 | extensão `x-lastro` no OpenAPI | `x-vintem` |
 | `@lastrohq/sdk`, classe `Lastro` | `@vintemhq/sdk`, classe `Vintem` |
 | `ghcr.io/lastrohq/lastro` | `ghcr.io/vintemhq/vintem` |
-| `lastrohq.github.io/lastro` | `vintemhq.github.io/vintem` |
+| `lastrohq.github.io/lastro` | `vintem.dev` |
 
 As ADRs 001 a 008 e as levas antigas do arquivo do board continuam com o nome
 antigo, porque ADR não se reescreve e o arquivo é histórico.

@@ -34,7 +34,9 @@ type Par struct {
 	CertificadoPEM []byte
 }
 
-// Gerar cria um certificado com o CN dado, válido até validade.
+// Gerar cria um certificado com o CN dado, válido até validade. Se ele for usado
+// num handshake TLS, calcule validade a partir de time.Now: o TLS confere o
+// certificado no relógio real, não no relógio falso do teste.
 func Gerar(t testing.TB, cn string, validade time.Time) Par {
 	t.Helper()
 	chave, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

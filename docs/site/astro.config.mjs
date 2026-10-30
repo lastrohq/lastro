@@ -2,11 +2,11 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import starlightOpenAPI, { openAPISidebarGroups } from "starlight-openapi";
 
-// Publicado no GitHub Pages (.github/workflows/site.yml). Com domínio próprio,
-// troque site/base por https://vintem.dev e "/".
+// Publicado no Cloudflare Workers pelo Workers Builds (wrangler.jsonc), na
+// raiz de https://vintem.dev.
 export default defineConfig({
-  site: "https://vintemhq.github.io",
-  base: "/vintem",
+  site: "https://vintem.dev",
+  base: "/",
   integrations: [
     starlight({
       title: "Vintém",
@@ -19,9 +19,12 @@ export default defineConfig({
       plugins: [starlightOpenAPI([{ base: "api", schema: "../../api/openapi.yaml", sidebar: { label: "Referência da API" } }])],
       sidebar: [
         { label: "Começar", items: ["comecar/quickstart", "gerado/sandbox"] },
+        { label: "Conceitos", items: ["conceitos/como-funciona", "conceitos/contas-e-certificados", "conceitos/cobrancas", "conceitos/idempotencia", "conceitos/recebimentos-e-conciliacao", "conceitos/webhooks-de-saida", "conceitos/devolucoes", "conceitos/pix-automatico", "conceitos/api-keys-e-escopos"] },
         { label: "Bancos", items: ["gerado/efi", "gerado/inter", "gerado/sicoob", "gerado/bb"] },
         { label: "Integrar", items: ["integrar/sdk", "integrar/mcp", "integrar/painel"] },
+        { label: "Operar", items: ["operar/instalacao", "operar/producao", "operar/configuracao", "operar/cli", "operar/seguranca", "operar/backup-e-atualizacao"] },
         ...openAPISidebarGroups,
+        { label: "Referência", items: ["referencia/erros", { label: "Tipos de erro", collapsed: true, items: [{ autogenerate: { directory: "erros" } }] }] },
         { label: "Projeto", collapsed: true, items: ["gerado/regras-de-negocio", "gerado/arquitetura", "gerado/contribuir", { label: "Decisões (ADR)", items: [{ autogenerate: { directory: "gerado/adr" } }] }] },
       ],
     }),

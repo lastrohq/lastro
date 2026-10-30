@@ -65,8 +65,8 @@ sozinha. A consulta também pergunta ao PSP quando a cobrança ainda está `ATIV
 ## Como ele se comporta
 
 Toda cobrança (cob ou cobv) é **paga 5 segundos depois de criada**, desde que
-não tenha expirado antes. O pagamento aparece na consulta da cobrança (`CONCLUIDA`) e em
-`GET /pix`.
+não tenha expirado antes. O pagamento aparece na consulta da cobrança (`CONCLUIDA`) e, quando há um
+destino cadastrado, no evento `pix.recebido`.
 
 ## Valores mágicos
 
