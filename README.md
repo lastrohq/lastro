@@ -118,5 +118,5 @@ Lastro never holds or moves money. It runs with **your** credentials against
 
 ## License
 
-[Apache-2.0](./LICENSE). "Pix" is a trademark of Banco Central do Brasil;
+[Apache-2.0](./LICENSE). Pix is a trademark of Banco Central do Brasil;
 Lastro is an independent project, not affiliated with or endorsed by the BCB.
