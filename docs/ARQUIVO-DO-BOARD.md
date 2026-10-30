@@ -37,6 +37,51 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 29/10/2026 (madrugada) — v0.8.0: quatro bancos sobre um cliente só
+
+O adapter do Efí virou a configuração de um cliente da API Pix comum, e Inter,
+Sicoob e Banco do Brasil entraram por cima dele. O Pix Automático teve as
+transições conferidas nos diagramas do BCB. Foi o último release com o nome
+Lastro.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#99](https://github.com/vintemhq/vintem/issues/99) | Transições da solicitação de confirmação conferidas no Manual de Fluxos do BCB | Estudo | P | Média | [#135](https://github.com/vintemhq/vintem/pull/135) `e2ca345` | [v0.8.0](https://github.com/vintemhq/vintem/releases/tag/v0.8.0) · [#137](https://github.com/vintemhq/vintem/pull/137) `270ffc5` | 29/10 21:27 |
+
+> **Também no release, sem fechar issue:** o `pixapi` ([#131](https://github.com/vintemhq/vintem/pull/131) `1b3aea8`), os adapters do Inter
+> ([#132](https://github.com/vintemhq/vintem/pull/132) `d9a0826`, parte da [#28](https://github.com/vintemhq/vintem/issues/28)), do Sicoob ([#133](https://github.com/vintemhq/vintem/pull/133) `e6b8072`, parte da [#29](https://github.com/vintemhq/vintem/issues/29))
+> e do Banco do Brasil ([#134](https://github.com/vintemhq/vintem/pull/134) `fe0c36f`, parte da [#30](https://github.com/vintemhq/vintem/issues/30)), e a leva do v0.7.0
+> ([#136](https://github.com/vintemhq/vintem/pull/136) `1cc3126`).
+>
+> Release [v0.8.0](https://github.com/vintemhq/vintem/releases/tag/v0.8.0) com binários e checksums; o binário
+> linux/amd64 foi conferido contra o `checksums.txt`, respondeu `0.8.0` e o sandbox dele subiu.
+>
+> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/vintemhq/vintem/issues/98)).
+
+### O manual estava num PDF que ninguém tinha aberto
+
+A spec da API Pix lista os status do Pix Automático, mas não as transições. O
+*Manual de Padrões para Iniciação do Pix* tem os diagramas, e três tabelas
+estavam erradas: faltava ENVIADA → REJEITADA na solicitação e CRIADA →
+CANCELADA na recorrência, e sobrava CRIADA → REJEITADA na cobrança recorrente.
+A conferência achou também um bug: se o aviso de ATIVA se perdesse, o
+CONCLUIDA que chegasse depois era ignorado para sempre. O status que vem do
+banco passou a valer quando é alcançável no diagrama.
+
+### Três bancos sem conta em nenhum
+
+Inter, Sicoob e BB foram escritos pela documentação e por relatos públicos
+(o kmee/brbank rodou os sandboxes do Sicoob e do BB), e passam na suíte contra
+um banco simulado. Nenhum rodou ainda contra o banco de verdade, e os guias
+dizem isso no topo.
+
+### Ficou aberto
+
+- [#28](https://github.com/vintemhq/vintem/issues/28), [#29](https://github.com/vintemhq/vintem/issues/29), [#30](https://github.com/vintemhq/vintem/issues/30) — teste manual com conta real.
+- [#98](https://github.com/vintemhq/vintem/issues/98) — imagem pública no ghcr.io.
+
+---
+
 ## Leva de 29/10/2026 (noite) — v0.7.0: o MVP de lançamento
 
 O Lastro ficou pronto para ser mostrado: painel embutido no binário, servidor
