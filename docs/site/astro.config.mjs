@@ -16,6 +16,7 @@ export default defineConfig({
       social: [{ icon: "github", label: "GitHub", href: "https://github.com/vintemhq/vintem" }],
       logo: { light: "./src/assets/logo-claro.svg", dark: "./src/assets/logo-escuro.svg", alt: "" },
       favicon: "/favicon.svg",
+      components: { SiteTitle: "./src/components/TituloComMenu.astro" },
       customCss: ["@fontsource-variable/inter/wght.css", "@fontsource-variable/jetbrains-mono/wght.css", "./src/styles/marca.css"],
       head: [
         { tag: "link", attrs: { rel: "icon", type: "image/png", sizes: "32x32", href: "/favicon-32.png" } },
