@@ -48,12 +48,24 @@ func (s Webhooks) Configurar(ctx context.Context, contaID, urlPublica string) (s
 	_, _ = rand.Read(b)
 	token := hex.EncodeToString(b)
 	endereco := base.String() + "/webhooks/pix/" + conta.ID + "/" + token
-	if err := psp.ConfigurarWebhook(ctx, conta, endereco); err != nil {
-		return "", erroDoPSP(err)
+	// O token é gravado antes de falar com o banco: o Efí chama a URL durante o
+	// registro e só aceita se ela responder 2xx (produção, 30/10/2026). Se o banco
+	// recusar, o token anterior volta, porque a URL antiga continua valendo lá.
+	anterior, errAnterior := s.Store.Contas().BuscarTokenWebhook(ctx, conta.ID)
+	if errAnterior != nil && !errors.Is(errAnterior, ports.ErrNaoEncontrado) {
+		return "", errAnterior
 	}
 	h := sha256.Sum256([]byte(token))
 	if err := s.Store.Contas().SalvarTokenWebhook(ctx, conta.ID, h[:]); err != nil {
-		return "", fmt.Errorf("o PSP já recebeu a URL nova, mas o token não foi gravado; configure de novo: %w", err)
+		return "", fmt.Errorf("gravando o token do webhook: %w", err)
+	}
+	if err := psp.ConfigurarWebhook(ctx, conta, endereco); err != nil {
+		if errAnterior == nil {
+			if errVolta := s.Store.Contas().SalvarTokenWebhook(ctx, conta.ID, anterior); errVolta != nil {
+				return "", fmt.Errorf("o banco recusou a URL nova e o token anterior não voltou; configure de novo: %w", errors.Join(erroDoPSP(err), errVolta))
+			}
+		}
+		return "", erroDoPSP(err)
 	}
 	// Com Pix Automático, o mesmo token vale para o aviso de recorrência. Fica
 	// depois de gravar o token: se falhar, o aviso de Pix continua valendo.
