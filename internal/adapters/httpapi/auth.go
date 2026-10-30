@@ -29,6 +29,8 @@ var escopoDaRota = map[string]domain.Escopo{
 	"POST /rec":                             domain.EscopoRecWrite,
 	"GET /rec/{idRec}":                      domain.EscopoRecRead,
 	"POST /solicrec":                        domain.EscopoRecWrite,
+	"GET /solicrec/{idSolicRec}":            domain.EscopoRecRead,
+	"PATCH /solicrec/{idSolicRec}":          domain.EscopoRecWrite,
 	"POST /cobr":                            domain.EscopoCobrWrite,
 	"PUT /cobr/{txid}":                      domain.EscopoCobrWrite,
 	"GET /cobr/{txid}":                      domain.EscopoCobrRead,

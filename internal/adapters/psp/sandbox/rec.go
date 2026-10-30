@@ -109,10 +109,12 @@ func (p *PSP) solicitadaEm(ctx context.Context, idRec string) (time.Time, error)
 	if err != nil {
 		return time.Time{}, fmt.Errorf("sandbox: lembrando a solicitação de %s: %w", idRec, err)
 	}
-	if len(sols) == 0 {
-		return time.Time{}, nil
+	for _, sol := range sols {
+		if sol.Status != domain.SolicitacaoCancelada {
+			return sol.CriadaEm, nil
+		}
 	}
-	return sols[0].CriadaEm, nil
+	return time.Time{}, nil
 }
 
 // SolicitarConfirmacao registra a solicitação como ENVIADA ao app do pagador.
@@ -133,6 +135,16 @@ func (p *PSP) SolicitarConfirmacao(ctx context.Context, conta domain.Conta, s do
 	p.avisar(conta, rec)
 	s.ID = "SC" + ispbSandbox + s.CriadaEm.UTC().Format("20060102") + sufixo11()
 	s.ContaID, s.Status = conta.ID, domain.SolicitacaoEnviada
+	return s, nil
+}
+
+// CancelarSolicitacao desiste do pedido: o pagador simulado não responde mais, e
+// a recorrência continua CRIADA.
+func (p *PSP) CancelarSolicitacao(_ context.Context, _ domain.Conta, s domain.SolicitacaoRecorrencia) (domain.SolicitacaoRecorrencia, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	delete(p.solicitadas, s.RecorrenciaID)
+	s.Status = domain.SolicitacaoCancelada
 	return s, nil
 }
 
@@ -190,11 +202,15 @@ func (p *PSP) InterpretarWebhookRec(conta domain.Conta, corpo []byte) ([]domain.
 // conciliação encontra a resposta pelo ConsultarRecorrencia.
 func (p *PSP) avisar(conta domain.Conta, r domain.Recorrencia) {
 	status, motivo := desfecho(r)
+	p.mu.Lock()
+	pedida := p.solicitadas[r.ID]
+	p.mu.Unlock()
 	time.AfterFunc(p.atraso, func() {
 		p.mu.Lock()
 		url := p.webhooksRec[conta.ID]
+		ainda := p.solicitadas[r.ID].Equal(pedida) // cancelada no meio do atraso: o pagador não responde
 		p.mu.Unlock()
-		if url == "" {
+		if url == "" || !ainda {
 			return
 		}
 		item := map[string]any{
