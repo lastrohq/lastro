@@ -1,20 +1,20 @@
 openapi: 3.0.3
 info:
-  title: Lastro
+  title: Vintém
   version: 0.1.0
   description: |
-    API do Lastro, o gateway Pix self-hosted.
+    API do Vintém, o gateway Pix self-hosted.
 
     As rotas Pix (`/cob`, `/cobv`...) são **compatíveis com a API Pix do Banco
     Central** (spec v2.10.0): mesmo caminho, mesmos campos, mesmo formato de
     erro. Quem já tem cliente escrito contra a spec troca a URL base e a
-    autenticação. Este arquivo é escrito pelo Lastro — não é cópia da spec do BCB.
+    autenticação. Este arquivo é escrito pelo Vintém — não é cópia da spec do BCB.
 
-    O que o Lastro **acrescenta** à spec vem marcado com `x-lastro: true`:
+    O que o Vintém **acrescenta** à spec vem marcado com `x-vintem: true`:
     o header `Idempotency-Key` e o campo `expirada`, por exemplo.
 
     Rotas que não existem na spec (contas, API keys, administração) vivem em
-    `/lastro/v1/...` (ADR-003).
+    `/vintem/v1/...` (ADR-003).
 
     Dinheiro trafega como string decimal com exatamente duas casas (`"10.50"`).
   license:
@@ -44,16 +44,16 @@ tags:
   - name: Pix
     description: >-
       Devolução de Pix recebidos (RN-20, RN-21). O Pix precisa estar gravado no
-      Lastro, pelo webhook ou pela conciliação.
-  - name: Lastro
-    description: Rotas do Lastro, fora da spec do BCB.
+      Vintém, pelo webhook ou pela conciliação.
+  - name: Vintém
+    description: Rotas do Vintém, fora da spec do BCB.
   - name: Webhooks
     description: Rotas chamadas pelos bancos.
 
 paths:
   /health:
     get:
-      tags: [Lastro]
+      tags: [Vintém]
       operationId: health
       summary: Saúde da instância
       security: []
@@ -218,7 +218,7 @@ paths:
     post:
       tags: [CobR]
       operationId: criarCobr
-      summary: Criar cobrança recorrente com txid gerado pelo Lastro
+      summary: Criar cobrança recorrente com txid gerado pelo Vintém
       description: >-
         A recorrência precisa estar APROVADA e o vencimento, de 2 a 10 dias corridos
         à frente (RN-42). Um ciclo tem uma cobrança só.
@@ -413,7 +413,7 @@ paths:
     post:
       tags: [Cob]
       operationId: criarCob
-      summary: Criar cobrança imediata com txid gerado pelo Lastro
+      summary: Criar cobrança imediata com txid gerado pelo Vintém
       parameters:
         - $ref: "#/components/parameters/IdempotencyKey"
       requestBody:
@@ -662,9 +662,9 @@ paths:
           $ref: "#/components/responses/AcessoNegado"
         "404":
           $ref: "#/components/responses/NaoEncontrado"
-  /lastro/v1/contas:
+  /vintem/v1/contas:
     post:
-      tags: [Lastro]
+      tags: [Vintém]
       operationId: criarConta
       summary: Cadastrar conta recebedora
       description: |
@@ -686,7 +686,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/Conta"
     get:
-      tags: [Lastro]
+      tags: [Vintém]
       operationId: listarContas
       summary: Listar contas
       responses:
@@ -705,11 +705,11 @@ paths:
                     items:
                       $ref: "#/components/schemas/Conta"
 
-  /lastro/v1/contas/{id}:
+  /vintem/v1/contas/{id}:
     parameters:
       - $ref: "#/components/parameters/ContaIdPath"
     get:
-      tags: [Lastro]
+      tags: [Vintém]
       operationId: consultarConta
       summary: Consultar conta
       responses:
@@ -722,11 +722,11 @@ paths:
               schema:
                 $ref: "#/components/schemas/Conta"
 
-  /lastro/v1/contas/{id}/desativar:
+  /vintem/v1/contas/{id}/desativar:
     parameters:
       - $ref: "#/components/parameters/ContaIdPath"
     post:
-      tags: [Lastro]
+      tags: [Vintém]
       operationId: desativarConta
       summary: Desativar conta
       description: Novas cobranças passam a ser recusadas; as existentes continuam valendo.
@@ -740,9 +740,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/Conta"
 
-  /lastro/v1/webhooks/entregas:
+  /vintem/v1/webhooks/entregas:
     get:
-      tags: [Lastro]
+      tags: [Vintém]
       operationId: listarEntregas
       summary: Listar entregas de webhook
       description: |
@@ -781,7 +781,7 @@ paths:
                     items:
                       $ref: "#/components/schemas/EntregaWebhook"
 
-  /lastro/v1/webhooks/entregas/{eventoId}/reenviar:
+  /vintem/v1/webhooks/entregas/{eventoId}/reenviar:
     parameters:
       - name: eventoId
         in: path
@@ -791,7 +791,7 @@ paths:
           minLength: 1
           maxLength: 64
     post:
-      tags: [Lastro]
+      tags: [Vintém]
       operationId: reenviarEntregas
       summary: Reenviar entregas que estão na DLQ
       description: |
@@ -822,7 +822,7 @@ paths:
       summary: Aviso de Pix recebido, enviado pelo banco
       description: |
         Chamada pelo **banco**, não pela sua aplicação. A URL (com o token) é
-        gerada por `lastro conta webhook` e registrada no PSP. O corpo segue o
+        gerada por `vintem conta webhook` e registrada no PSP. O corpo segue o
         callback da spec do BCB (`{"pix": [...]}`); bancos que desviam são
         tratados pelo adapter da conta. Responde 200 só depois de gravar (RN-30).
       security: []
@@ -861,7 +861,7 @@ paths:
       summary: Aviso de mudança de recorrência (Pix Automático), enviado pelo banco
       description: |
         Chamada pelo **banco**. A URL usa o mesmo token do aviso de Pix e é
-        registrada por `lastro conta webhook` quando o banco faz Pix Automático.
+        registrada por `vintem conta webhook` quando o banco faz Pix Automático.
         O corpo segue o callback da spec do BCB (`{"recs": [...]}`). Aviso
         repetido ou fora de ordem não muda nada; recorrência desconhecida é
         ignorada (RN-40).
@@ -901,7 +901,7 @@ paths:
       summary: Aviso de mudança de cobrança recorrente (Pix Automático), enviado pelo banco
       description: |
         Chamada pelo **banco**. A URL usa o mesmo token do aviso de Pix e é
-        registrada por `lastro conta webhook` quando o banco faz cobrança
+        registrada por `vintem conta webhook` quando o banco faz cobrança
         recorrente. O corpo segue o callback da spec do BCB (`{"cobsr": [...]}`).
         Aviso repetido ou fora de ordem não muda nada; cobrança desconhecida é
         ignorada (RN-42).
@@ -936,7 +936,7 @@ components:
     apiKey:
       type: http
       scheme: bearer
-      description: "API key do Lastro, com escopos (RN-60). Envie `Authorization: Bearer lst_...`"
+      description: "API key do Vintém, com escopos (RN-60). Envie `Authorization: Bearer vtm_...`"
 
   requestBodies:
     WebhookPix:
@@ -1016,7 +1016,7 @@ components:
       in: header
       required: true
       description: Reenvio com a mesma chave em até 24 h devolve a resposta original (RN-11).
-      x-lastro: true
+      x-vintem: true
       schema:
         type: string
         minLength: 1
@@ -1026,7 +1026,7 @@ components:
       in: header
       required: false
       description: Reenvio com a mesma chave em até 24 h devolve a resposta original (RN-11).
-      x-lastro: true
+      x-vintem: true
       schema:
         type: string
         minLength: 1
@@ -1177,7 +1177,7 @@ components:
       type: object
       description: >-
         Dados públicos do certificado do mTLS, conferido no cadastro (RN-62). O
-        certificado e a chave privada nunca saem do Lastro. Ausente se a conta não
+        certificado e a chave privada nunca saem do Vintém. Ausente se a conta não
         tiver certificado.
       required: [sujeito, impressaoDigital, validade]
       properties:
@@ -1430,7 +1430,7 @@ components:
           type: string
           enum: [ORIGINAL, RETIRADA]
           default: ORIGINAL
-          description: RETIRADA (Pix Saque ou Troco) é recusada; o Lastro não recebe esse tipo de Pix.
+          description: RETIRADA (Pix Saque ou Troco) é recusada; o Vintém não recebe esse tipo de Pix.
         descricao:
           type: string
           maxLength: 140
@@ -1725,8 +1725,8 @@ components:
           maxLength: 512
         expirada:
           type: boolean
-          x-lastro: true
-          description: Extensão do Lastro. Na spec a cob continua ATIVA depois de expirar; este campo poupa o cálculo (RN-13).
+          x-vintem: true
+          description: Extensão do Vintém. Na spec a cob continua ATIVA depois de expirar; este campo poupa o cálculo (RN-13).
 
     CobCompleta:
       allOf:

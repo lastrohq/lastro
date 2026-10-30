@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // errSemDevolucoes responde 501 quando o servidor foi montado sem devoluções.

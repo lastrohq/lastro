@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 // pspCobr é um PSP falso com cobrança recorrente.
@@ -176,7 +176,7 @@ func TestCriarCobrGravaEPublica(t *testing.T) {
 		t.Fatalf("eventos = %+v", evs)
 	}
 
-	// Sem txid, o Lastro gera um.
+	// Sem txid, o Vintém gera um.
 	semTxid := pedidoCobr()
 	semTxid.Txid = ""
 	gerada, err := svc.Criar(ctx, idRecDaConta["outra"], semTxid)

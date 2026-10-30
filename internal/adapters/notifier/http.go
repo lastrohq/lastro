@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // HTTP é o ports.Enviador de verdade.
@@ -26,7 +26,7 @@ var _ ports.Enviador = (*HTTP)(nil)
 // em outro lugar.
 func NovoHTTP(versao string) *HTTP {
 	return &HTTP{
-		agente: "Lastro/" + versao,
+		agente: "Vintém/" + versao,
 		cliente: &http.Client{
 			Timeout:       10 * time.Second,
 			CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },

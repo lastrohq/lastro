@@ -20,13 +20,13 @@ export function Login({ aoEntrar }: { aoEntrar: () => void }) {
             sessao.entrar(token.trim());
             aoEntrar();
           } catch (err) {
-            setErro(err instanceof ErroAPI && err.status === 401 ? "API key inválida ou revogada." : err instanceof ErroAPI && err.status === 403 ? "Esta API key não tem o escopo cob:read." : "Não foi possível falar com o Lastro.");
+            setErro(err instanceof ErroAPI && err.status === 401 ? "API key inválida ou revogada." : err instanceof ErroAPI && err.status === 403 ? "Esta API key não tem o escopo cob:read." : "Não foi possível falar com o Vintém.");
           } finally {
             setCarregando(false);
           }
         }}
       >
-        <h1 style={{ margin: 0 }}><span style={{ color: "var(--brand)" }}>◆</span> Lastro</h1>
+        <h1 style={{ margin: 0 }}><span style={{ color: "var(--brand)" }}>◆</span> Vintém</h1>
         <p className="muted" style={{ margin: 0 }}>Entre com uma API key. O painel só mostra o que os escopos dela permitem.</p>
         <label htmlFor="token" style={{ fontWeight: 600 }}>API key</label>
         <input
@@ -34,13 +34,13 @@ export function Login({ aoEntrar }: { aoEntrar: () => void }) {
           type="password"
           autoComplete="off"
           required
-          placeholder="lst_..."
+          placeholder="vtm_..."
           value={token}
           onChange={(e) => setToken(e.target.value)}
           aria-describedby={erro ? "erro-login" : "dica-login"}
           style={{ font: "inherit", fontFamily: "var(--font-mono)", padding: "var(--space-2) var(--space-3)", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)" }}
         />
-        <div id="dica-login" className="muted" style={{ fontSize: "var(--text-12)" }}>Crie com <code className="mono">lastro apikey criar --nome painel --escopo cob:read</code> ou use a que o <code className="mono">lastro sandbox</code> imprime.</div>
+        <div id="dica-login" className="muted" style={{ fontSize: "var(--text-12)" }}>Crie com <code className="mono">vintem apikey criar --nome painel --escopo cob:read</code> ou use a que o <code className="mono">vintem sandbox</code> imprime.</div>
         {erro && <div id="erro-login" role="alert" style={{ color: "var(--danger)" }}>{erro}</div>}
         <Button type="submit" variante="primary" carregando={carregando}>Entrar</Button>
       </form>

@@ -14,10 +14,10 @@ func TestNovaAPIKeyGeraTokenQueConfere(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(token, "lst_"+k.ID+"_") {
-		t.Fatalf("token %q não começa com lst_<id>_", token)
+	if !strings.HasPrefix(token, "vtm_"+k.ID+"_") {
+		t.Fatalf("token %q não começa com vtm_<id>_", token)
 	}
-	if strings.Contains(string(k.Hash), token[len("lst_")+13:]) {
+	if strings.Contains(string(k.Hash), token[len("vtm_")+13:]) {
 		t.Fatal("hash contém o segredo")
 	}
 	if len(k.Escopos) != 2 || k.Escopos[0] != EscopoCobRead {
@@ -60,7 +60,7 @@ func TestNovaAPIKeyRecusa(t *testing.T) {
 }
 
 func TestSepararTokenRecusaFormato(t *testing.T) {
-	for _, tok := range []string{"", "Bearer x", "lst_", "lst_abc_def", "sk_123456789012_12345678901234567890123456789012"} {
+	for _, tok := range []string{"", "Bearer x", "vtm_", "vtm_abc_def", "sk_123456789012_12345678901234567890123456789012"} {
 		if _, _, err := SepararToken(tok); !errors.Is(err, ErrNaoAutenticado) {
 			t.Errorf("%q aceito", tok)
 		}

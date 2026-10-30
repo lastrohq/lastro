@@ -1,15 +1,15 @@
 <div align="center">
 
-# 🏦 Lastro — Efí
+# 🏦 Vintém — Efí
 
-### Receber Pix pela sua conta Efí, com o Lastro no meio.
+### Receber Pix pela sua conta Efí, com o Vintém no meio.
 
 </div>
 
 > ⚠️ **O adapter ainda não foi testado na homologação do Efí.** Ele foi escrito pela
 > [documentação oficial](https://dev.efipay.com.br/docs/api-pix/credenciais/) e
 > testado contra um Efí simulado. Os pontos que só a homologação confirma estão
-> marcados abaixo. Acompanhe pela [#27](https://github.com/lastrohq/lastro/issues/27).
+> marcados abaixo. Acompanhe pela [#27](https://github.com/vintemhq/vintem/issues/27).
 
 ## 1. Conta e credenciais
 
@@ -19,12 +19,12 @@
    web, não no app.
 2. No painel, em **API → Aplicações**, crie uma aplicação e ative a **API Pix**
    com os escopos de **homologação** (e de produção, quando for a hora):
-   os escopos que o Lastro usa são `cob.write`, `cob.read`, `cobv.write`,
+   os escopos que o Vintém usa são `cob.write`, `cob.read`, `cobv.write`,
    `cobv.read`, `pix.read` (Pix recebidos), `pix.write` (devolução) e
    `webhook.write`.
    No painel eles aparecem como Alterar/Consultar cobranças, Alterar/Consultar
    Pix, Alterar Webhooks e Alterar/Consultar cobranças com vencimento. Não
-   marque Enviar Pix nem Pagar QR Code: o Lastro só recebe. O painel não deixa
+   marque Enviar Pix nem Pagar QR Code: o Vintém só recebe. O painel não deixa
    criar a aplicação sem ao menos um escopo de **produção**; para testar só na
    homologação, marque em produção apenas "Consultar cobranças", que só lê.
 3. Copie o **Client ID** e o **Client Secret** do ambiente que vai usar. Cada
@@ -32,13 +32,13 @@
 4. Em **API → Meus Certificados**, gere o certificado do **mesmo ambiente** e
    baixe o `.p12`. **O download só acontece na criação.**
 
-## 2. Cadastrar a conta no Lastro
+## 2. Cadastrar a conta no Vintém
 
 Segredos vêm de arquivo, nunca de flag, porque flag fica no histórico do shell:
 
 ```sh
 printf '%s' 'SEU_CLIENT_SECRET' > secret.txt   # ou crie o arquivo num editor
-lastro conta criar --id minha-loja --nome "Minha Loja" --psp efi \
+vintem conta criar --id minha-loja --nome "Minha Loja" --psp efi \
   --chave sua-chave-pix@exemplo.com --ambiente homologacao \
   --client-id SEU_CLIENT_ID --client-secret-arquivo secret.txt \
   --certificado homologacao.p12
@@ -46,7 +46,7 @@ lastro conta criar --id minha-loja --nome "Minha Loja" --psp efi \
 
 Se o `.p12` tiver senha, passe também `--senha-certificado-arquivo`. O certificado é conferido na hora (RN-62), e o
 `conta listar` mostra até quando ele vale. Depois, apague `secret.txt`: o
-Lastro guarda tudo cifrado com a `LASTRO_MASTER_KEY`.
+Vintém guarda tudo cifrado com a `VINTEM_MASTER_KEY`.
 
 **A chave Pix precisa ser da conta Efí**; senão o Efí recusa a cobrança com
 `chave_invalida`.
@@ -54,16 +54,16 @@ Lastro guarda tudo cifrado com a `LASTRO_MASTER_KEY`.
 ## 3. Webhook
 
 ```sh
-lastro conta webhook minha-loja --url-publica https://seu-lastro.exemplo.com
+vintem conta webhook minha-loja --url-publica https://seu-vintem.exemplo.com
 ```
 
-O Lastro gera uma URL com um token secreto e a registra na sua chave Pix
-(`PUT /v2/webhook/:chave`). O Efí acrescenta `/pix` ao fim, e a rota do Lastro
+O Vintém gera uma URL com um token secreto e a registra na sua chave Pix
+(`PUT /v2/webhook/:chave`). O Efí acrescenta `/pix` ao fim, e a rota do Vintém
 aceita os dois caminhos. Ao registrar, o Efí manda uma notificação de teste, que o
-Lastro aceita sem registrar nada.
+Vintém aceita sem registrar nada.
 
 **Sobre o mTLS do webhook.** O Efí exige mTLS no servidor que recebe o aviso. O
-Lastro não termina TLS, então registra o webhook com `x-skip-mtls-checking: true`.
+Vintém não termina TLS, então registra o webhook com `x-skip-mtls-checking: true`.
 Nesse modo, o Efí pede que você garanta de outro jeito que o aviso veio dele:
 
 - **O token secreto na URL** já faz o papel do "hmac na URL" que o Efí sugere.

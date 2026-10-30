@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // LimiteResposta protege contra resposta gigante (bug ou ataque no caminho).

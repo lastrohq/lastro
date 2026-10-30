@@ -70,7 +70,7 @@ const AntecedenciaAvisoVencimento = 30 * 24 * time.Hour
 
 // PrecisaAvisarEm diz se, no instante agora, o vencimento do certificado já
 // deveria ter sido avisado e ainda não foi. Vale também para certificado já
-// vencido, caso o Lastro tenha ficado desligado durante a janela.
+// vencido, caso o Vintém tenha ficado desligado durante a janela.
 func (c Certificado) PrecisaAvisarEm(agora time.Time) bool {
 	return !c.VencimentoAvisado && !agora.Before(c.Validade.Add(-AntecedenciaAvisoVencimento))
 }

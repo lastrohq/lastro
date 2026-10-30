@@ -1,8 +1,8 @@
-# 🎨 Lastro — Design system
+# 🎨 Vintém — Design system
 
 ## Conceito
 
-**Lastro** é o que dá garantia ao dinheiro. A identidade tem que passar
+**Vintém** é o que dá garantia ao dinheiro. A identidade tem que passar
 **solidez e calma**: quem abre o painel quer saber, em dois segundos, se o
 dinheiro entrou e se alguma coisa está quebrada. Nada de gradiente de fintech,
 nada de animação comemorativa. Ouro aparece como acento da marca, não como cor

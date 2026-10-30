@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 type nomeado struct {

@@ -16,11 +16,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/certificado"
-	"github.com/lastrohq/lastro/internal/platform/oauth"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/certificado"
+	"github.com/vintemhq/vintem/internal/platform/oauth"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // Banco descreve o que muda de um banco para outro.

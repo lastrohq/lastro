@@ -1,4 +1,4 @@
-module github.com/lastrohq/lastro
+module github.com/vintemhq/vintem
 
 go 1.27.0
 

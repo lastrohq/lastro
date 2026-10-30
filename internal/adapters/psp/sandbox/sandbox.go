@@ -1,4 +1,4 @@
-// Package sandbox é o PSP de mentira do Lastro: implementa todas as
+// Package sandbox é o PSP de mentira do Vintém: implementa todas as
 // capacidades sem banco nenhum, para testar o fluxo inteiro sem conta PJ (RN-52).
 // É também o adapter de referência da suíte de conformidade.
 //
@@ -12,9 +12,9 @@
 //	outros   é paga integralmente depois do atraso configurado
 //
 // Com ComStore, o sandbox lembra das cobranças depois de reiniciar: o que não
-// está na memória é reconstruído das cobranças que o Lastro gravou, que são o
+// está na memória é reconstruído das cobranças que o Vintém gravou, que são o
 // espelho do que o sandbox sabia (valor, location e criação bastam para os
-// valores mágicos). As devoluções também: as que o Lastro gravou contam no saldo
+// valores mágicos). As devoluções também: as que o Vintém gravou contam no saldo
 // do Pix e respondem pelo id.
 package sandbox
 
@@ -27,10 +27,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/pkg/brcode"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/pkg/brcode"
 )
 
 // Valores mágicos, em centavos.
@@ -72,7 +72,7 @@ var _ ports.PSP = (*PSP)(nil)
 // Opcao configura o sandbox.
 type Opcao func(*PSP)
 
-// ComStore faz o sandbox buscar no store do Lastro as cobranças que não estão
+// ComStore faz o sandbox buscar no store do Vintém as cobranças que não estão
 // na memória, para que um restart não as esqueça.
 func ComStore(s ports.Store) Opcao { return func(p *PSP) { p.store = s } }
 
@@ -115,7 +115,7 @@ func (p *PSP) CriarCob(ctx context.Context, conta domain.Conta, c domain.Cobranc
 	p.locSeq++
 	c.ContaID = conta.ID
 	c.Status = domain.CobrancaAtiva
-	c.Location = fmt.Sprintf("sandbox.lastro.dev/qr/v2/%s/%d", conta.ID, p.locSeq)
+	c.Location = fmt.Sprintf("sandbox.vintem.dev/qr/v2/%s/%d", conta.ID, p.locSeq)
 	if c.CriadaEm.IsZero() {
 		c.CriadaEm = p.clock.Now()
 	}
@@ -196,7 +196,7 @@ func (p *PSP) CriarCobv(ctx context.Context, conta domain.Conta, c domain.Cobran
 	}
 	p.locSeq++
 	c.ContaID, c.Status = conta.ID, domain.CobrancaAtiva
-	c.Location = fmt.Sprintf("sandbox.lastro.dev/qr/v2/cobv/%s/%d", conta.ID, p.locSeq)
+	c.Location = fmt.Sprintf("sandbox.vintem.dev/qr/v2/cobv/%s/%d", conta.ID, p.locSeq)
 	if c.CriadaEm.IsZero() {
 		c.CriadaEm = p.clock.Now()
 	}
@@ -356,7 +356,7 @@ func (p *PSP) Devolver(ctx context.Context, conta domain.Conta, d domain.Devoluc
 	return d, nil
 }
 
-// ConsultarDevolucao acha a devolução na memória ou no que o Lastro gravou.
+// ConsultarDevolucao acha a devolução na memória ou no que o Vintém gravou.
 func (p *PSP) ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, id string) (domain.Devolucao, error) {
 	ds, err := p.devolucoesDoPix(ctx, e2e)
 	if err != nil {
@@ -370,7 +370,7 @@ func (p *PSP) ConsultarDevolucao(ctx context.Context, conta domain.Conta, e2e, i
 	return domain.Devolucao{}, fmt.Errorf("sandbox: devolução %s do Pix %s: %w", id, e2e, ports.ErrNaoEncontrado)
 }
 
-// devolucoesDoPix junta as devoluções da memória com as que o Lastro gravou,
+// devolucoesDoPix junta as devoluções da memória com as que o Vintém gravou,
 // que sobrevivem a um restart do sandbox.
 func (p *PSP) devolucoesDoPix(ctx context.Context, e2e string) ([]domain.Devolucao, error) {
 	p.mu.Lock()
@@ -422,7 +422,7 @@ func nomeBRCode(nome string) string {
 		return nome[:25]
 	}
 	if nome == "" {
-		return "LASTRO SANDBOX"
+		return "VINTEM SANDBOX"
 	}
 	return nome
 }

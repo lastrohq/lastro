@@ -4,7 +4,7 @@ import json, html, sys, os
 G = sys.argv[1]
 banner = open(f"{G}/run/banner.txt").read().rstrip("\n").split("\n")
 criada = json.load(open(f"{G}/run/criada.json")); paga = json.load(open(f"{G}/run/paga.json"))
-token = next(l.split("=",1)[1] for l in banner if "export LASTRO_TOKEN=" in l)
+token = next(l.split("=",1)[1] for l in banner if "export VINTEM_TOKEN=" in l)
 txid = criada["txid"]
 
 P = '<span class="p">$</span> '
@@ -17,7 +17,7 @@ def digitar(antes, cmd, passo=4, seg=0.045):
     return antes + [P + esc(cmd)]
 
 # Cena 1: sobe o sandbox
-t = digitar([], "lastro sandbox", 2, 0.06)
+t = digitar([], "vintem sandbox", 2, 0.06)
 tela(t + ['<span class="c">▋</span>'], 0.5)
 corpo = []
 for l in banner:
@@ -29,14 +29,14 @@ for l in banner:
 tela(t + corpo, 2.6)
 
 # Cena 2: cria a cobrança e espera o pagamento
-t = digitar([], f"export LASTRO_TOKEN={token}", 12, 0.03)
-cmd = "curl -s -X POST localhost:8080/cob -H \"Authorization: Bearer $LASTRO_TOKEN\" -H \"Idempotency-Key: pedido-42\" -d '{\"valor\":{\"original\":\"49.90\"},\"chave\":\"sandbox@lastro.dev\",\"calendario\":{\"expiracao\":3600}}' | jq '{txid, status}'"
+t = digitar([], f"export VINTEM_TOKEN={token}", 12, 0.03)
+cmd = "curl -s -X POST localhost:8080/cob -H \"Authorization: Bearer $VINTEM_TOKEN\" -H \"Idempotency-Key: pedido-42\" -d '{\"valor\":{\"original\":\"49.90\"},\"chave\":\"sandbox@vintem.dev\",\"calendario\":{\"expiracao\":3600}}' | jq '{txid, status}'"
 t = digitar(t, cmd, 9, 0.03)
 saida = ['{', f'  <span class="k">"txid"</span>: <span class="s">"{txid}"</span>,', '  <span class="k">"status"</span>: <span class="y">"ATIVA"</span>', '}']
 tela(t + saida, 1.3)
 t = t + saida + ['', '<span class="m"># o pagador do sandbox paga em 5 s…</span>']
 tela(t, 1.4)
-cmd2 = f"curl -s localhost:8080/cob/{txid} -H \"Authorization: Bearer $LASTRO_TOKEN\" | jq .status"
+cmd2 = f"curl -s localhost:8080/cob/{txid} -H \"Authorization: Bearer $VINTEM_TOKEN\" | jq .status"
 t = digitar(t, cmd2, 8, 0.03)
 tela(t + ['<span class="g">"' + paga["status"] + '"</span>  <span class="m">✔ Pix pago, sem gateway</span>'], 3.0)
 

@@ -9,13 +9,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/efi"
-	"github.com/lastrohq/lastro/internal/adapters/psp/efi/efitest"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
-	"github.com/lastrohq/lastro/pkg/brcode"
+	"github.com/vintemhq/vintem/internal/adapters/psp/efi"
+	"github.com/vintemhq/vintem/internal/adapters/psp/efi/efitest"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/certificado/certificadotest"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
+	"github.com/vintemhq/vintem/pkg/brcode"
 )
 
 const (

@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 func TestAPIKeysCriarAutenticarRevogar(t *testing.T) {
@@ -32,7 +32,7 @@ func TestAPIKeysCriarAutenticarRevogar(t *testing.T) {
 	if strings.HasSuffix(token, "x") {
 		trocado = "y"
 	}
-	for _, ruim := range []string{"", "lst_xxx", token[:len(token)-1] + trocado, "lst_" + "zzzzzzzzzzzz" + token[16:]} {
+	for _, ruim := range []string{"", "vtm_xxx", token[:len(token)-1] + trocado, "vtm_" + "zzzzzzzzzzzz" + token[16:]} {
 		if _, err := svc.Autenticar(ctx, ruim); !errors.Is(err, domain.ErrNaoAutenticado) {
 			t.Errorf("token %q autenticou (err = %v)", ruim, err)
 		}

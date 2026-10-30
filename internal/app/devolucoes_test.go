@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 // pspDevolucao é um PSP falso que devolve.
@@ -310,7 +310,7 @@ func TestAvisoDoBancoAtualizaDevolucoes(t *testing.T) {
 	pix := domain.PixRecebido{EndToEndID: e2eLoja, ContaID: "loja", Valor: valorDoPix, Horario: pagoEm, Devolucoes: []domain.Devolucao{
 		{ID: "dev1", Status: domain.DevolucaoDevolvido, LiquidadaEm: liquidada},
 		{ID: "dev2", Status: domain.DevolucaoNaoRealizado, Motivo: "Conta do pagador encerrada"},
-		{ID: "dev9", Status: domain.DevolucaoDevolvido}, // pedida fora do Lastro
+		{ID: "dev9", Status: domain.DevolucaoDevolvido}, // pedida fora do Vintém
 	}}
 	rec := app.Recebimentos{Store: s, Clock: clock}
 	if novos, err := rec.Registrar(ctx, []domain.PixRecebido{pix}); err != nil || novos != 0 {

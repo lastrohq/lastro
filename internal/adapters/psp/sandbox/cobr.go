@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 var _ ports.PSPCobrancaRecorrente = (*PSP)(nil)
@@ -117,7 +117,7 @@ func (p *PSP) CriarCobr(ctx context.Context, conta domain.Conta, c domain.Cobran
 }
 
 // lembrarCobr devolve a cobrança da memória ou, depois de um restart, a
-// reconstrói da que o Lastro gravou: as retentativas gravadas contam como
+// reconstrói da que o Vintém gravou: as retentativas gravadas contam como
 // pedidas na criação, e a cobrança cancelada continua cancelada.
 func (p *PSP) lembrarCobr(ctx context.Context, conta domain.Conta, txid domain.Txid) (cobrSandbox, error) {
 	p.mu.Lock()

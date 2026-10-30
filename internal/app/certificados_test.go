@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 var vence = time.Date(2027, 1, 31, 12, 0, 0, 0, time.UTC)
@@ -73,7 +73,7 @@ func TestAvisaTrintaDiasAntesUmaVezSo(t *testing.T) {
 
 func TestAvisaCertificadoJaVencidoQueNuncaFoiAvisado(t *testing.T) {
 	s := fake.NewStore()
-	svc := app.Certificados{Store: s, Clock: fake.NewClock(vence.Add(25 * time.Hour))} // o Lastro ficou desligado na janela
+	svc := app.Certificados{Store: s, Clock: fake.NewClock(vence.Add(25 * time.Hour))} // o Vintém ficou desligado na janela
 	comCertificado(t, s, "loja", vence, true)
 	if n, err := svc.AvisarVencimentos(context.Background()); err != nil || n != 1 {
 		t.Fatalf("%d avisos, %v; quer 1", n, err)

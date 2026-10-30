@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"log/slog"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // O ConfigurarWebhook vem do pixapi: PUT /v2/webhook/:chave. O Efí acrescenta
-// /pix ao fim da URL, e a rota de entrada do Lastro aceita os dois caminhos.
+// /pix ao fim da URL, e a rota de entrada do Vintém aceita os dois caminhos.
 //
 // O Efí exige mTLS no servidor que recebe o webhook, com a chave pública dele.
-// O Lastro não termina TLS, então pede o skip-mTLS (x-skip-mtls-checking: true,
+// O Vintém não termina TLS, então pede o skip-mTLS (x-skip-mtls-checking: true,
 // em New). Nesse caso o Efí pede outras garantias de que o aviso é dele: a URL
-// do Lastro carrega um token secreto por conta, que é o "hmac na URL" da
+// do Vintém carrega um token secreto por conta, que é o "hmac na URL" da
 // documentação, e quem quiser também pode restringir o IP de origem no proxy
 // (ver docs/EFI.md).
 

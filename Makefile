@@ -2,7 +2,7 @@
 
 # O painel (web/) é embutido no binário: build compila os dois.
 build: web
-	go build -o bin/lastro ./cmd/lastro
+	go build -o bin/vintem ./cmd/vintem
 
 web:
 	cd web && npm ci && npm run build
@@ -18,7 +18,7 @@ cover:
 	go tool cover -func=coverage.out | tail -1
 
 run:
-	go run ./cmd/lastro serve
+	go run ./cmd/vintem serve
 
 generate:
 	go tool sqlc generate

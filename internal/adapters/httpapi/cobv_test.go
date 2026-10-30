@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
 )
 
 const txidV = "boleto000000000000000000001"

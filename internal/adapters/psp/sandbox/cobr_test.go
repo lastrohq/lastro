@@ -5,10 +5,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 // novaCobrSandbox cria a recorrência e a cobrança de valor v no sandbox.
@@ -140,7 +140,7 @@ func TestCobrLembradaDepoisDoRestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// O Lastro grava a cobrança com a retentativa pedida antes do restart.
+	// O Vintém grava a cobrança com a retentativa pedida antes do restart.
 	c.Status = domain.CobrAtiva
 	c.Tentativas = []domain.Tentativa{
 		{DataLiquidacao: c.Vencimento, Tipo: domain.TipoAgendamento, Status: domain.TentativaRejeitada},

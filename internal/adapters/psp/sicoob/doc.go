@@ -20,14 +20,14 @@
 //   - A cob e a cobv devolvem o BR Code no campo brcode, não no
 //     pixCopiaECola (o pixapi lê os dois).
 //   - A cob só aceita documento e nome no devedor; endereço e e-mail são
-//     recusados com 400 (é o schema da spec, que o Lastro já segue).
+//     recusados com 400 (é o schema da spec, que o Vintém já segue).
 //   - Não há documentação pública do que acontece com txid nem com id de
 //     devolução repetidos: o adapter consulta antes de criar a cob, a cobv e a
 //     devolução, e cumpre o port (ErrJaExiste, idempotência) sem depender disso.
 //   - O sandbox (sandbox.sicoob.com.br) não usa mTLS nem OAuth (token fixo do
 //     portal), valida só o formato do pedido e responde dados aleatórios, sem
-//     guardar estado. Não serve de homologação para o Lastro: a conta do Sicoob
-//     é sempre de produção, e para testar sem banco existe o sandbox do Lastro.
+//     guardar estado. Não serve de homologação para o Vintém: a conta do Sicoob
+//     é sempre de produção, e para testar sem banco existe o sandbox do Vintém.
 //
 // Erros vêm no formato de problema da spec (RFC 7807) ou, quando o gateway do
 // Sicoob recusa antes da API, como {"httpCode", "httpMessage",

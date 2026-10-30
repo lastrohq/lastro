@@ -1,10 +1,10 @@
 # Usado pelo goreleaser (dockers_v2): o binário já vem compilado em
-# $TARGETPLATFORM/lastro, então não há RUN e o build arm64 não precisa de emulação.
+# $TARGETPLATFORM/vintem, então não há RUN e o build arm64 não precisa de emulação.
 FROM gcr.io/distroless/static-debian12:nonroot
 ARG TARGETPLATFORM
-COPY $TARGETPLATFORM/lastro /lastro
-# O usuário nonroot só grava aqui: é onde ficam lastro.db e o banco do sandbox.
+COPY $TARGETPLATFORM/vintem /vintem
+# O usuário nonroot só grava aqui: é onde ficam vintem.db e o banco do sandbox.
 WORKDIR /home/nonroot
 EXPOSE 8080
-ENTRYPOINT ["/lastro"]
+ENTRYPOINT ["/vintem"]
 CMD ["serve"]

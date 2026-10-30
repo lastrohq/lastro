@@ -231,7 +231,7 @@ type AtualizacaoCobrancaRecorrente struct {
 // Aplicar leva para a cobrança o que o banco avisou e devolve se o status
 // mudou e quais tentativas são novas ou mudaram. O banco é a fonte da verdade
 // sobre cada tentativa, identificada pela data e pelo tipo; tentativa que só o
-// Lastro conhece (pedida e ainda não avisada) continua. Status fora da RN-42,
+// Vintém conhece (pedida e ainda não avisada) continua. Status fora da RN-42,
 // como uma volta de CONCLUIDA para ATIVA, é ErrTransicaoInvalida, e nada muda.
 func (c *CobrancaRecorrente) Aplicar(a AtualizacaoCobrancaRecorrente) (statusMudou bool, tentativas []Tentativa, err error) {
 	novo := *c

@@ -6,10 +6,10 @@ import (
 
 	openapi_types "github.com/oapi-codegen/runtime/types"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // errSemRecorrencias responde 501 quando o servidor foi montado sem Pix Automático.
@@ -25,7 +25,7 @@ func (s *Server) CriarRec(ctx context.Context, r gen.CriarRecRequestObject) (gen
 	if contaID == "" {
 		return nil, &app.ErroValidacao{Violacoes: []app.Violacao{{
 			Propriedade: "Authorization",
-			Razao:       "use uma API key restrita a uma conta (lastro apikey criar --conta ...): ela identifica o recebedor da recorrência",
+			Razao:       "use uma API key restrita a uma conta (vintem apikey criar --conta ...): ela identifica o recebedor da recorrência",
 		}}}
 	}
 	rec, err := recDoPedido(*r.Body)

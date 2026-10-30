@@ -13,7 +13,7 @@ import (
 	"github.com/getkin/kin-openapi/routers"
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
 )
 
 func carregarContrato(t *testing.T) (*openapi3.T, routers.Router) {

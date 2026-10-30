@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // O exemplo cobRWebhookNotification1 da API Pix, com uma correção: a spec traz

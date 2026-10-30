@@ -55,11 +55,11 @@ export function VisaoGeral({ ir }: { ir: (rota: string) => void }) {
         )}
       </div>
       {pix.length === 0 ? (
-        <EmptyState titulo="Nenhum Pix recebido ainda" acao={<>Crie sua primeira cobrança no sandbox: <code className="mono">lastro sandbox</code></>} />
+        <EmptyState titulo="Nenhum Pix recebido ainda" acao={<>Crie sua primeira cobrança no sandbox: <code className="mono">vintem sandbox</code></>} />
       ) : (
         <Card titulo="Quanto você pagaria num gateway">
           <p className="muted" style={{ marginTop: 0 }}>
-            Pelos {doMes.length} Pix deste mês (<Money centavos={recebidoMes} />). O Lastro não cobra nada por Pix; a sua economia é o valor abaixo
+            Pelos {doMes.length} Pix deste mês (<Money centavos={recebidoMes} />). O Vintém não cobra nada por Pix; a sua economia é o valor abaixo
             menos a tarifa de Pix do seu banco.
           </p>
           <ul style={{ margin: 0, paddingLeft: "var(--space-4)" }}>

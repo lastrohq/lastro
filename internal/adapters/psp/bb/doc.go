@@ -13,7 +13,7 @@
 // Fontes: o portal do BB, o que o projeto kmee/brbank registrou ao rodar cob
 // e cobv contra a homologação do BB em 28/10/2026 (docs/bb-homologacao.md de
 // lá) e SDKs de terceiros para o nome da chave em produção. Nada disso foi
-// conferido ainda pelo Lastro.
+// conferido ainda pelo Vintém.
 //
 // Desvios do BB em relação à spec do BCB, tratados aqui (RN-51):
 //

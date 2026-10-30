@@ -1,6 +1,6 @@
 ---
 title: Painel
-description: O painel do Lastro em /painel/, embutido no binário.
+description: O painel do Vintém em /painel/, embutido no binário.
 ---
 
 O painel vem dentro do binário e fica em `/painel/` (no sandbox,
@@ -17,7 +17,7 @@ que os outros clientes, então mostra só o que os escopos da key permitem.
 Para uma key só do painel, de leitura:
 
 ```bash
-lastro apikey criar --nome painel --escopo cob:read --escopo webhook:admin --escopo conta:admin
+vintem apikey criar --nome painel --escopo cob:read --escopo webhook:admin --escopo conta:admin
 ```
 
 Binários instalados com `go install` vêm sem o painel; a imagem Docker e os

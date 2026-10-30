@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/sandbox"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sandbox"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 // TestCobrComRetentativaNoSandbox é o critério da #32, entre processos como
@@ -19,7 +19,7 @@ import (
 // recorrência de R$ 0,55 é aprovada, a cobrança falha no vencimento por falta
 // de saldo, a retentativa é paga, e cada tentativa vira um evento.
 func TestCobrComRetentativaNoSandbox(t *testing.T) {
-	p := novoLastroEmProcessos(t, "rec:write", "rec:read", "cobr:write", "cobr:read")
+	p := novoVintemEmProcessos(t, "rec:write", "rec:read", "cobr:write", "cobr:read")
 	relogio, servir, conciliar := p.relogio, p.servir, p.conciliar
 	ctx := context.Background()
 	const txid = "cobrcli000000000000000000001"

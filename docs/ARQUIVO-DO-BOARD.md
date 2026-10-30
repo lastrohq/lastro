@@ -1,12 +1,15 @@
 <div align="center">
 
-# 🗄️ Lastro — Arquivo do board
+# 🗄️ Vintém — Arquivo do board
 
 ### O que já foi entregue, com o caminho de volta ao código.
 
-<sub>📋 board no <a href="https://github.com/orgs/lastrohq/projects">GitHub Projects</a> &nbsp;•&nbsp; 🧭 processo no <a href="./EQUIPE.md">manual do projeto</a></sub>
+<sub>📋 board no <a href="https://github.com/orgs/vintemhq/projects">GitHub Projects</a> &nbsp;•&nbsp; 🧭 processo no <a href="./EQUIPE.md">manual do projeto</a></sub>
 
 </div>
+
+> **Nome antigo:** até 30/10/2026 o projeto se chamava **Lastro** ([ADR-009](./adr/009-nome-e-marca.md)).
+> As levas daquela época ficam com o nome original; os links já apontam para o repositório novo.
 
 ---
 
@@ -25,12 +28,57 @@ Ao fim da sprint, para cada card em `✅ Concluído`:
 1. Confirme que a issue foi fechada pelo `Closes` no merge;
 2. Ache o **PR que fechou** e o **release** que levou aquilo para a `main`;
 3. Registre a linha na tabela da leva;
-4. **Só então** arquive o card (`gh project item-archive <n> --owner lastrohq --id <id>`).
+4. **Só então** arquive o card (`gh project item-archive <n> --owner vintemhq --id <id>`).
 
 ### Épico que fecha ganha seção própria
 
 Épico não tem PR nem release. O que vale registrar dele é a leitura de
 conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
+
+---
+
+## Leva de 29/10/2026 (madrugada) — v0.8.0: quatro bancos sobre um cliente só
+
+O adapter do Efí virou a configuração de um cliente da API Pix comum, e Inter,
+Sicoob e Banco do Brasil entraram por cima dele. O Pix Automático teve as
+transições conferidas nos diagramas do BCB. Foi o último release com o nome
+Lastro.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#99](https://github.com/vintemhq/vintem/issues/99) | Transições da solicitação de confirmação conferidas no Manual de Fluxos do BCB | Estudo | P | Média | [#135](https://github.com/vintemhq/vintem/pull/135) `e2ca345` | [v0.8.0](https://github.com/vintemhq/vintem/releases/tag/v0.8.0) · [#137](https://github.com/vintemhq/vintem/pull/137) `270ffc5` | 29/10 21:27 |
+
+> **Também no release, sem fechar issue:** o `pixapi` ([#131](https://github.com/vintemhq/vintem/pull/131) `1b3aea8`), os adapters do Inter
+> ([#132](https://github.com/vintemhq/vintem/pull/132) `d9a0826`, parte da [#28](https://github.com/vintemhq/vintem/issues/28)), do Sicoob ([#133](https://github.com/vintemhq/vintem/pull/133) `e6b8072`, parte da [#29](https://github.com/vintemhq/vintem/issues/29))
+> e do Banco do Brasil ([#134](https://github.com/vintemhq/vintem/pull/134) `fe0c36f`, parte da [#30](https://github.com/vintemhq/vintem/issues/30)), e a leva do v0.7.0
+> ([#136](https://github.com/vintemhq/vintem/pull/136) `1cc3126`).
+>
+> Release [v0.8.0](https://github.com/vintemhq/vintem/releases/tag/v0.8.0) com binários e checksums; o binário
+> linux/amd64 foi conferido contra o `checksums.txt`, respondeu `0.8.0` e o sandbox dele subiu.
+>
+> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/vintemhq/vintem/issues/98)).
+
+### O manual estava num PDF que ninguém tinha aberto
+
+A spec da API Pix lista os status do Pix Automático, mas não as transições. O
+*Manual de Padrões para Iniciação do Pix* tem os diagramas, e três tabelas
+estavam erradas: faltava ENVIADA → REJEITADA na solicitação e CRIADA →
+CANCELADA na recorrência, e sobrava CRIADA → REJEITADA na cobrança recorrente.
+A conferência achou também um bug: se o aviso de ATIVA se perdesse, o
+CONCLUIDA que chegasse depois era ignorado para sempre. O status que vem do
+banco passou a valer quando é alcançável no diagrama.
+
+### Três bancos sem conta em nenhum
+
+Inter, Sicoob e BB foram escritos pela documentação e por relatos públicos
+(o kmee/brbank rodou os sandboxes do Sicoob e do BB), e passam na suíte contra
+um banco simulado. Nenhum rodou ainda contra o banco de verdade, e os guias
+dizem isso no topo.
+
+### Ficou aberto
+
+- [#28](https://github.com/vintemhq/vintem/issues/28), [#29](https://github.com/vintemhq/vintem/issues/29), [#30](https://github.com/vintemhq/vintem/issues/30) — teste manual com conta real.
+- [#98](https://github.com/vintemhq/vintem/issues/98) — imagem pública no ghcr.io.
 
 ---
 
@@ -42,33 +90,33 @@ prometer.
 
 | Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
 |---|---|---|---|---|---|---|---|
-| [#38](https://github.com/lastrohq/lastro/issues/38) | Criar e consultar cobranças a partir de um agente de IA (MCP) | DX/Docs | M | Média | [#112](https://github.com/lastrohq/lastro/pull/112) `93aa19b` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 19:27 |
-| [#20](https://github.com/lastrohq/lastro/issues/20) | Subir o Lastro em modo sandbox com um comando | DX/Docs | P | Alta | [#113](https://github.com/lastrohq/lastro/pull/113) `0659af0` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 19:40 |
-| [#34](https://github.com/lastrohq/lastro/issues/34) | Tokens e componentes base do design system no painel | Design | M | Média | [#126](https://github.com/lastrohq/lastro/pull/126) `5547f65` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 20:01 |
-| [#35](https://github.com/lastrohq/lastro/issues/35) | Ver cobranças, Pix recebidos e quanto economizei no painel | Painel | G | Média | [#126](https://github.com/lastrohq/lastro/pull/126) `5547f65` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 20:01 |
-| [#36](https://github.com/lastrohq/lastro/issues/36) | Ver e reenviar webhooks que falharam pelo painel | Painel | G | Média | [#127](https://github.com/lastrohq/lastro/pull/127) `adad0bc` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 20:12 |
-| [#39](https://github.com/lastrohq/lastro/issues/39) | Site de docs em lastro.dev | DX/Docs | G | Média | [#128](https://github.com/lastrohq/lastro/pull/128) `bc8b691` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 20:19 |
+| [#38](https://github.com/vintemhq/vintem/issues/38) | Criar e consultar cobranças a partir de um agente de IA (MCP) | DX/Docs | M | Média | [#112](https://github.com/vintemhq/vintem/pull/112) `93aa19b` | [v0.7.0](https://github.com/vintemhq/vintem/releases/tag/v0.7.0) · [#130](https://github.com/vintemhq/vintem/pull/130) `92bc1aa` | 29/10 19:27 |
+| [#20](https://github.com/vintemhq/vintem/issues/20) | Subir o Lastro em modo sandbox com um comando | DX/Docs | P | Alta | [#113](https://github.com/vintemhq/vintem/pull/113) `0659af0` | [v0.7.0](https://github.com/vintemhq/vintem/releases/tag/v0.7.0) · [#130](https://github.com/vintemhq/vintem/pull/130) `92bc1aa` | 29/10 19:40 |
+| [#34](https://github.com/vintemhq/vintem/issues/34) | Tokens e componentes base do design system no painel | Design | M | Média | [#126](https://github.com/vintemhq/vintem/pull/126) `5547f65` | [v0.7.0](https://github.com/vintemhq/vintem/releases/tag/v0.7.0) · [#130](https://github.com/vintemhq/vintem/pull/130) `92bc1aa` | 29/10 20:01 |
+| [#35](https://github.com/vintemhq/vintem/issues/35) | Ver cobranças, Pix recebidos e quanto economizei no painel | Painel | G | Média | [#126](https://github.com/vintemhq/vintem/pull/126) `5547f65` | [v0.7.0](https://github.com/vintemhq/vintem/releases/tag/v0.7.0) · [#130](https://github.com/vintemhq/vintem/pull/130) `92bc1aa` | 29/10 20:01 |
+| [#36](https://github.com/vintemhq/vintem/issues/36) | Ver e reenviar webhooks que falharam pelo painel | Painel | G | Média | [#127](https://github.com/vintemhq/vintem/pull/127) `adad0bc` | [v0.7.0](https://github.com/vintemhq/vintem/releases/tag/v0.7.0) · [#130](https://github.com/vintemhq/vintem/pull/130) `92bc1aa` | 29/10 20:12 |
+| [#39](https://github.com/vintemhq/vintem/issues/39) | Site de docs em lastro.dev | DX/Docs | G | Média | [#128](https://github.com/vintemhq/vintem/pull/128) `bc8b691` | [v0.7.0](https://github.com/vintemhq/vintem/releases/tag/v0.7.0) · [#130](https://github.com/vintemhq/vintem/pull/130) `92bc1aa` | 29/10 20:19 |
 
-> **Também no release, sem fechar issue:** o SDK `@lastrohq/sdk` da [#37](https://github.com/lastrohq/lastro/issues/37)
-> ([#125](https://github.com/lastrohq/lastro/pull/125) `a694820`), o README de lançamento da [#40](https://github.com/lastrohq/lastro/issues/40) (no [#113](https://github.com/lastrohq/lastro/pull/113))
-> e a leva do v0.6.0 ([#129](https://github.com/lastrohq/lastro/pull/129) `aa4d791`).
+> **Também no release, sem fechar issue:** o SDK `@vintemhq/sdk` da [#37](https://github.com/vintemhq/vintem/issues/37)
+> ([#125](https://github.com/vintemhq/vintem/pull/125) `a694820`), o README de lançamento da [#40](https://github.com/vintemhq/vintem/issues/40) (no [#113](https://github.com/vintemhq/vintem/pull/113))
+> e a leva do v0.6.0 ([#129](https://github.com/vintemhq/vintem/pull/129) `aa4d791`).
 >
-> Release [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) com binários e checksums.
+> Release [v0.7.0](https://github.com/vintemhq/vintem/releases/tag/v0.7.0) com binários e checksums.
 >
-> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/lastrohq/lastro/issues/98)).
+> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/vintemhq/vintem/issues/98)).
 
 ### O nome do pacote já tinha dono
 
-O escopo `@lastro` no npm pertence a outra pessoa. O SDK virou `@lastrohq/sdk`,
+O escopo `@lastro` no npm pertence a outra pessoa. O SDK virou `@vintemhq/sdk`,
 igual à organização do GitHub, e a publicação espera a organização no npm e o
-`NPM_TOKEN` ([#37](https://github.com/lastrohq/lastro/issues/37)).
+`NPM_TOKEN` ([#37](https://github.com/vintemhq/vintem/issues/37)).
 
 ### Ficou aberto
 
-- [#37](https://github.com/lastrohq/lastro/issues/37) — publicar o SDK no npm.
-- [#40](https://github.com/lastrohq/lastro/issues/40) — social preview em Settings.
-- [#41](https://github.com/lastrohq/lastro/issues/41) — GitHub Sponsors.
-- [#98](https://github.com/lastrohq/lastro/issues/98) — imagem pública no ghcr.io.
+- [#37](https://github.com/vintemhq/vintem/issues/37) — publicar o SDK no npm.
+- [#40](https://github.com/vintemhq/vintem/issues/40) — social preview em Settings.
+- [#41](https://github.com/vintemhq/vintem/issues/41) — GitHub Sponsors.
+- [#98](https://github.com/vintemhq/vintem/issues/98) — imagem pública no ghcr.io.
 
 ---
 
@@ -81,19 +129,19 @@ passou a subir com um comando.
 
 | Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
 |---|---|---|---|---|---|---|---|
-| [#32](https://github.com/lastrohq/lastro/issues/32) | Cobrar automaticamente as parcelas de uma recorrência aprovada | Core | G | Alta | [#100](https://github.com/lastrohq/lastro/pull/100) `88afe10`, [#101](https://github.com/lastrohq/lastro/pull/101) `2c0cc2f`, [#102](https://github.com/lastrohq/lastro/pull/102) `5daa183`, [#103](https://github.com/lastrohq/lastro/pull/103) `ef75558` | [v0.6.0](https://github.com/lastrohq/lastro/releases/tag/v0.6.0) · [#111](https://github.com/lastrohq/lastro/pull/111) `ba6ad2c` | 29/10 17:07 |
-| [#33](https://github.com/lastrohq/lastro/issues/33) | Devolver um Pix total ou parcialmente sem passar do valor recebido | Core | M | Média | [#104](https://github.com/lastrohq/lastro/pull/104) `e526e19`, [#105](https://github.com/lastrohq/lastro/pull/105) `f41dce4`, [#106](https://github.com/lastrohq/lastro/pull/106) `82f8067` | [v0.6.0](https://github.com/lastrohq/lastro/releases/tag/v0.6.0) · [#111](https://github.com/lastrohq/lastro/pull/111) `ba6ad2c` | 29/10 17:41 |
-| [#21](https://github.com/lastrohq/lastro/issues/21) | Todo adapter passa pela mesma suíte de conformidade | Adapters PSP | G | Alta | [#108](https://github.com/lastrohq/lastro/pull/108) `14cdf3e` | [v0.6.0](https://github.com/lastrohq/lastro/releases/tag/v0.6.0) · [#111](https://github.com/lastrohq/lastro/pull/111) `ba6ad2c` | 29/10 18:46 |
+| [#32](https://github.com/vintemhq/vintem/issues/32) | Cobrar automaticamente as parcelas de uma recorrência aprovada | Core | G | Alta | [#100](https://github.com/vintemhq/vintem/pull/100) `88afe10`, [#101](https://github.com/vintemhq/vintem/pull/101) `2c0cc2f`, [#102](https://github.com/vintemhq/vintem/pull/102) `5daa183`, [#103](https://github.com/vintemhq/vintem/pull/103) `ef75558` | [v0.6.0](https://github.com/vintemhq/vintem/releases/tag/v0.6.0) · [#111](https://github.com/vintemhq/vintem/pull/111) `ba6ad2c` | 29/10 17:07 |
+| [#33](https://github.com/vintemhq/vintem/issues/33) | Devolver um Pix total ou parcialmente sem passar do valor recebido | Core | M | Média | [#104](https://github.com/vintemhq/vintem/pull/104) `e526e19`, [#105](https://github.com/vintemhq/vintem/pull/105) `f41dce4`, [#106](https://github.com/vintemhq/vintem/pull/106) `82f8067` | [v0.6.0](https://github.com/vintemhq/vintem/releases/tag/v0.6.0) · [#111](https://github.com/vintemhq/vintem/pull/111) `ba6ad2c` | 29/10 17:41 |
+| [#21](https://github.com/vintemhq/vintem/issues/21) | Todo adapter passa pela mesma suíte de conformidade | Adapters PSP | G | Alta | [#108](https://github.com/vintemhq/vintem/pull/108) `14cdf3e` | [v0.6.0](https://github.com/vintemhq/vintem/releases/tag/v0.6.0) · [#111](https://github.com/vintemhq/vintem/pull/111) `ba6ad2c` | 29/10 18:46 |
 
-> **Também no release, sem fechar issue:** o `lastro sandbox` da [#20](https://github.com/lastrohq/lastro/issues/20)
-> ([#107](https://github.com/lastrohq/lastro/pull/107) `d965f7c`), as fitas de pagamento e devolução do Efí da [#27](https://github.com/lastrohq/lastro/issues/27)
-> ([#109](https://github.com/lastrohq/lastro/pull/109) `f709a32`) e a leva do v0.5.0 ([#110](https://github.com/lastrohq/lastro/pull/110) `0b45367`).
+> **Também no release, sem fechar issue:** o `lastro sandbox` da [#20](https://github.com/vintemhq/vintem/issues/20)
+> ([#107](https://github.com/vintemhq/vintem/pull/107) `d965f7c`), as fitas de pagamento e devolução do Efí da [#27](https://github.com/vintemhq/vintem/issues/27)
+> ([#109](https://github.com/vintemhq/vintem/pull/109) `f709a32`) e a leva do v0.5.0 ([#110](https://github.com/vintemhq/vintem/pull/110) `0b45367`).
 >
-> Release [v0.6.0](https://github.com/lastrohq/lastro/releases/tag/v0.6.0) com 6 binários e checksums; o binário
+> Release [v0.6.0](https://github.com/vintemhq/vintem/releases/tag/v0.6.0) com 6 binários e checksums; o binário
 > linux/amd64 foi conferido contra o `checksums.txt`, respondeu `0.6.0`, e o `lastro sandbox` dele levou uma
 > cobrança a `CONCLUIDA`.
 >
-> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/lastrohq/lastro/issues/98)).
+> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/vintemhq/vintem/issues/98)).
 
 ### A homologação contou o que a documentação não contava
 
@@ -113,9 +161,9 @@ a dizer o que é verdade: o Lastro não soma nada à tarifa do banco.
 
 ### Ficou aberto
 
-- [#20](https://github.com/lastrohq/lastro/issues/20) — GIF do README (fechou depois, no v0.7.0).
-- [#27](https://github.com/lastrohq/lastro/issues/27) — cadastro do webhook do Efí, que pede URL pública.
-- [#98](https://github.com/lastrohq/lastro/issues/98) — imagem pública no ghcr.io.
+- [#20](https://github.com/vintemhq/vintem/issues/20) — GIF do README (fechou depois, no v0.7.0).
+- [#27](https://github.com/vintemhq/vintem/issues/27) — cadastro do webhook do Efí, que pede URL pública.
+- [#98](https://github.com/vintemhq/vintem/issues/98) — imagem pública no ghcr.io.
 
 ---
 
@@ -129,16 +177,16 @@ v0.3.0 passaram a receber o aviso de vencimento do certificado.
 
 | Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
 |---|---|---|---|---|---|---|---|
-| [#79](https://github.com/lastrohq/lastro/issues/79) | Contas cadastradas antes do v0.3.0 também recebem o aviso de vencimento do certificado | Segurança | P | Média | [#87](https://github.com/lastrohq/lastro/pull/87) `15c6d9b` | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 14:18 |
-| [#1](https://github.com/lastrohq/lastro/issues/1) | Saber quais bancos expõem /rec e /cobr (Pix Automático) em produção para PJ | Estudo | M | Alta | — (estudo) | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 14:46 |
-| [#31](https://github.com/lastrohq/lastro/issues/31) | Criar recorrência de Pix Automático e pedir autorização ao pagador | Core | G | Alta | [#90](https://github.com/lastrohq/lastro/pull/90) `054cc34`, [#91](https://github.com/lastrohq/lastro/pull/91) `ea30346`, [#92](https://github.com/lastrohq/lastro/pull/92) `d0145c0`, [#94](https://github.com/lastrohq/lastro/pull/94) `deda649` | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 15:20 |
-| [#93](https://github.com/lastrohq/lastro/issues/93) | Recorrência aprovada sem aviso do banco aparece no Lastro (conciliação de recorrências) | Core | M | Alta | [#95](https://github.com/lastrohq/lastro/pull/95) `8a9c095` | [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) · [#96](https://github.com/lastrohq/lastro/pull/96) `96736cb` | 29/10 15:31 |
+| [#79](https://github.com/vintemhq/vintem/issues/79) | Contas cadastradas antes do v0.3.0 também recebem o aviso de vencimento do certificado | Segurança | P | Média | [#87](https://github.com/vintemhq/vintem/pull/87) `15c6d9b` | [v0.5.0](https://github.com/vintemhq/vintem/releases/tag/v0.5.0) · [#96](https://github.com/vintemhq/vintem/pull/96) `96736cb` | 29/10 14:18 |
+| [#1](https://github.com/vintemhq/vintem/issues/1) | Saber quais bancos expõem /rec e /cobr (Pix Automático) em produção para PJ | Estudo | M | Alta | — (estudo) | [v0.5.0](https://github.com/vintemhq/vintem/releases/tag/v0.5.0) · [#96](https://github.com/vintemhq/vintem/pull/96) `96736cb` | 29/10 14:46 |
+| [#31](https://github.com/vintemhq/vintem/issues/31) | Criar recorrência de Pix Automático e pedir autorização ao pagador | Core | G | Alta | [#90](https://github.com/vintemhq/vintem/pull/90) `054cc34`, [#91](https://github.com/vintemhq/vintem/pull/91) `ea30346`, [#92](https://github.com/vintemhq/vintem/pull/92) `d0145c0`, [#94](https://github.com/vintemhq/vintem/pull/94) `deda649` | [v0.5.0](https://github.com/vintemhq/vintem/releases/tag/v0.5.0) · [#96](https://github.com/vintemhq/vintem/pull/96) `96736cb` | 29/10 15:20 |
+| [#93](https://github.com/vintemhq/vintem/issues/93) | Recorrência aprovada sem aviso do banco aparece no Lastro (conciliação de recorrências) | Core | M | Alta | [#95](https://github.com/vintemhq/vintem/pull/95) `8a9c095` | [v0.5.0](https://github.com/vintemhq/vintem/releases/tag/v0.5.0) · [#96](https://github.com/vintemhq/vintem/pull/96) `96736cb` | 29/10 15:31 |
 
-> Release [v0.5.0](https://github.com/lastrohq/lastro/releases/tag/v0.5.0) com 6 binários e checksums; o workflow
-> `Release` passou e publicou `ghcr.io/lastrohq/lastro:0.5.0`. O binário linux/amd64 foi baixado, conferido contra o
+> Release [v0.5.0](https://github.com/vintemhq/vintem/releases/tag/v0.5.0) com 6 binários e checksums; o workflow
+> `Release` passou e publicou `ghcr.io/vintemhq/vintem:0.5.0`. O binário linux/amd64 foi baixado, conferido contra o
 > `checksums.txt` e respondeu `0.5.0`.
 >
-> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/lastrohq/lastro/issues/98)): por isso o digest da imagem
+> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/vintemhq/vintem/issues/98)): por isso o digest da imagem
 > não foi conferido nesta leva.
 
 ### O estudo antes do código
@@ -146,7 +194,7 @@ v0.3.0 passaram a receber o aviso de vencimento do certificado.
 A #1 decidiu a ordem da F6: as RN-40 a RN-43 foram revisadas contra a API Pix
 2.10.0 e o Guia do Pix Automático v1.3 antes de qualquer tabela existir. O
 resultado também disse o que não dava para fazer ainda: o Efí só libera `/rec`
-para conta PJ, o que virou a [#89](https://github.com/lastrohq/lastro/issues/89).
+para conta PJ, o que virou a [#89](https://github.com/vintemhq/vintem/issues/89).
 
 ### O sandbox faz o papel do pagador
 
@@ -158,10 +206,10 @@ mudou pelo mesmo caminho do webhook.
 
 ### Ficou aberto
 
-- [#32](https://github.com/lastrohq/lastro/issues/32) — cobrança recorrente (`/cobr`), a segunda metade do Pix Automático.
-- [#33](https://github.com/lastrohq/lastro/issues/33) — devoluções (F7).
-- [#89](https://github.com/lastrohq/lastro/issues/89) — conta PJ para testar Pix Automático num banco real.
-- [#27](https://github.com/lastrohq/lastro/issues/27) e [#21](https://github.com/lastrohq/lastro/issues/21) — teste do Efí na homologação e fixtures gravadas.
+- [#32](https://github.com/vintemhq/vintem/issues/32) — cobrança recorrente (`/cobr`), a segunda metade do Pix Automático.
+- [#33](https://github.com/vintemhq/vintem/issues/33) — devoluções (F7).
+- [#89](https://github.com/vintemhq/vintem/issues/89) — conta PJ para testar Pix Automático num banco real.
+- [#27](https://github.com/vintemhq/vintem/issues/27) e [#21](https://github.com/vintemhq/vintem/issues/21) — teste do Efí na homologação e fixtures gravadas.
 
 ---
 
@@ -174,15 +222,15 @@ cobranças quando o processo reinicia.
 
 | Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
 |---|---|---|---|---|---|---|---|
-| [#64](https://github.com/lastrohq/lastro/issues/64) | Sandbox lembra das cobranças depois de reiniciar | Adapters PSP | M | Baixa | [#85](https://github.com/lastrohq/lastro/pull/85) `49bedce` | [v0.4.0](https://github.com/lastrohq/lastro/releases/tag/v0.4.0) · [#83](https://github.com/lastrohq/lastro/pull/83) `62266ca` | 29/10 13:51 |
+| [#64](https://github.com/vintemhq/vintem/issues/64) | Sandbox lembra das cobranças depois de reiniciar | Adapters PSP | M | Baixa | [#85](https://github.com/vintemhq/vintem/pull/85) `49bedce` | [v0.4.0](https://github.com/vintemhq/vintem/releases/tag/v0.4.0) · [#83](https://github.com/vintemhq/vintem/pull/83) `62266ca` | 29/10 13:51 |
 
-> **Também no release, sem fechar issue:** a [#27](https://github.com/lastrohq/lastro/issues/27) (adapter do Efí) entrou
-> em três PRs — [#80](https://github.com/lastrohq/lastro/pull/80) `169ca43`, [#81](https://github.com/lastrohq/lastro/pull/81) `92037b3`
-> e [#82](https://github.com/lastrohq/lastro/pull/82) `f8c5a5d` — e segue em `🧪 Em teste` até o teste na homologação do Efí, que é
-> critério de aceite. A correção dos testes instáveis entrou pelo [#84](https://github.com/lastrohq/lastro/pull/84) `b445ed7`.
+> **Também no release, sem fechar issue:** a [#27](https://github.com/vintemhq/vintem/issues/27) (adapter do Efí) entrou
+> em três PRs — [#80](https://github.com/vintemhq/vintem/pull/80) `169ca43`, [#81](https://github.com/vintemhq/vintem/pull/81) `92037b3`
+> e [#82](https://github.com/vintemhq/vintem/pull/82) `f8c5a5d` — e segue em `🧪 Em teste` até o teste na homologação do Efí, que é
+> critério de aceite. A correção dos testes instáveis entrou pelo [#84](https://github.com/vintemhq/vintem/pull/84) `b445ed7`.
 >
-> Release [v0.4.0](https://github.com/lastrohq/lastro/releases/tag/v0.4.0) com 6 binários, checksums e imagem
-> `ghcr.io/lastrohq/lastro:0.4.0` (amd64 e arm64, digest `sha256:aba25d53…`). O binário linux/amd64 foi baixado,
+> Release [v0.4.0](https://github.com/vintemhq/vintem/releases/tag/v0.4.0) com 6 binários, checksums e imagem
+> `ghcr.io/vintemhq/vintem:0.4.0` (amd64 e arm64, digest `sha256:aba25d53…`). O binário linux/amd64 foi baixado,
 > conferido contra o `checksums.txt`, respondeu `0.4.0` e lista `[efi sandbox]`.
 >
 > **Ainda não ⚠️ — imagem privada**, a mesma pendência das levas anteriores.
@@ -216,10 +264,10 @@ pagamento simulado e, ao voltar, a cobrança apareceu paga.
 
 ### Ficou aberto
 
-- [#27](https://github.com/lastrohq/lastro/issues/27) — teste do adapter do Efí na homologação; roteiro de 7 passos na issue.
-- [#79](https://github.com/lastrohq/lastro/issues/79) — contas cadastradas antes do v0.3.0 não recebem o aviso de vencimento do certificado.
-- [#21](https://github.com/lastrohq/lastro/issues/21) — fixtures gravadas da homologação para a suíte de conformidade.
-- [#1](https://github.com/lastrohq/lastro/issues/1) — estudo de quais bancos expõem Pix Automático, que destrava a F6.
+- [#27](https://github.com/vintemhq/vintem/issues/27) — teste do adapter do Efí na homologação; roteiro de 7 passos na issue.
+- [#79](https://github.com/vintemhq/vintem/issues/79) — contas cadastradas antes do v0.3.0 não recebem o aviso de vencimento do certificado.
+- [#21](https://github.com/vintemhq/vintem/issues/21) — fixtures gravadas da homologação para a suíte de conformidade.
+- [#1](https://github.com/vintemhq/vintem/issues/1) — estudo de quais bancos expõem Pix Automático, que destrava a F6.
 
 ---
 
@@ -232,16 +280,16 @@ virou check do CI. O BR Code saiu de `🧪 Em teste` com o teste manual em quatr
 
 | Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
 |---|---|---|---|---|---|---|---|
-| [#9](https://github.com/lastrohq/lastro/issues/9) | Gerar BR Code estático e dinâmico válido em qualquer app de banco | Core | M | Alta | [#67](https://github.com/lastrohq/lastro/pull/67) `832b45e` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 10:55 |
-| [#4](https://github.com/lastrohq/lastro/issues/4) | CI reprova importação proibida entre camadas (depguard) | Infra/CI | P | Média | [#68](https://github.com/lastrohq/lastro/pull/68) `c7fa073` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 11:08 |
-| [#26](https://github.com/lastrohq/lastro/issues/26) | Token OAuth2 dos bancos é reutilizado até expirar | Core | M | Alta | [#70](https://github.com/lastrohq/lastro/pull/70) `68ecaa7` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 11:53 |
-| [#71](https://github.com/lastrohq/lastro/issues/71) | Certificado do mTLS é conferido ao cadastrar e a validade fica visível | Segurança | M | Alta | [#74](https://github.com/lastrohq/lastro/pull/74) `d168f1a` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 12:11 |
-| [#73](https://github.com/lastrohq/lastro/issues/73) | Certificado de homologação é recusado em conta de produção | Segurança | P | Alta | [#75](https://github.com/lastrohq/lastro/pull/75) `cc1e36c` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 12:25 |
-| [#72](https://github.com/lastrohq/lastro/issues/72) | A aplicação é avisada 30 dias antes de o certificado vencer | Segurança | M | Alta | [#76](https://github.com/lastrohq/lastro/pull/76) `cfd6ba1` | [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) · [#77](https://github.com/lastrohq/lastro/pull/77) `475e2aa` | 29/10 12:28 |
+| [#9](https://github.com/vintemhq/vintem/issues/9) | Gerar BR Code estático e dinâmico válido em qualquer app de banco | Core | M | Alta | [#67](https://github.com/vintemhq/vintem/pull/67) `832b45e` | [v0.3.0](https://github.com/vintemhq/vintem/releases/tag/v0.3.0) · [#77](https://github.com/vintemhq/vintem/pull/77) `475e2aa` | 29/10 10:55 |
+| [#4](https://github.com/vintemhq/vintem/issues/4) | CI reprova importação proibida entre camadas (depguard) | Infra/CI | P | Média | [#68](https://github.com/vintemhq/vintem/pull/68) `c7fa073` | [v0.3.0](https://github.com/vintemhq/vintem/releases/tag/v0.3.0) · [#77](https://github.com/vintemhq/vintem/pull/77) `475e2aa` | 29/10 11:08 |
+| [#26](https://github.com/vintemhq/vintem/issues/26) | Token OAuth2 dos bancos é reutilizado até expirar | Core | M | Alta | [#70](https://github.com/vintemhq/vintem/pull/70) `68ecaa7` | [v0.3.0](https://github.com/vintemhq/vintem/releases/tag/v0.3.0) · [#77](https://github.com/vintemhq/vintem/pull/77) `475e2aa` | 29/10 11:53 |
+| [#71](https://github.com/vintemhq/vintem/issues/71) | Certificado do mTLS é conferido ao cadastrar e a validade fica visível | Segurança | M | Alta | [#74](https://github.com/vintemhq/vintem/pull/74) `d168f1a` | [v0.3.0](https://github.com/vintemhq/vintem/releases/tag/v0.3.0) · [#77](https://github.com/vintemhq/vintem/pull/77) `475e2aa` | 29/10 12:11 |
+| [#73](https://github.com/vintemhq/vintem/issues/73) | Certificado de homologação é recusado em conta de produção | Segurança | P | Alta | [#75](https://github.com/vintemhq/vintem/pull/75) `cc1e36c` | [v0.3.0](https://github.com/vintemhq/vintem/releases/tag/v0.3.0) · [#77](https://github.com/vintemhq/vintem/pull/77) `475e2aa` | 29/10 12:25 |
+| [#72](https://github.com/vintemhq/vintem/issues/72) | A aplicação é avisada 30 dias antes de o certificado vencer | Segurança | M | Alta | [#76](https://github.com/vintemhq/vintem/pull/76) `cfd6ba1` | [v0.3.0](https://github.com/vintemhq/vintem/releases/tag/v0.3.0) · [#77](https://github.com/vintemhq/vintem/pull/77) `475e2aa` | 29/10 12:28 |
 
-> `develop` e `main` com o mesmo conteúdo depois do [#77](https://github.com/lastrohq/lastro/pull/77); release
-> [v0.3.0](https://github.com/lastrohq/lastro/releases/tag/v0.3.0) com 6 binários, checksums e imagem
-> `ghcr.io/lastrohq/lastro:0.3.0` (amd64 e arm64, digest `sha256:9fa67e6b…`). O binário linux/amd64
+> `develop` e `main` com o mesmo conteúdo depois do [#77](https://github.com/vintemhq/vintem/pull/77); release
+> [v0.3.0](https://github.com/vintemhq/vintem/releases/tag/v0.3.0) com 6 binários, checksums e imagem
+> `ghcr.io/vintemhq/vintem:0.3.0` (amd64 e arm64, digest `sha256:9fa67e6b…`). O binário linux/amd64
 > foi baixado, conferido contra o `checksums.txt` e respondeu `0.3.0`.
 >
 > **Ainda não ⚠️ — imagem privada**, a mesma pendência das levas anteriores.
@@ -288,11 +336,11 @@ usado de verdade o depguard apareceu.
 
 ### Ficou aberto
 
-- [#27](https://github.com/lastrohq/lastro/issues/27) — adapter do Efí, que usa tudo o que entrou aqui; espera acesso à homologação.
-- [#21](https://github.com/lastrohq/lastro/issues/21) — conformidade espera as fixtures do primeiro banco real.
-- [#64](https://github.com/lastrohq/lastro/issues/64) — sandbox ainda esquece as cobranças ao reiniciar.
-- [#1](https://github.com/lastrohq/lastro/issues/1) — estudo de quais bancos expõem Pix Automático, que destrava a F6.
-- [#79](https://github.com/lastrohq/lastro/issues/79) — contas cadastradas antes do v0.3.0 não têm os dados públicos do certificado e não recebem o aviso de vencimento.
+- [#27](https://github.com/vintemhq/vintem/issues/27) — adapter do Efí, que usa tudo o que entrou aqui; espera acesso à homologação.
+- [#21](https://github.com/vintemhq/vintem/issues/21) — conformidade espera as fixtures do primeiro banco real.
+- [#64](https://github.com/vintemhq/vintem/issues/64) — sandbox ainda esquece as cobranças ao reiniciar.
+- [#1](https://github.com/vintemhq/vintem/issues/1) — estudo de quais bancos expõem Pix Automático, que destrava a F6.
+- [#79](https://github.com/vintemhq/vintem/issues/79) — contas cadastradas antes do v0.3.0 não têm os dados públicos do certificado e não recebem o aviso de vencimento.
 
 ---
 
@@ -304,14 +352,14 @@ com assinatura verificável. Junto, o projeto foi para o Go 1.27.
 
 | Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
 |---|---|---|---|---|---|---|---|
-| [#59](https://github.com/lastrohq/lastro/issues/59) | Projeto compila e roda no Go 1.27 | Infra/CI | P | Média | [#60](https://github.com/lastrohq/lastro/pull/60) `6aad7e3` | [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) · [#65](https://github.com/lastrohq/lastro/pull/65) `12d2c40` | 28/10 22:13 |
-| [#22](https://github.com/lastrohq/lastro/issues/22) | Webhook do banco é aceito, deduplicado e persistido antes do 200 | Core | G | Alta | [#61](https://github.com/lastrohq/lastro/pull/61) `6103f66` | [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) · [#65](https://github.com/lastrohq/lastro/pull/65) `12d2c40` | 28/10 22:22 |
-| [#24](https://github.com/lastrohq/lastro/issues/24) | Pix recebido sem webhook aparece em até 5 minutos (conciliação) | Core | M | Alta | [#62](https://github.com/lastrohq/lastro/pull/62) `6ef5174` | [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) · [#65](https://github.com/lastrohq/lastro/pull/65) `12d2c40` | 28/10 22:28 |
-| [#23](https://github.com/lastrohq/lastro/issues/23) | A aplicação do cliente recebe webhook assinado mesmo se estiver fora do ar por horas | Core | G | Alta | [#63](https://github.com/lastrohq/lastro/pull/63) `48647f9` | [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) · [#65](https://github.com/lastrohq/lastro/pull/65) `12d2c40` | 28/10 22:39 |
-| [#19](https://github.com/lastrohq/lastro/issues/19) | Testar o fluxo completo de Pix sem conta PJ (sandbox com estado) | Adapters PSP | G | Alta | — (fechada com evidência de #51, #55, #62 e #63) | [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) · [#65](https://github.com/lastrohq/lastro/pull/65) `12d2c40` | 28/10 22:39 |
+| [#59](https://github.com/vintemhq/vintem/issues/59) | Projeto compila e roda no Go 1.27 | Infra/CI | P | Média | [#60](https://github.com/vintemhq/vintem/pull/60) `6aad7e3` | [v0.2.0](https://github.com/vintemhq/vintem/releases/tag/v0.2.0) · [#65](https://github.com/vintemhq/vintem/pull/65) `12d2c40` | 28/10 22:13 |
+| [#22](https://github.com/vintemhq/vintem/issues/22) | Webhook do banco é aceito, deduplicado e persistido antes do 200 | Core | G | Alta | [#61](https://github.com/vintemhq/vintem/pull/61) `6103f66` | [v0.2.0](https://github.com/vintemhq/vintem/releases/tag/v0.2.0) · [#65](https://github.com/vintemhq/vintem/pull/65) `12d2c40` | 28/10 22:22 |
+| [#24](https://github.com/vintemhq/vintem/issues/24) | Pix recebido sem webhook aparece em até 5 minutos (conciliação) | Core | M | Alta | [#62](https://github.com/vintemhq/vintem/pull/62) `6ef5174` | [v0.2.0](https://github.com/vintemhq/vintem/releases/tag/v0.2.0) · [#65](https://github.com/vintemhq/vintem/pull/65) `12d2c40` | 28/10 22:28 |
+| [#23](https://github.com/vintemhq/vintem/issues/23) | A aplicação do cliente recebe webhook assinado mesmo se estiver fora do ar por horas | Core | G | Alta | [#63](https://github.com/vintemhq/vintem/pull/63) `48647f9` | [v0.2.0](https://github.com/vintemhq/vintem/releases/tag/v0.2.0) · [#65](https://github.com/vintemhq/vintem/pull/65) `12d2c40` | 28/10 22:39 |
+| [#19](https://github.com/vintemhq/vintem/issues/19) | Testar o fluxo completo de Pix sem conta PJ (sandbox com estado) | Adapters PSP | G | Alta | — (fechada com evidência de #51, #55, #62 e #63) | [v0.2.0](https://github.com/vintemhq/vintem/releases/tag/v0.2.0) · [#65](https://github.com/vintemhq/vintem/pull/65) `12d2c40` | 28/10 22:39 |
 
-> `develop` e `main` com o mesmo conteúdo depois do [#65](https://github.com/lastrohq/lastro/pull/65); release
-> [v0.2.0](https://github.com/lastrohq/lastro/releases/tag/v0.2.0) com 6 binários, checksums e imagem `ghcr.io/lastrohq/lastro:0.2.0`.
+> `develop` e `main` com o mesmo conteúdo depois do [#65](https://github.com/vintemhq/vintem/pull/65); release
+> [v0.2.0](https://github.com/vintemhq/vintem/releases/tag/v0.2.0) com 6 binários, checksums e imagem `ghcr.io/vintemhq/vintem:0.2.0`.
 >
 > **Ainda não ⚠️ — imagem privada**, a mesma pendência da leva do v0.1.0.
 
@@ -345,10 +393,10 @@ drift do CI pegaria isso num PR distraído — é para isso que ele existe.
 
 ### Ficou aberto
 
-- [#64](https://github.com/lastrohq/lastro/issues/64) — sandbox ainda esquece as cobranças ao reiniciar (tirado da #19).
-- [#21](https://github.com/lastrohq/lastro/issues/21) — conformidade espera as fixtures do primeiro banco real (F5).
-- [#9](https://github.com/lastrohq/lastro/issues/9) — BR Code ainda sem teste manual em apps de banco.
-- [#1](https://github.com/lastrohq/lastro/issues/1) — estudo de quais bancos expõem Pix Automático, que destrava a F6.
+- [#64](https://github.com/vintemhq/vintem/issues/64) — sandbox ainda esquece as cobranças ao reiniciar (tirado da #19).
+- [#21](https://github.com/vintemhq/vintem/issues/21) — conformidade espera as fixtures do primeiro banco real (F5).
+- [#9](https://github.com/vintemhq/vintem/issues/9) — BR Code ainda sem teste manual em apps de banco.
+- [#1](https://github.com/vintemhq/vintem/issues/1) — estudo de quais bancos expõem Pix Automático, que destrava a F6.
 
 ---
 
@@ -361,24 +409,24 @@ publica imagem multi-arch no `ghcr.io`.
 
 | Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
 |---|---|---|---|---|---|---|---|
-| [#3](https://github.com/lastrohq/lastro/issues/3) | main e develop protegidas com o check Lint & Test | Infra/CI | P | Alta | — (via API, comentado na issue) | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 18:24 |
-| [#5](https://github.com/lastrohq/lastro/issues/5) | Release com tag publica binários e imagem multi-arch no ghcr.io | Infra/CI | M | Média | [#56](https://github.com/lastrohq/lastro/pull/56) `8695c28` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 21:49 |
-| [#6](https://github.com/lastrohq/lastro/issues/6) | Valores em dinheiro nunca perdem centavo (Money em int64) | Core | P | Alta | [#44](https://github.com/lastrohq/lastro/pull/44) `9ea705b` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 18:54 |
-| [#7](https://github.com/lastrohq/lastro/issues/7) | txid gerado e validado conforme a spec (26–35 alfanuméricos) | Core | P | Alta | [#44](https://github.com/lastrohq/lastro/pull/44) `9ea705b` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 18:54 |
-| [#8](https://github.com/lastrohq/lastro/issues/8) | Cobrança só muda de estado por transição permitida | Core | M | Alta | [#45](https://github.com/lastrohq/lastro/pull/45) `2b4c046` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 18:57 |
-| [#10](https://github.com/lastrohq/lastro/issues/10) | Ler um BR Code "Pix Copia e Cola" e saber o que ele cobra | Core | M | Média | [#46](https://github.com/lastrohq/lastro/pull/46) `0b30133` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 19:00 |
-| [#11](https://github.com/lastrohq/lastro/issues/11) | Ports PSP, Store, Notifier, Vault e Clock definidos | Core | M | Alta | [#47](https://github.com/lastrohq/lastro/pull/47) `bffc2aa` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 19:04 |
-| [#12](https://github.com/lastrohq/lastro/issues/12) | Dados do Lastro persistem em SQLite com migrations versionadas | Core | M | Alta | [#48](https://github.com/lastrohq/lastro/pull/48) `717b6e5` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 20:04 |
-| [#13](https://github.com/lastrohq/lastro/issues/13) | Contrato da API em api/openapi.yaml derivado da spec do BCB | API | M | Alta | [#49](https://github.com/lastrohq/lastro/pull/49) `f472593` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 20:23 |
-| [#18](https://github.com/lastrohq/lastro/issues/18) | Uma instância atende várias contas recebedoras | Core | M | Alta | [#50](https://github.com/lastrohq/lastro/pull/50) `188ca42` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 20:34 |
-| [#14](https://github.com/lastrohq/lastro/issues/14) | Criar e consultar cobrança imediata (cob) pela API | API | G | Alta | [#52](https://github.com/lastrohq/lastro/pull/52) `656ad18` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 20:49 |
-| [#16](https://github.com/lastrohq/lastro/issues/16) | Acesso à API só com API key de escopo limitado | Segurança | M | Alta | [#53](https://github.com/lastrohq/lastro/pull/53) `7ac80e2` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 20:58 |
-| [#17](https://github.com/lastrohq/lastro/issues/17) | Reenviar a mesma criação não gera cobrança duplicada (Idempotency-Key) | API | M | Alta | [#54](https://github.com/lastrohq/lastro/pull/54) `2582256` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 21:05 |
-| [#15](https://github.com/lastrohq/lastro/issues/15) | Criar e consultar cobrança com vencimento (cobv) pela API | API | G | Média | [#55](https://github.com/lastrohq/lastro/pull/55) `ed0eec2` | [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) · [#57](https://github.com/lastrohq/lastro/pull/57) `7a0a897` | 28/10 21:23 |
+| [#3](https://github.com/vintemhq/vintem/issues/3) | main e develop protegidas com o check Lint & Test | Infra/CI | P | Alta | — (via API, comentado na issue) | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 18:24 |
+| [#5](https://github.com/vintemhq/vintem/issues/5) | Release com tag publica binários e imagem multi-arch no ghcr.io | Infra/CI | M | Média | [#56](https://github.com/vintemhq/vintem/pull/56) `8695c28` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 21:49 |
+| [#6](https://github.com/vintemhq/vintem/issues/6) | Valores em dinheiro nunca perdem centavo (Money em int64) | Core | P | Alta | [#44](https://github.com/vintemhq/vintem/pull/44) `9ea705b` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 18:54 |
+| [#7](https://github.com/vintemhq/vintem/issues/7) | txid gerado e validado conforme a spec (26–35 alfanuméricos) | Core | P | Alta | [#44](https://github.com/vintemhq/vintem/pull/44) `9ea705b` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 18:54 |
+| [#8](https://github.com/vintemhq/vintem/issues/8) | Cobrança só muda de estado por transição permitida | Core | M | Alta | [#45](https://github.com/vintemhq/vintem/pull/45) `2b4c046` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 18:57 |
+| [#10](https://github.com/vintemhq/vintem/issues/10) | Ler um BR Code "Pix Copia e Cola" e saber o que ele cobra | Core | M | Média | [#46](https://github.com/vintemhq/vintem/pull/46) `0b30133` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 19:00 |
+| [#11](https://github.com/vintemhq/vintem/issues/11) | Ports PSP, Store, Notifier, Vault e Clock definidos | Core | M | Alta | [#47](https://github.com/vintemhq/vintem/pull/47) `bffc2aa` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 19:04 |
+| [#12](https://github.com/vintemhq/vintem/issues/12) | Dados do Lastro persistem em SQLite com migrations versionadas | Core | M | Alta | [#48](https://github.com/vintemhq/vintem/pull/48) `717b6e5` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 20:04 |
+| [#13](https://github.com/vintemhq/vintem/issues/13) | Contrato da API em api/openapi.yaml derivado da spec do BCB | API | M | Alta | [#49](https://github.com/vintemhq/vintem/pull/49) `f472593` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 20:23 |
+| [#18](https://github.com/vintemhq/vintem/issues/18) | Uma instância atende várias contas recebedoras | Core | M | Alta | [#50](https://github.com/vintemhq/vintem/pull/50) `188ca42` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 20:34 |
+| [#14](https://github.com/vintemhq/vintem/issues/14) | Criar e consultar cobrança imediata (cob) pela API | API | G | Alta | [#52](https://github.com/vintemhq/vintem/pull/52) `656ad18` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 20:49 |
+| [#16](https://github.com/vintemhq/vintem/issues/16) | Acesso à API só com API key de escopo limitado | Segurança | M | Alta | [#53](https://github.com/vintemhq/vintem/pull/53) `7ac80e2` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 20:58 |
+| [#17](https://github.com/vintemhq/vintem/issues/17) | Reenviar a mesma criação não gera cobrança duplicada (Idempotency-Key) | API | M | Alta | [#54](https://github.com/vintemhq/vintem/pull/54) `2582256` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 21:05 |
+| [#15](https://github.com/vintemhq/vintem/issues/15) | Criar e consultar cobrança com vencimento (cobv) pela API | API | G | Média | [#55](https://github.com/vintemhq/vintem/pull/55) `ed0eec2` | [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) · [#57](https://github.com/vintemhq/vintem/pull/57) `7a0a897` | 28/10 21:23 |
 
-> `develop` e `main` com o mesmo conteúdo depois do [#57](https://github.com/lastrohq/lastro/pull/57);
-> release [v0.1.0](https://github.com/lastrohq/lastro/releases/tag/v0.1.0) com 6 binários, checksums e imagem
-> `ghcr.io/lastrohq/lastro:0.1.0` (amd64 e arm64).
+> `develop` e `main` com o mesmo conteúdo depois do [#57](https://github.com/vintemhq/vintem/pull/57);
+> release [v0.1.0](https://github.com/vintemhq/vintem/releases/tag/v0.1.0) com 6 binários, checksums e imagem
+> `ghcr.io/vintemhq/vintem:0.1.0` (amd64 e arm64).
 >
 > **Ainda não ⚠️ — imagem privada.** Pacote novo no `ghcr.io` nasce privado, e a API
 > do GitHub não muda visibilidade de pacote: é na interface da org. Até lá,
@@ -413,9 +461,9 @@ antes de ela ser protegida.**
 
 ### Ficou aberto
 
-- [#19](https://github.com/lastrohq/lastro/issues/19) — sandbox ainda não dispara webhook nem persiste estado (F4).
-- [#21](https://github.com/lastrohq/lastro/issues/21) — suíte de conformidade espera as fixtures do primeiro banco real (F5).
-- [#9](https://github.com/lastrohq/lastro/issues/9) — BR Code ainda sem teste manual em apps de banco.
+- [#19](https://github.com/vintemhq/vintem/issues/19) — sandbox ainda não dispara webhook nem persiste estado (F4).
+- [#21](https://github.com/vintemhq/vintem/issues/21) — suíte de conformidade espera as fixtures do primeiro banco real (F5).
+- [#9](https://github.com/vintemhq/vintem/issues/9) — BR Code ainda sem teste manual em apps de banco.
 
 ---
 

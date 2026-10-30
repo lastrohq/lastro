@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/platform/vault"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/platform/vault"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 type pspFalso struct{ ports.PSP }
@@ -27,7 +27,7 @@ func ambiente(t *testing.T, env map[string]string) (Ambiente, *bytes.Buffer) {
 
 func envComBanco(t *testing.T) map[string]string {
 	t.Helper()
-	return map[string]string{"LASTRO_DB": filepath.Join(t.TempDir(), "lastro.db"), "LASTRO_MASTER_KEY": vault.NovaChave()}
+	return map[string]string{"VINTEM_DB": filepath.Join(t.TempDir(), "vintem.db"), "VINTEM_MASTER_KEY": vault.NovaChave()}
 }
 
 func TestVersionEChave(t *testing.T) {
@@ -45,9 +45,9 @@ func TestVersionEChave(t *testing.T) {
 }
 
 func TestContaSemMasterKeyFalhaComOrientacao(t *testing.T) {
-	amb, _ := ambiente(t, map[string]string{"LASTRO_DB": filepath.Join(t.TempDir(), "x.db")})
+	amb, _ := ambiente(t, map[string]string{"VINTEM_DB": filepath.Join(t.TempDir(), "x.db")})
 	err := Run(context.Background(), []string{"conta", "listar"}, amb)
-	if err == nil || !strings.Contains(err.Error(), "lastro chave gerar") {
+	if err == nil || !strings.Contains(err.Error(), "vintem chave gerar") {
 		t.Fatalf("err = %v", err)
 	}
 }
@@ -123,7 +123,7 @@ func TestAPIKeyCriarListarRevogar(t *testing.T) {
 	}
 	var token, id string
 	for _, campo := range strings.Fields(out.String()) {
-		if strings.HasPrefix(campo, "lst_") {
+		if strings.HasPrefix(campo, "vtm_") {
 			token = campo
 		}
 	}
@@ -164,11 +164,11 @@ func TestConciliarEValidaDuracoes(t *testing.T) {
 	if !strings.Contains(out.String(), "0 contas conciliadas") {
 		t.Fatalf("saída: %s", out)
 	}
-	env["LASTRO_CONCILIACAO_JANELA"] = "duas horas"
-	if err := Run(context.Background(), []string{"conciliar"}, amb); err == nil || !strings.Contains(err.Error(), "LASTRO_CONCILIACAO_JANELA") {
+	env["VINTEM_CONCILIACAO_JANELA"] = "duas horas"
+	if err := Run(context.Background(), []string{"conciliar"}, amb); err == nil || !strings.Contains(err.Error(), "VINTEM_CONCILIACAO_JANELA") {
 		t.Fatalf("janela inválida: err = %v", err)
 	}
-	env["LASTRO_CONCILIACAO_JANELA"] = "0s"
+	env["VINTEM_CONCILIACAO_JANELA"] = "0s"
 	if err := Run(context.Background(), []string{"conciliar"}, amb); err == nil {
 		t.Fatal("aceitou janela zero")
 	}
@@ -177,7 +177,7 @@ func TestConciliarEValidaDuracoes(t *testing.T) {
 func TestDestinoEDLQ(t *testing.T) {
 	amb, out := ambiente(t, envComBanco(t))
 	ctx := context.Background()
-	if err := Run(ctx, []string{"destino", "criar", "--url", "https://app.example.com/webhooks/lastro"}, amb); err != nil {
+	if err := Run(ctx, []string{"destino", "criar", "--url", "https://app.example.com/webhooks/vintem"}, amb); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(out.String(), "whsec_") {
@@ -230,5 +230,34 @@ func TestMontarPSPsRecebeAsCredenciaisDasContas(t *testing.T) {
 	cred, err := recebido.Credenciais(ctx, "loja")
 	if err != nil || cred.ClientSecret != "secret-do-banco" || cred.ClientID != "abc" {
 		t.Fatalf("Credenciais = %q, %v", cred.ClientID, err)
+	}
+}
+
+// -h mostra a ajuda do comando sem rodá-lo: o sandbox não sobe e o conta
+// criar não pede a VINTEM_MASTER_KEY.
+func TestAjudaDosSubcomandosNaoRodaNada(t *testing.T) {
+	db := filepath.Join(t.TempDir(), "x.db")
+	casos := map[string][]string{
+		"sandbox":         {"sandbox", "-h"},
+		"conta criar":     {"conta", "criar", "--help"},
+		"apikey criar":    {"apikey", "criar", "-h"},
+		"conta webhook":   {"conta", "webhook", "-h"},
+		"destino remover": {"destino", "remover", "-h"},
+	}
+	for quer, args := range casos {
+		amb, out := ambiente(t, map[string]string{"VINTEM_DB": db})
+		if err := Run(context.Background(), args, amb); err != nil {
+			t.Fatalf("%v: %v", args, err)
+		}
+		if !strings.Contains(out.String(), "  "+quer) {
+			t.Errorf("%v: ajuda sem %q:\n%s", args, quer, out)
+		}
+	}
+	amb, out := ambiente(t, map[string]string{"VINTEM_DB": db})
+	if err := Run(context.Background(), []string{"conta", "criar", "-h"}, amb); err != nil || !strings.Contains(out.String(), "-chave-aplicacao") {
+		t.Fatalf("flags do conta criar: %v\n%s", err, out)
+	}
+	if _, err := os.Stat(db); !os.IsNotExist(err) {
+		t.Fatalf("a ajuda abriu o banco: %v", err)
 	}
 }

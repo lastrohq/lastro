@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/platform/certificado"
-	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
+	"github.com/vintemhq/vintem/internal/platform/certificado"
+	"github.com/vintemhq/vintem/internal/platform/certificado/certificadotest"
 )
 
 var validade = time.Date(2027, 6, 30, 23, 59, 59, 0, time.UTC)
@@ -19,7 +19,7 @@ func TestLerFormatosAceitos(t *testing.T) {
 	par := certificadotest.Gerar(t, "loja.example.com", validade)
 	soma := sha256.Sum256(par.Certificado.Raw)
 	quer := certificado.Info{
-		Sujeito:          "CN=loja.example.com,O=Lastro Teste",
+		Sujeito:          "CN=loja.example.com,O=Vintém Teste",
 		ImpressaoDigital: hex.EncodeToString(soma[:]),
 		Validade:         validade,
 	}

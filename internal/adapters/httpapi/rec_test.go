@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 const pedidoRec = `{"vinculo":{"contrato":"63100862","objeto":"Academia","devedor":{"cpf":"12345678909","nome":"Fulano de Tal"}},

@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // Recorrencias cria recorrências de Pix Automático e pede a autorização do

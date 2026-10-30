@@ -43,7 +43,7 @@ func Gerar(t testing.TB, cn string, validade time.Time) Par {
 	}
 	modelo := &x509.Certificate{
 		SerialNumber: big.NewInt(time.Now().UnixNano()),
-		Subject:      pkix.Name{CommonName: cn, Organization: []string{"Lastro Teste"}},
+		Subject:      pkix.Name{CommonName: cn, Organization: []string{"Vintém Teste"}},
 		NotBefore:    validade.Add(-365 * 24 * time.Hour),
 		NotAfter:     validade,
 		KeyUsage:     x509.KeyUsageDigitalSignature,

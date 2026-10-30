@@ -6,12 +6,12 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 func TestConfigurarWebhookNaChaveDaContaComSkipMTLS(t *testing.T) {
 	c := novo(t)
-	url := "https://lastro.example.com/webhooks/pix/loja/segredo"
+	url := "https://vintem.example.com/webhooks/pix/loja/segredo"
 	if err := c.psp.ConfigurarWebhook(context.Background(), c.conta, url); err != nil {
 		t.Fatal(err)
 	}
@@ -37,7 +37,7 @@ func TestInterpretarWebhook(t *testing.T) {
 		t.Fatalf("Pix = %+v", p)
 	}
 
-	// Notificação de teste do cadastro (corpo não documentado) ou evento que o Lastro não usa: aceita, sem Pix.
+	// Notificação de teste do cadastro (corpo não documentado) ou evento que o Vintém não usa: aceita, sem Pix.
 	for _, corpo := range []string{`{}`, `{"evento":"teste_webhook"}`, `{"recs":[]}`} {
 		pix, err := c.psp.InterpretarWebhook(c.conta, []byte(corpo))
 		if err != nil || len(pix) != 0 {

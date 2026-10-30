@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const destino = join(dirname(fileURLToPath(import.meta.url)), "src/content/docs/gerado");
-const base = "/lastro";
+const base = "/vintem";
 
 const paginas = [
   ["docs/SANDBOX.md", "sandbox"],
@@ -32,10 +32,10 @@ for (const [arquivo, slug] of paginas) {
     const nome = basename(alvo);
     if (rota[nome]) return `](${rota[nome]}${ancora})`;
     const caminho = join(dirname(arquivo), alvo).replace(/\\/g, "/");
-    return `](https://github.com/lastrohq/lastro/blob/develop/${caminho}${ancora})`;
+    return `](https://github.com/vintemhq/vintem/blob/develop/${caminho}${ancora})`;
   });
   const saida = join(destino, `${slug}.md`);
   mkdirSync(dirname(saida), { recursive: true });
-  writeFileSync(saida, `---\ntitle: ${JSON.stringify(titulo)}\neditUrl: https://github.com/lastrohq/lastro/edit/develop/${arquivo}\n---\n\n${texto}`);
+  writeFileSync(saida, `---\ntitle: ${JSON.stringify(titulo)}\neditUrl: https://github.com/vintemhq/vintem/edit/develop/${arquivo}\n---\n\n${texto}`);
 }
 console.log(`${paginas.length} guias sincronizados`);

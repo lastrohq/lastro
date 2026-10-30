@@ -9,14 +9,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp/sicoob"
-	"github.com/lastrohq/lastro/internal/adapters/psp/sicoob/sicoobtest"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
-	"github.com/lastrohq/lastro/test/conformance"
-	"github.com/lastrohq/lastro/test/conformance/fita"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sicoob"
+	"github.com/vintemhq/vintem/internal/adapters/psp/sicoob/sicoobtest"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/certificado/certificadotest"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
+	"github.com/vintemhq/vintem/test/conformance"
+	"github.com/vintemhq/vintem/test/conformance/fita"
 )
 
 const clientID = "client-id-sicoob"
@@ -151,10 +151,10 @@ func TestErrosNosDoisFormatos(t *testing.T) {
 
 func TestWebhookRegistradoNaChave(t *testing.T) {
 	c := novo(t, fake.NewClock(agora))
-	if err := c.psp.ConfigurarWebhook(context.Background(), c.conta, "https://lastro.example.com/webhooks/pix/loja/token"); err != nil {
+	if err := c.psp.ConfigurarWebhook(context.Background(), c.conta, "https://vintem.example.com/webhooks/pix/loja/token"); err != nil {
 		t.Fatal(err)
 	}
-	if got := c.srv.Webhook("loja@example.com"); got != "https://lastro.example.com/webhooks/pix/loja/token" {
+	if got := c.srv.Webhook("loja@example.com"); got != "https://vintem.example.com/webhooks/pix/loja/token" {
 		t.Fatalf("webhook: %q", got)
 	}
 }
@@ -166,11 +166,11 @@ const dirFitas = "../../../../test/fixtures/sicoob"
 // pagamento são pulados: nada é pago de verdade. Para gravar, com a aplicação
 // do portal Sicoob Developers:
 //
-//	LASTRO_GRAVAR_SICOOB=1 SICOOB_CLIENT_ID=... SICOOB_CERTIFICADO=sicoob.pem \
+//	VINTEM_GRAVAR_SICOOB=1 SICOOB_CLIENT_ID=... SICOOB_CERTIFICADO=sicoob.pem \
 //	SICOOB_CHAVE_PIX=... SICOOB_WEBHOOK=https://... \
 //	go test -run TestConformidadeGravada ./internal/adapters/psp/sicoob/
 func TestConformidadeGravada(t *testing.T) {
-	gravar := os.Getenv("LASTRO_GRAVAR_SICOOB") != ""
+	gravar := os.Getenv("VINTEM_GRAVAR_SICOOB") != ""
 	if !gravar {
 		if fitas, _ := filepath.Glob(filepath.Join(dirFitas, "*.json")); len(fitas) == 0 {
 			t.Skip("nenhuma fita do Sicoob gravada ainda")

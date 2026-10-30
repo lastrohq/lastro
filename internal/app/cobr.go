@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 // CobrancasRecorrentes cria, cancela e pede retentativa das cobranças de uma
@@ -89,7 +89,7 @@ func txidLivre(ctx context.Context, st ports.Store, txid domain.Txid) error {
 
 // Criar valida a cobrança contra a recorrência (RN-42), envia ao PSP da conta
 // e grava o que ele devolveu, com o evento cobranca_recorrente.criada. Txid
-// vazio faz o Lastro gerar um. Cada ciclo tem uma cobrança só: outra no mesmo
+// vazio faz o Vintém gerar um. Cada ciclo tem uma cobrança só: outra no mesmo
 // ciclo só entra se a anterior foi cancelada, rejeitada ou expirou.
 func (s CobrancasRecorrentes) Criar(ctx context.Context, idRec string, c domain.CobrancaRecorrente) (domain.CobrancaRecorrente, error) {
 	rec, err := Recorrencias{Store: s.Store}.Consultar(ctx, idRec)

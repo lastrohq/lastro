@@ -1,4 +1,4 @@
-// Package cli implementa os comandos do binário lastro.
+// Package cli implementa os comandos do binário vintem.
 package cli
 
 import (
@@ -11,27 +11,28 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"slices"
 	"strings"
 	"sync"
 	"text/tabwriter"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi"
-	"github.com/lastrohq/lastro/internal/adapters/jobs"
-	"github.com/lastrohq/lastro/internal/adapters/notifier"
-	"github.com/lastrohq/lastro/internal/adapters/store/sqlite"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/platform/vault"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/web"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi"
+	"github.com/vintemhq/vintem/internal/adapters/jobs"
+	"github.com/vintemhq/vintem/internal/adapters/notifier"
+	"github.com/vintemhq/vintem/internal/adapters/store/sqlite"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/platform/vault"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/web"
 )
 
 // Fontes é o que os adapters de PSP recebem ao serem montados.
 type Fontes struct {
 	// Credenciais decifra as credenciais de uma conta (ADR-007).
 	Credenciais ports.Credenciais
-	// Store é o store do Lastro; o sandbox o lê para lembrar das cobranças depois de reiniciar.
+	// Store é o store do Vintém; o sandbox o lê para lembrar das cobranças depois de reiniciar.
 	Store ports.Store
 }
 
@@ -48,14 +49,14 @@ type Ambiente struct {
 	Versao     string
 }
 
-const uso = `uso: lastro <comando>
+const uso = `uso: vintem <comando>
 
   serve                          sobe a API (padrão)
   sandbox                        sobe a API pronta para testar, sem banco nem configuração
   mcp                            servidor MCP para agentes de IA (stdio), sobre a API
-                                 em LASTRO_URL com a API key de LASTRO_TOKEN
+                                 em VINTEM_URL com a API key de VINTEM_TOKEN
   version                        imprime a versão
-  chave gerar                    gera uma LASTRO_MASTER_KEY nova
+  chave gerar                    gera uma VINTEM_MASTER_KEY nova
   conta criar  [flags]           cadastra uma conta recebedora
   conta listar                   lista as contas
   conta desativar <id>           impede novas cobranças na conta
@@ -76,15 +77,18 @@ const uso = `uso: lastro <comando>
 escopos: cob:read cob:write cobv:read cobv:write pix:read devolucao:write
          rec:read rec:write cobr:read cobr:write webhook:admin conta:admin
 
-variáveis: LASTRO_DB (padrão lastro.db), LASTRO_MASTER_KEY, LASTRO_ADDR (padrão :8080),
-           LASTRO_CONCILIACAO_INTERVALO (padrão 5m; 0 desliga), LASTRO_CONCILIACAO_JANELA (padrão 2h),
-           LASTRO_WEBHOOK_INTERVALO (padrão 2s; 0 desliga a entrega de eventos),
-           LASTRO_CERTIFICADO_INTERVALO (padrão 1h; 0 desliga o aviso de certificado vencendo)`
+variáveis: VINTEM_DB (padrão vintem.db), VINTEM_MASTER_KEY, VINTEM_ADDR (padrão :8080),
+           VINTEM_CONCILIACAO_INTERVALO (padrão 5m; 0 desliga), VINTEM_CONCILIACAO_JANELA (padrão 2h),
+           VINTEM_WEBHOOK_INTERVALO (padrão 2s; 0 desliga a entrega de eventos),
+           VINTEM_CERTIFICADO_INTERVALO (padrão 1h; 0 desliga o aviso de certificado vencendo)`
 
 // Run executa o comando em args.
 func Run(ctx context.Context, args []string, amb Ambiente) error {
 	if len(args) == 0 {
 		args = []string{"serve"}
+	}
+	if len(args) > 1 && slices.ContainsFunc(args[1:], pedeAjuda) {
+		return ajuda(ctx, args, amb)
 	}
 	switch args[0] {
 	case "version":
@@ -98,7 +102,7 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 		return mcpCmd(ctx, amb)
 	case "chave":
 		if len(args) < 2 || args[1] != "gerar" {
-			return errors.New("use: lastro chave gerar")
+			return errors.New("use: vintem chave gerar")
 		}
 		_, err := fmt.Fprintln(amb.Saida, vault.NovaChave())
 		return err
@@ -120,6 +124,46 @@ func Run(ctx context.Context, args []string, amb Ambiente) error {
 	}
 }
 
+func pedeAjuda(arg string) bool { return arg == "-h" || arg == "--help" }
+
+// ajuda mostra o uso de um comando sem rodá-lo: nada de subir o sandbox nem
+// pedir a VINTEM_MASTER_KEY só para ler a ajuda. Mostra as linhas do uso que
+// começam pelo comando e, no conta criar, as flags.
+func ajuda(ctx context.Context, args []string, amb Ambiente) error {
+	prefixo := "  " + args[0]
+	if len(args) > 2 && !pedeAjuda(args[1]) && !strings.HasPrefix(args[1], "-") {
+		prefixo += " " + args[1]
+	}
+	var linhas []string
+	continua := false
+	for _, l := range strings.Split(uso, "\n") {
+		switch {
+		case strings.HasPrefix(l, prefixo+" ") || l == prefixo:
+			linhas, continua = append(linhas, l), true
+		case continua && strings.HasPrefix(l, "      "):
+			linhas = append(linhas, l)
+		default:
+			continua = false
+		}
+	}
+	if len(linhas) == 0 {
+		_, err := fmt.Fprintln(amb.Saida, uso)
+		return err
+	}
+	if _, err := fmt.Fprintln(amb.Saida, "uso: vintem <comando>\n\n"+strings.Join(linhas, "\n")); err != nil {
+		return err
+	}
+	if prefixo == "  conta criar" {
+		// As flags vêm do próprio FlagSet: o -h faz o Parse imprimir e parar
+		// antes de usar as contas.
+		_, _ = fmt.Fprintln(amb.Saida)
+		if err := contaCriar(ctx, app.Contas{}, []string{"-h"}, amb); !errors.Is(err, flag.ErrHelp) {
+			return err
+		}
+	}
+	return nil
+}
+
 func getenv(amb Ambiente, chave, padrao string) string {
 	if v := amb.Getenv(chave); v != "" {
 		return v
@@ -129,15 +173,15 @@ func getenv(amb Ambiente, chave, padrao string) string {
 
 // abrir monta o caso de uso de contas a partir do ambiente.
 func abrir(ctx context.Context, amb Ambiente) (app.Contas, func(), error) {
-	chave := amb.Getenv("LASTRO_MASTER_KEY")
+	chave := amb.Getenv("VINTEM_MASTER_KEY")
 	if chave == "" {
-		return app.Contas{}, nil, errors.New("defina LASTRO_MASTER_KEY (gere uma com `lastro chave gerar` e guarde em lugar seguro: sem ela as credenciais não são recuperáveis)")
+		return app.Contas{}, nil, errors.New("defina VINTEM_MASTER_KEY (gere uma com `vintem chave gerar` e guarde em lugar seguro: sem ela as credenciais não são recuperáveis)")
 	}
 	v, err := vault.New(chave)
 	if err != nil {
 		return app.Contas{}, nil, err
 	}
-	store, err := sqlite.Open(ctx, getenv(amb, "LASTRO_DB", "lastro.db"))
+	store, err := sqlite.Open(ctx, getenv(amb, "VINTEM_DB", "vintem.db"))
 	if err != nil {
 		return app.Contas{}, nil, err
 	}
@@ -151,7 +195,7 @@ func abrir(ctx context.Context, amb Ambiente) (app.Contas, func(), error) {
 
 func conta(ctx context.Context, args []string, amb Ambiente) error {
 	if len(args) == 0 {
-		return errors.New("use: lastro conta criar|listar|desativar")
+		return errors.New("use: vintem conta criar|listar|desativar")
 	}
 	contas, fechar, err := abrir(ctx, amb)
 	if err != nil {
@@ -180,9 +224,9 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 	case "webhook":
 		fs := flag.NewFlagSet("conta webhook", flag.ContinueOnError)
 		fs.SetOutput(amb.Saida)
-		urlPublica := fs.String("url-publica", "", "endereço público deste Lastro (https://lastro.suaempresa.com)")
+		urlPublica := fs.String("url-publica", "", "endereço público deste Vintém (https://vintem.suaempresa.com)")
 		if len(args) < 2 || strings.HasPrefix(args[1], "-") {
-			return errors.New("use: lastro conta webhook <id> --url-publica URL")
+			return errors.New("use: vintem conta webhook <id> --url-publica URL")
 		}
 		if err := fs.Parse(args[2:]); err != nil {
 			return err
@@ -198,7 +242,7 @@ func conta(ctx context.Context, args []string, amb Ambiente) error {
 		return err
 	case "desativar":
 		if len(args) != 2 {
-			return errors.New("use: lastro conta desativar <id>")
+			return errors.New("use: vintem conta desativar <id>")
 		}
 		if err := contas.Desativar(ctx, args[1]); err != nil {
 			return err
@@ -278,8 +322,8 @@ func trimFinal(b []byte) []byte {
 }
 
 func serve(ctx context.Context, amb Ambiente) error {
-	addr := getenv(amb, "LASTRO_ADDR", ":8080")
-	intervalo, err := duracao(amb, "LASTRO_CONCILIACAO_INTERVALO", "5m")
+	addr := getenv(amb, "VINTEM_ADDR", ":8080")
+	intervalo, err := duracao(amb, "VINTEM_CONCILIACAO_INTERVALO", "5m")
 	if err != nil {
 		return err
 	}
@@ -287,11 +331,11 @@ func serve(ctx context.Context, amb Ambiente) error {
 	if err != nil {
 		return err
 	}
-	intervaloWebhook, err := duracao(amb, "LASTRO_WEBHOOK_INTERVALO", "2s")
+	intervaloWebhook, err := duracao(amb, "VINTEM_WEBHOOK_INTERVALO", "2s")
 	if err != nil {
 		return err
 	}
-	intervaloCertificado, err := duracao(amb, "LASTRO_CERTIFICADO_INTERVALO", "1h")
+	intervaloCertificado, err := duracao(amb, "VINTEM_CERTIFICADO_INTERVALO", "1h")
 	if err != nil {
 		return err
 	}
@@ -389,7 +433,7 @@ func serve(ctx context.Context, amb Ambiente) error {
 		defer cancelar()
 		_ = srv.Shutdown(fim)
 	}()
-	slog.Info("lastro no ar", "addr", addr, "version", amb.Versao)
+	slog.Info("vintem no ar", "addr", addr, "version", amb.Versao)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
@@ -408,7 +452,7 @@ func (e *escopos) Set(v string) error {
 
 func apikey(ctx context.Context, args []string, amb Ambiente) error {
 	if len(args) == 0 {
-		return errors.New("use: lastro apikey criar|listar|revogar")
+		return errors.New("use: vintem apikey criar|listar|revogar")
 	}
 	contas, fechar, err := abrir(ctx, amb)
 	if err != nil {
@@ -456,7 +500,7 @@ func apikey(ctx context.Context, args []string, amb Ambiente) error {
 		return tw.Flush()
 	case "revogar":
 		if len(args) != 2 {
-			return errors.New("use: lastro apikey revogar <id>")
+			return errors.New("use: vintem apikey revogar <id>")
 		}
 		if err := keys.Revogar(ctx, args[1]); err != nil {
 			return err
@@ -480,12 +524,12 @@ func duracao(amb Ambiente, chave, padrao string) (time.Duration, error) {
 
 // conciliacao monta o caso de uso sem Store; quem chama completa com o banco aberto.
 func conciliacao(amb Ambiente) (app.Conciliacao, error) {
-	janela, err := duracao(amb, "LASTRO_CONCILIACAO_JANELA", "2h")
+	janela, err := duracao(amb, "VINTEM_CONCILIACAO_JANELA", "2h")
 	if err != nil {
 		return app.Conciliacao{}, err
 	}
 	if janela == 0 {
-		return app.Conciliacao{}, errors.New("LASTRO_CONCILIACAO_JANELA não pode ser zero")
+		return app.Conciliacao{}, errors.New("VINTEM_CONCILIACAO_JANELA não pode ser zero")
 	}
 	return app.Conciliacao{Recebimentos: app.Recebimentos{Clock: amb.Clock}, Clock: amb.Clock, Janela: janela}, nil
 }
@@ -516,7 +560,7 @@ func conciliar(ctx context.Context, amb Ambiente) error {
 
 func destino(ctx context.Context, args []string, amb Ambiente) error {
 	if len(args) == 0 {
-		return errors.New("use: lastro destino criar|listar|remover")
+		return errors.New("use: vintem destino criar|listar|remover")
 	}
 	contas, fechar, err := abrir(ctx, amb)
 	if err != nil {
@@ -556,7 +600,7 @@ func destino(ctx context.Context, args []string, amb Ambiente) error {
 		return tw.Flush()
 	case "remover":
 		if len(args) != 2 {
-			return errors.New("use: lastro destino remover <id>")
+			return errors.New("use: vintem destino remover <id>")
 		}
 		if err := contas.Store.Destinos().Remover(ctx, args[1]); err != nil {
 			return err
@@ -570,7 +614,7 @@ func destino(ctx context.Context, args []string, amb Ambiente) error {
 
 func dlq(ctx context.Context, args []string, amb Ambiente) error {
 	if len(args) == 0 {
-		return errors.New("use: lastro dlq listar|reenviar")
+		return errors.New("use: vintem dlq listar|reenviar")
 	}
 	contas, fechar, err := abrir(ctx, amb)
 	if err != nil {
@@ -592,7 +636,7 @@ func dlq(ctx context.Context, args []string, amb Ambiente) error {
 		return tw.Flush()
 	case "reenviar":
 		if len(args) != 2 {
-			return errors.New("use: lastro dlq reenviar <evento-id>")
+			return errors.New("use: vintem dlq reenviar <evento-id>")
 		}
 		n, err := saida.Reenviar(ctx, args[1])
 		if err != nil {

@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lastrohq/lastro/internal/adapters/psp"
-	"github.com/lastrohq/lastro/internal/adapters/psp/efi"
-	"github.com/lastrohq/lastro/internal/adapters/psp/efi/efitest"
-	"github.com/lastrohq/lastro/internal/platform/certificado/certificadotest"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/adapters/psp"
+	"github.com/vintemhq/vintem/internal/adapters/psp/efi"
+	"github.com/vintemhq/vintem/internal/adapters/psp/efi/efitest"
+	"github.com/vintemhq/vintem/internal/platform/certificado/certificadotest"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
 )
 
 // TestContaEfiDePontaAPonta usa o adapter efi de verdade contra o Efí falso: as
@@ -36,11 +36,11 @@ func TestContaEfiDePontaAPonta(t *testing.T) {
 	}
 
 	out.Reset()
-	if err := Run(ctx, []string{"conta", "webhook", "loja", "--url-publica", "https://lastro.example.com"}, amb); err != nil {
+	if err := Run(ctx, []string{"conta", "webhook", "loja", "--url-publica", "https://vintem.example.com"}, amb); err != nil {
 		t.Fatal(err)
 	}
 	cadastrada := srv.Webhook("loja@example.com")
-	if !strings.HasPrefix(cadastrada, "https://lastro.example.com/webhooks/pix/loja/") || !strings.Contains(out.String(), cadastrada) {
+	if !strings.HasPrefix(cadastrada, "https://vintem.example.com/webhooks/pix/loja/") || !strings.Contains(out.String(), cadastrada) {
 		t.Fatalf("webhook no Efí = %q; saída: %s", cadastrada, out)
 	}
 

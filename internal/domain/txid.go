@@ -15,7 +15,7 @@ const TxidMin = 26
 // TxidMax é o maior tamanho de txid aceito em cob e cobv.
 const TxidMax = 35
 
-// txidGerado é o tamanho do txid gerado pelo Lastro.
+// txidGerado é o tamanho do txid gerado pelo Vintém.
 const txidGerado = 32
 
 const alfabetoTxid = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"

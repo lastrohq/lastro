@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports"
 )
 
 var _ ports.Vault = (*AESGCM)(nil)

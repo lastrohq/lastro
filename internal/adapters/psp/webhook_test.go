@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
 var contaTeste = domain.Conta{ID: "loja"}

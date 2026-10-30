@@ -3,12 +3,12 @@ package httpapi
 import (
 	"context"
 
-	"github.com/lastrohq/lastro/internal/adapters/httpapi/gen"
-	"github.com/lastrohq/lastro/internal/app"
-	"github.com/lastrohq/lastro/internal/domain"
+	"github.com/vintemhq/vintem/internal/adapters/httpapi/gen"
+	"github.com/vintemhq/vintem/internal/app"
+	"github.com/vintemhq/vintem/internal/domain"
 )
 
-// CriarCob cria uma cob com txid gerado pelo Lastro.
+// CriarCob cria uma cob com txid gerado pelo Vintém.
 func (s *Server) CriarCob(ctx context.Context, r gen.CriarCobRequestObject) (gen.CriarCobResponseObject, error) {
 	c, err := s.cobrancas.Criar(ctx, pedidoCob("", r.Body))
 	if err != nil {

@@ -3,10 +3,10 @@ package fake_test
 import (
 	"testing"
 
-	"github.com/lastrohq/lastro/internal/domain"
-	"github.com/lastrohq/lastro/internal/ports"
-	"github.com/lastrohq/lastro/internal/ports/fake"
-	"github.com/lastrohq/lastro/internal/ports/storetest"
+	"github.com/vintemhq/vintem/internal/domain"
+	"github.com/vintemhq/vintem/internal/ports"
+	"github.com/vintemhq/vintem/internal/ports/fake"
+	"github.com/vintemhq/vintem/internal/ports/storetest"
 )
 
 func TestStoreContrato(t *testing.T) {

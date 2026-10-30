@@ -45,7 +45,7 @@ var TabelaParametros = []Parametros{
 
 // ParametrosEm devolve os parâmetros que valem na data d: a última linha com
 // Desde até d. Antes da primeira linha vale a primeira, que é o mais antigo
-// que o Lastro conhece.
+// que o Vintém conhece.
 func ParametrosEm(d Data) Parametros {
 	p := TabelaParametros[0]
 	for _, linha := range TabelaParametros[1:] {
