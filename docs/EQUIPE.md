@@ -73,6 +73,30 @@ flowchart LR
 > PR; com um mantenedor, o PR é mergeado com CI verde. PR de contribuidor
 > externo sempre passa por review do mantenedor.
 
+### Revisar PR de contribuidor externo
+
+Aprovar o workflow ou rodar os testes executa o código de quem abriu o PR. Por
+isso, **o diff vem antes de tudo**.
+
+1. **Triagem** — resolve uma issue aberta e está no escopo? Se não, agradeça e
+   explique ao fechar, ou peça uma issue antes.
+2. **Ler o diff antes de rodar** — atenção a `.github/workflows`, `Makefile`,
+   dependências, scripts, binários, chamadas de rede e comandos sem motivo. Na
+   dúvida, não aprove o workflow e não rode na sua máquina: o CI só tem permissão
+   de leitura, a sua máquina não tem esse limite.
+3. **CI** — com a branch atrás da `develop`, clique em `Update branch`. Depois, em
+   `Approve workflows to run`, que o GitHub pede na primeira contribuição de cada
+   pessoa. Se o `Lint & Test` falhar, comente no PR o que falhou.
+4. **Revisão** — os critérios da issue foram atendidos, o teste prova algo e as
+   docs acompanham a mudança? Para ajustes, use `Request changes` dizendo o que
+   mudar. Se estiver certo, use `Approve` e agradeça.
+5. **Merge** — com merge commit, o padrão do projeto.
+6. **Depois do merge** — card em `🚀 Aguardando release` e crédito a quem
+   contribuiu nas notas do release.
+
+Commit novo do autor depois da revisão invalida a análise: revise o que mudou. O
+merge commit do `Update branch` é esperado.
+
 ---
 
 ## 📥 Definition of Ready
