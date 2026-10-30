@@ -34,6 +34,44 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 29/10/2026 (noite) — v0.7.0: o MVP de lançamento
+
+O Lastro ficou pronto para ser mostrado: painel embutido no binário, servidor
+MCP para agentes, SDK TypeScript, site de docs e um README que mostra em vez de
+prometer.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#38](https://github.com/lastrohq/lastro/issues/38) | Criar e consultar cobranças a partir de um agente de IA (MCP) | DX/Docs | M | Média | [#112](https://github.com/lastrohq/lastro/pull/112) `93aa19b` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 19:27 |
+| [#20](https://github.com/lastrohq/lastro/issues/20) | Subir o Lastro em modo sandbox com um comando | DX/Docs | P | Alta | [#113](https://github.com/lastrohq/lastro/pull/113) `0659af0` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 19:40 |
+| [#34](https://github.com/lastrohq/lastro/issues/34) | Tokens e componentes base do design system no painel | Design | M | Média | [#126](https://github.com/lastrohq/lastro/pull/126) `5547f65` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 20:01 |
+| [#35](https://github.com/lastrohq/lastro/issues/35) | Ver cobranças, Pix recebidos e quanto economizei no painel | Painel | G | Média | [#126](https://github.com/lastrohq/lastro/pull/126) `5547f65` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 20:01 |
+| [#36](https://github.com/lastrohq/lastro/issues/36) | Ver e reenviar webhooks que falharam pelo painel | Painel | G | Média | [#127](https://github.com/lastrohq/lastro/pull/127) `adad0bc` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 20:12 |
+| [#39](https://github.com/lastrohq/lastro/issues/39) | Site de docs em lastro.dev | DX/Docs | G | Média | [#128](https://github.com/lastrohq/lastro/pull/128) `bc8b691` | [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) · [#130](https://github.com/lastrohq/lastro/pull/130) `92bc1aa` | 29/10 20:19 |
+
+> **Também no release, sem fechar issue:** o SDK `@lastrohq/sdk` da [#37](https://github.com/lastrohq/lastro/issues/37)
+> ([#125](https://github.com/lastrohq/lastro/pull/125) `a694820`), o README de lançamento da [#40](https://github.com/lastrohq/lastro/issues/40) (no [#113](https://github.com/lastrohq/lastro/pull/113))
+> e a leva do v0.6.0 ([#129](https://github.com/lastrohq/lastro/pull/129) `aa4d791`).
+>
+> Release [v0.7.0](https://github.com/lastrohq/lastro/releases/tag/v0.7.0) com binários e checksums.
+>
+> **Ainda não ⚠️ — imagem privada** ([#98](https://github.com/lastrohq/lastro/issues/98)).
+
+### O nome do pacote já tinha dono
+
+O escopo `@lastro` no npm pertence a outra pessoa. O SDK virou `@lastrohq/sdk`,
+igual à organização do GitHub, e a publicação espera a organização no npm e o
+`NPM_TOKEN` ([#37](https://github.com/lastrohq/lastro/issues/37)).
+
+### Ficou aberto
+
+- [#37](https://github.com/lastrohq/lastro/issues/37) — publicar o SDK no npm.
+- [#40](https://github.com/lastrohq/lastro/issues/40) — social preview em Settings.
+- [#41](https://github.com/lastrohq/lastro/issues/41) — GitHub Sponsors.
+- [#98](https://github.com/lastrohq/lastro/issues/98) — imagem pública no ghcr.io.
+
+---
+
 ## Leva de 29/10/2026 (noite) — v0.6.0: Pix Automático completo, devoluções e o primeiro banco de verdade respondendo
 
 A cobrança recorrente fechou a F6 e as devoluções abriram a F7, as duas no
