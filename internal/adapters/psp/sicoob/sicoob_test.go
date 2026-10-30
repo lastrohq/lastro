@@ -43,7 +43,7 @@ type cenario struct {
 // o Sicoob não tem client secret.
 func novo(t *testing.T, relogio ports.Clock) cenario {
 	t.Helper()
-	par := certificadotest.Gerar(t, "loja", agora.Add(365*24*time.Hour))
+	par := certificadotest.Gerar(t, "loja", time.Now().Add(365*24*time.Hour))
 	srv := sicoobtest.Novo(t, par.Certificado, clientID)
 	cred := credenciais{"loja": {ClientID: clientID, Certificado: par.PEM}}
 	conta := domain.Conta{ID: "loja", Nome: "Loja", PSP: "sicoob", ChavePix: "loja@example.com", Ambiente: domain.Producao, Ativa: true}
@@ -105,7 +105,7 @@ func TestBRCodeVemDoCampoBrcode(t *testing.T) {
 }
 
 func TestClientIDErradoExplicaOQueConferir(t *testing.T) {
-	par := certificadotest.Gerar(t, "loja", agora.Add(time.Hour*24))
+	par := certificadotest.Gerar(t, "loja", time.Now().Add(365*24*time.Hour))
 	srv := sicoobtest.Novo(t, par.Certificado, clientID)
 	cred := credenciais{"loja": {ClientID: "errado", Certificado: par.PEM}}
 	p := sicoob.New(cred, fake.NewClock(agora), sicoob.ComURLs(srv.URL, "https://x.invalid/pix/api/v2"), sicoob.ComRaizes(srv.Raizes))

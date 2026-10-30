@@ -57,7 +57,7 @@ type cenario struct {
 
 func novo(t *testing.T) cenario {
 	t.Helper()
-	par := certificadotest.Gerar(t, "loja", agora.Add(365*24*time.Hour))
+	par := certificadotest.Gerar(t, "loja", time.Now().Add(365*24*time.Hour))
 	srv := efitest.Novo(t, par.Certificado, clientID, clientSecret)
 	cred := &credenciais{porID: map[string]domain.Credenciais{
 		"loja": {ClientID: clientID, ClientSecret: clientSecret, Certificado: par.P12, SenhaCertificado: certificadotest.Senha},
@@ -190,7 +190,7 @@ func TestCredenciaisErradas(t *testing.T) {
 	})
 	t.Run("certificado que o Efí não reconhece", func(t *testing.T) {
 		c := novo(t)
-		outro := certificadotest.Gerar(t, "intruso", agora.Add(time.Hour*24))
+		outro := certificadotest.Gerar(t, "intruso", time.Now().Add(365*24*time.Hour))
 		c.cred.trocar("loja", domain.Credenciais{ClientID: clientID, ClientSecret: clientSecret, Certificado: outro.PEM})
 		if _, err := c.psp.ConsultarCob(context.Background(), c.conta, "efi00000000000000000000001"); err == nil {
 			t.Fatal("o Efí aceitou um certificado de cliente que não emitiu")
