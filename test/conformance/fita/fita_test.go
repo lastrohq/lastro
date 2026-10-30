@@ -209,3 +209,22 @@ func TestCredencialNoCorpoNaoVaiParaAFita(t *testing.T) {
 		t.Fatal("reprodução do JSON com outra credencial falhou")
 	}
 }
+
+func TestChaveNaURLNaoVaiParaAFita(t *testing.T) {
+	srv := banco(t)
+	arquivo := filepath.Join(t.TempDir(), "fita.json")
+	t.Run("gravar", func(t *testing.T) {
+		c := &http.Client{Transport: Abrir(t, arquivo, true).Envolver(http.DefaultTransport)}
+		if st, _ := chamar(t, c, http.MethodGet, srv.URL+"/pix/v2/cob/abc?gw-dev-app-key=chave-real&x=1", ""); st == 0 {
+			t.Fatal("gravação falhou")
+		}
+	})
+	b, _ := os.ReadFile(arquivo) //nolint:gosec // G304: arquivo do próprio teste
+	if strings.Contains(string(b), "chave-real") {
+		t.Fatalf("a fita guardou a chave de aplicação:\n%s", b)
+	}
+	c := &http.Client{Transport: Abrir(t, arquivo, false).Envolver(nil)}
+	if st, _ := chamar(t, c, http.MethodGet, "http://x/pix/v2/cob/abc?gw-dev-app-key=outra&x=1", ""); st == 0 {
+		t.Fatal("reprodução com outra chave falhou")
+	}
+}

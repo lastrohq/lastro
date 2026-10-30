@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/lastrohq/lastro/internal/domain"
 )
@@ -35,11 +37,18 @@ func (a *API) chamar(ctx context.Context, conta domain.Conta, metodo, caminho st
 
 // chamarCom é o chamar com headers extras.
 func (a *API) chamarCom(ctx context.Context, conta domain.Conta, metodo, caminho string, entrada, saida any, headers map[string]string) error {
-	nome := a.cfg.Nome
 	c, err := a.clienteDa(ctx, conta)
 	if err != nil {
 		return err
 	}
+	return a.chamarEm(ctx, c, metodo, c.base+caminho, entrada, saida, headers)
+}
+
+// chamarEm faz a requisição no endereço completo, com o token e os
+// parâmetros da conta, e decodifica a resposta em saida.
+func (a *API) chamarEm(ctx context.Context, c *cliente, metodo, endereco string, entrada, saida any, headers map[string]string) error {
+	nome := a.cfg.Nome
+	caminho := strings.TrimPrefix(endereco, c.base)
 	var corpo io.Reader
 	if entrada != nil {
 		b, err := json.Marshal(entrada)
@@ -49,9 +58,16 @@ func (a *API) chamarCom(ctx context.Context, conta domain.Conta, metodo, caminho
 		// bytes.Reader permite ao oauth.Transport reenviar o corpo depois de um 401.
 		corpo = bytes.NewReader(b)
 	}
-	req, err := http.NewRequestWithContext(ctx, metodo, c.base+caminho, corpo)
+	req, err := http.NewRequestWithContext(ctx, metodo, endereco, corpo)
 	if err != nil {
 		return err
+	}
+	if len(c.parametros) > 0 {
+		q := req.URL.Query()
+		for k, v := range c.parametros {
+			q[k] = v
+		}
+		req.URL.RawQuery = q.Encode()
 	}
 	if entrada != nil {
 		req.Header.Set("Content-Type", "application/json")
@@ -89,6 +105,21 @@ func (a *API) chamarCom(ctx context.Context, conta domain.Conta, metodo, caminho
 func (a *API) ConfigurarWebhook(ctx context.Context, conta domain.Conta, endereco string) error {
 	corpo := map[string]string{"webhookUrl": endereco}
 	return a.chamarCom(ctx, conta, http.MethodPut, a.cfg.Prefixo+"/webhook/"+escapar(conta.ChavePix), corpo, nil, a.cfg.HeadersWebhook)
+}
+
+// ChamarNoHost chama um caminho no mesmo host da API Pix da conta, fora da
+// base (o simulador de pagamento da homologação do BB), com o token e os
+// parâmetros da conta.
+func (a *API) ChamarNoHost(ctx context.Context, conta domain.Conta, metodo, caminho string, entrada, saida any) error {
+	c, err := a.clienteDa(ctx, conta)
+	if err != nil {
+		return err
+	}
+	u, err := url.Parse(c.base)
+	if err != nil {
+		return fmt.Errorf("%s: URL da API: %w", a.cfg.Nome, err)
+	}
+	return a.chamarEm(ctx, c, metodo, u.Scheme+"://"+u.Host+caminho, entrada, saida, nil)
 }
 
 // Chamar é a chamada genérica, para a rota que só um banco tem (por exemplo,

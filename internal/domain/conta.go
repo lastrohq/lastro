@@ -111,6 +111,9 @@ type Credenciais struct {
 	ClientSecret     string `json:"clientSecret"`
 	Certificado      []byte `json:"certificado,omitempty"`
 	SenhaCertificado string `json:"senhaCertificado,omitempty"`
+	// ChaveAplicacao é a chave de aplicação do portal do Banco do Brasil
+	// (developer_application_key), que vai na URL de toda chamada.
+	ChaveAplicacao string `json:"chaveAplicacao,omitempty"`
 }
 
 const credenciaisOcultas = "[credenciais ocultas]" //nolint:gosec // G101: é o marcador de ocultação, não uma credencial

@@ -64,6 +64,8 @@ type cobJSON struct {
 	PixCopiaECola      string      `json:"pixCopiaECola,omitempty"`
 	// Brcode é onde o Sicoob devolve o BR Code, em vez do pixCopiaECola.
 	Brcode string `json:"brcode,omitempty"`
+	// TextoImagemQRcode é onde o BB devolve o BR Code.
+	TextoImagemQRcode string `json:"textoImagemQRcode,omitempty"`
 }
 
 func paraDevedor(d *domain.Devedor) *devedor {
@@ -123,6 +125,8 @@ func paraCobranca(conta domain.Conta, r cobJSON, base domain.Cobranca) (domain.C
 		c.BRCode = r.PixCopiaECola
 	case r.Brcode != "":
 		c.BRCode = r.Brcode
+	case r.TextoImagemQRcode != "":
+		c.BRCode = r.TextoImagemQRcode
 	}
 	if r.Revisao != nil {
 		c.Revisao = *r.Revisao

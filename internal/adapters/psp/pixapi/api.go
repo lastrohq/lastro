@@ -12,6 +12,7 @@ import (
 	"crypto/x509"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
@@ -53,6 +54,13 @@ type Banco struct {
 	// HeaderClientID, se não vazio, é o header que leva o client id em toda
 	// chamada à API Pix (o Sicoob usa "client_id").
 	HeaderClientID string
+	// SemMTLS lista os ambientes em que o banco não pede certificado (a
+	// homologação do BB): a conta pode vir sem ele, e a chamada vai em TLS
+	// comum. Com certificado, ele é usado do mesmo jeito.
+	SemMTLS map[domain.Ambiente]bool
+	// Parametros, se não nil, entram na query de toda chamada à API Pix (a
+	// chave de aplicação do BB). O token não leva.
+	Parametros func(domain.Ambiente, domain.Credenciais) url.Values
 }
 
 // API é o cliente da API Pix de um banco. Guarda um cliente HTTP (mTLS +
@@ -116,10 +124,11 @@ func (a *API) InterpretarWebhook(conta domain.Conta, corpo []byte) ([]domain.Pix
 
 // cliente é a ligação com o banco de uma conta, com as credenciais de quando foi montado.
 type cliente struct {
-	http     *http.Client
-	base     string
-	clientID string
-	versao   [32]byte // resumo das credenciais e do ambiente; mudou, monta de novo
+	http       *http.Client
+	base       string
+	clientID   string
+	parametros url.Values
+	versao     [32]byte // resumo das credenciais e do ambiente; mudou, monta de novo
 }
 
 // clienteDa devolve o cliente da conta, montando de novo se as credenciais ou o
@@ -141,19 +150,27 @@ func (a *API) clienteDa(ctx context.Context, conta domain.Conta) (*cliente, erro
 	if c := a.clientes[conta.ID]; c != nil && c.versao == versao {
 		return c, nil
 	}
-	if a.cfg.SemClientSecret {
-		if cred.ClientID == "" || len(cred.Certificado) == 0 {
-			return nil, fmt.Errorf("%s: a conta %s precisa de client id e certificado", nome, conta.ID)
-		}
-	} else if cred.ClientID == "" || cred.ClientSecret == "" || len(cred.Certificado) == 0 {
-		return nil, fmt.Errorf("%s: a conta %s precisa de client id, client secret e certificado", nome, conta.ID)
+	semMTLS := a.cfg.SemMTLS[conta.Ambiente]
+	exigidos := "client id, client secret e certificado"
+	switch {
+	case a.cfg.SemClientSecret:
+		exigidos = "client id e certificado"
+	case semMTLS:
+		exigidos = "client id e client secret"
 	}
-	par, err := certificado.TLS(cred.Certificado, cred.SenhaCertificado)
-	if err != nil {
-		return nil, fmt.Errorf("%s: certificado da conta %s: %w", nome, conta.ID, err)
+	if cred.ClientID == "" || (cred.ClientSecret == "" && !a.cfg.SemClientSecret) || (len(cred.Certificado) == 0 && !semMTLS) {
+		return nil, fmt.Errorf("%s: a conta %s precisa de %s", nome, conta.ID, exigidos)
+	}
+	var certificados []tls.Certificate
+	if len(cred.Certificado) > 0 {
+		par, err := certificado.TLS(cred.Certificado, cred.SenhaCertificado)
+		if err != nil {
+			return nil, fmt.Errorf("%s: certificado da conta %s: %w", nome, conta.ID, err)
+		}
+		certificados = []tls.Certificate{par}
 	}
 	var mtls http.RoundTripper = &http.Transport{
-		TLSClientConfig:     &tls.Config{Certificates: []tls.Certificate{par}, RootCAs: a.raizes, MinVersion: tls.VersionTLS12},
+		TLSClientConfig:     &tls.Config{Certificates: certificados, RootCAs: a.raizes, MinVersion: tls.VersionTLS12},
 		ForceAttemptHTTP2:   true,
 		TLSHandshakeTimeout: 10 * time.Second,
 	}
@@ -169,6 +186,9 @@ func (a *API) clienteDa(ctx context.Context, conta domain.Conta) (*cliente, erro
 		clientID: cred.ClientID,
 		versao:   versao,
 	}
+	if a.cfg.Parametros != nil {
+		c.parametros = a.cfg.Parametros(conta.Ambiente, cred)
+	}
 	if antigo := a.clientes[conta.ID]; antigo != nil {
 		antigo.http.CloseIdleConnections()
 	}
@@ -178,7 +198,7 @@ func (a *API) clienteDa(ctx context.Context, conta domain.Conta) (*cliente, erro
 
 func resumo(cred domain.Credenciais, base string) [32]byte {
 	h := sha256.New()
-	for _, parte := range [][]byte{[]byte(base), []byte(cred.ClientID), []byte(cred.ClientSecret), cred.Certificado, []byte(cred.SenhaCertificado)} {
+	for _, parte := range [][]byte{[]byte(base), []byte(cred.ClientID), []byte(cred.ClientSecret), cred.Certificado, []byte(cred.SenhaCertificado), []byte(cred.ChaveAplicacao)} {
 		_, _ = fmt.Fprintf(h, "%d:", len(parte))
 		_, _ = h.Write(parte)
 	}
