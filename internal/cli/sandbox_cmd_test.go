@@ -161,12 +161,17 @@ func TestSandboxDoZeroAUmaCobrancaPaga(t *testing.T) {
 	}
 }
 
-// TestSandboxImprimeComandoDoMCP confere o bloco "Use com seu agente": a
-// subida (checada em subirSandbox) imprime o claude mcp add com token e URL dela.
-func TestSandboxImprimeComandoDoMCP(t *testing.T) {
-	db := filepath.Join(t.TempDir(), "vintem-sandbox.db")
-	_, _, parar := subirSandbox(t, db, fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC)))
-	parar()
+// A subida em porta aleatória (subirSandbox) confere o comando impresso; a porta
+// padrão, que não dá para ocupar num teste, é conferida aqui.
+func TestComandoMCPSoLevaAURLForaDaPortaPadrao(t *testing.T) {
+	for url, quer := range map[string]string{
+		"http://localhost:8080": "claude mcp add vintem -e VINTEM_TOKEN=vtm_x -e VINTEM_CHAVE_PIX=sandbox@vintem.dev -- vintem mcp",
+		"http://localhost:9090": "claude mcp add vintem -e VINTEM_TOKEN=vtm_x -e VINTEM_CHAVE_PIX=sandbox@vintem.dev -e VINTEM_URL=http://localhost:9090 -- vintem mcp",
+	} {
+		if got := comandoMCP("vtm_x", url); got != quer {
+			t.Errorf("comandoMCP(%q) = %q, quer %q", url, got, quer)
+		}
+	}
 }
 
 func TestSandboxRecusaBancoComContaReal(t *testing.T) {

@@ -32,6 +32,10 @@ func problemaDe(ctx context.Context, err error) gen.Problema {
 		}
 		pr.Violacoes = &vs
 		return pr
+	case errors.Is(err, domain.ErrTokenWebhook):
+		pr := p(http.StatusUnauthorized, "NaoAutenticado", "O token da URL do webhook está ausente ou errado")
+		pr.Detail = nil // não diz se a conta existe nem se o token estava errado
+		return pr
 	case errors.Is(err, domain.ErrNaoAutenticado):
 		pr := p(http.StatusUnauthorized, "NaoAutenticado", "Envie uma API key válida em Authorization: Bearer vtm_...")
 		pr.Detail = nil // não diz se a chave existe, está revogada ou malformada

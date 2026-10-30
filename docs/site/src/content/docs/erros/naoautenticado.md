@@ -9,7 +9,7 @@ description: "A requisição não trouxe uma API key válida."
 
 O header `Authorization: Bearer vtm_...` faltou, ou a key está malformada, revogada ou não existe. A resposta não diz qual dos casos foi e não traz `detail`, para não revelar se a key existe.
 
-As rotas de webhook (`/webhooks/...`) respondem o mesmo erro quando o token da URL está errado ou a conta não existe, embora o `title` fale de API key.
+As rotas de webhook (`/webhooks/...`) respondem o mesmo tipo, com outro `title`, quando o token da URL está errado ou a conta não existe: `O token da URL do webhook está ausente ou errado`.
 
 ## Exemplo
 
