@@ -76,8 +76,9 @@ Toda criação ou alteração (`POST`, `PUT`, `PATCH`) aceita o header `Idempote
   **2 minutos** é considerada abandonada (processo que caiu) e liberada.
 - Resposta **5xx não é guardada**: o cliente mandou a chave justamente para
   poder tentar de novo.
-- O header é obrigatório no `POST /cob` (o txid é gerado pelo Vintém) e opcional
-  no `PUT /cob/{txid}` (o txid já identifica a criação).
+- O header é obrigatório onde o identificador é gerado pelo servidor (`POST /cob`,
+  `POST /rec`, `POST /solicrec` e `POST /cobr`) e opcional nos `PUT` com txid
+  (`/cob`, `/cobv` e `/cobr`), em que o txid já identifica a criação.
 - Corpo acima de 1 MiB com a chave → **413**.
 
 ### RN-12 · Estados da cobrança (`cob` e `cobv`)

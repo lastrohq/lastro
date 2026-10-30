@@ -22,6 +22,7 @@ export default defineConfig({
         { label: "Conceitos", items: ["conceitos/como-funciona", "conceitos/contas-e-certificados", "conceitos/cobrancas", "conceitos/idempotencia", "conceitos/recebimentos-e-conciliacao", "conceitos/webhooks-de-saida", "conceitos/devolucoes", "conceitos/pix-automatico", "conceitos/api-keys-e-escopos"] },
         { label: "Bancos", items: ["gerado/efi", "gerado/inter", "gerado/sicoob", "gerado/bb"] },
         { label: "Integrar", items: ["integrar/sdk", "integrar/mcp", "integrar/painel"] },
+        { label: "Operar", items: ["operar/instalacao", "operar/producao", "operar/configuracao", "operar/cli", "operar/seguranca", "operar/backup-e-atualizacao"] },
         ...openAPISidebarGroups,
         { label: "Referência", items: ["referencia/erros", { label: "Tipos de erro", collapsed: true, items: [{ autogenerate: { directory: "erros" } }] }] },
         { label: "Projeto", collapsed: true, items: ["gerado/regras-de-negocio", "gerado/arquitetura", "gerado/contribuir", { label: "Decisões (ADR)", items: [{ autogenerate: { directory: "gerado/adr" } }] }] },
