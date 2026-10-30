@@ -37,6 +37,64 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 30/10/2026 — v0.10.0: o site explica como rodar, e a primeira contribuição de fora
+
+O site ganhou as seções Conceitos e Operar e as páginas de cada erro da API, e o
+Compose de produção entrou no repositório. Veio a primeira contribuição externa do
+projeto, de `jay23606`, e o manual passou a dizer como revisar um PR de fora.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#115](https://github.com/vintemhq/vintem/issues/115) | `vintem sandbox` imprime o comando para ligar o MCP no Claude Code | DX/Docs | P | Média | [#143](https://github.com/vintemhq/vintem/pull/143) `32778ec` | [v0.10.0](https://github.com/vintemhq/vintem/releases/tag/v0.10.0) · [#161](https://github.com/vintemhq/vintem/pull/161) `37beff8` | 30/10 10:04 |
+| [#149](https://github.com/vintemhq/vintem/issues/149) | O link do campo type dos erros da API leva a uma página que existe | DX/Docs | M | Alta | [#156](https://github.com/vintemhq/vintem/pull/156) `0d55787` | [v0.10.0](https://github.com/vintemhq/vintem/releases/tag/v0.10.0) · [#161](https://github.com/vintemhq/vintem/pull/161) `37beff8` | 30/10 09:43 |
+| [#147](https://github.com/vintemhq/vintem/issues/147) | Entender cobranças, webhooks e Pix Automático pelo site (seção Conceitos) | DX/Docs | G | Alta | [#159](https://github.com/vintemhq/vintem/pull/159) `e411184` | [v0.10.0](https://github.com/vintemhq/vintem/releases/tag/v0.10.0) · [#161](https://github.com/vintemhq/vintem/pull/161) `37beff8` | 30/10 10:26 |
+| [#148](https://github.com/vintemhq/vintem/issues/148) | Instalar, configurar e operar o Vintém em produção pelo site (seção Operar) | DX/Docs | G | Alta | [#160](https://github.com/vintemhq/vintem/pull/160) `111c204` | [v0.10.0](https://github.com/vintemhq/vintem/releases/tag/v0.10.0) · [#161](https://github.com/vintemhq/vintem/pull/161) `37beff8` | 30/10 10:42 |
+
+> **Também no release, sem fechar issue:** os certificados de teste ([#157](https://github.com/vintemhq/vintem/pull/157) `07de418`), o fluxo de
+> PR externo no manual ([#158](https://github.com/vintemhq/vintem/pull/158) `66637a8`), o site em `vintem.dev` ([#144](https://github.com/vintemhq/vintem/pull/144) `baf9190`) e o SDK por
+> Trusted Publishing ([#145](https://github.com/vintemhq/vintem/pull/145) `be62041` e [#146](https://github.com/vintemhq/vintem/pull/146) `55a8c2c`).
+>
+> Release [v0.10.0](https://github.com/vintemhq/vintem/releases/tag/v0.10.0) com binários, checksums e imagem `ghcr.io/vintemhq/vintem:0.10.0`, conferida
+> com o Compose da documentação, inclusive na atualização a partir da 0.9.0.
+
+### Um teste que dependia do dia
+
+Dois testes dos bancos passaram a falhar em toda branch de um dia para o outro. O
+certificado valia até `agora + 24h`, com `agora` fixo, mas o TLS confere no relógio real.
+A varredura achou outros seis com o mesmo defeito, um deles passando pelo motivo errado.
+Fica a regra, no comentário do `certificadotest.Gerar`: certificado que chega a um
+handshake parte de `time.Now`.
+
+### Testar a documentação achou erros nela
+
+Rodar os comandos das páginas pegou um `PATCH /solicrec` que a API não tem, datas que a
+janela do Pix Automático recusaria e um exemplo inventado, antes de irem para o site.
+Também mostrou o que nenhum teste de unidade dizia: uma chave mestra diferente só aparece
+na chamada ao banco, e um `lastro.db` não renomeado vira um `vintem.db` vazio sem aviso.
+
+### Ficou aberto
+
+- A issue do [#157](https://github.com/vintemhq/vintem/pull/157) não foi criada.
+
+---
+
+## Leva de 29/10/2026 (noite) — v0.9.0: o projeto passa a se chamar Vintém
+
+O nome mudou antes do lançamento, pelo conflito de marca com a Lastro Tecnologia
+registrado na [ADR-009](./adr/009-nome-e-marca.md). A troca quebra quem usava o alpha:
+variáveis `LASTRO_*`, API keys `lst_`, banco padrão e caminho do `go install`.
+
+| Issue | Título | Área | Est. | Prior. | PR → `develop` | Release → `main` | Issue fechada |
+|---|---|---|---|---|---|---|---|
+| [#2](https://github.com/vintemhq/vintem/issues/2) | Saber se o nome Lastro está livre para uso no INPI e se o uso descritivo de "Pix" é aceito pelo manual de marca do BCB | Estudo | — | — | [#140](https://github.com/vintemhq/vintem/pull/140) `18c7381` | [v0.9.0](https://github.com/vintemhq/vintem/releases/tag/v0.9.0) · [#142](https://github.com/vintemhq/vintem/pull/142) `4aa14e2` | 29/10 22:37 |
+
+> **Também no release, sem fechar issue:** o `-h` nos subcomandos ([#138](https://github.com/vintemhq/vintem/pull/138) `fa5a52e`), o estudo de
+> marca ([#139](https://github.com/vintemhq/vintem/pull/139) `f0ed93a`) e a leva do v0.8.0 ([#141](https://github.com/vintemhq/vintem/pull/141) `2361f8d`).
+>
+> A imagem ficou pública depois deste release: [#98](https://github.com/vintemhq/vintem/issues/98) fechada em 29/10.
+
+---
+
 ## Leva de 29/10/2026 (madrugada) — v0.8.0: quatro bancos sobre um cliente só
 
 O adapter do Efí virou a configuração de um cliente da API Pix comum, e Inter,

@@ -251,13 +251,16 @@ CRIADA ──▶ ENVIADA ──▶ RECEBIDA ──▶ ACEITA
 - `ACEITA` leva a recorrência a `APROVADA`; `REJEITADA`, a `REJEITADA` (RN-40).
 - Fica pendente no app do pagador por **no máximo 30 dias**; o recebedor pode
   definir menos. Passado o prazo, expira.
-- O recebedor só cancela (`PATCH` com `CANCELADA`).
+- O recebedor só cancela (`PATCH /solicrec/{idSolicRec}` com `CANCELADA`), enquanto
+  o pagador não respondeu. Outro status no corpo é recusado. A recorrência continua
+  `CRIADA`, e o cancelamento publica `recorrencia.solicitacao` com o status novo.
 - Mudanças chegam por webhook de recorrência (`/webhookrec`).
 
 ### RN-42 · Cobrança recorrente (`/cobr`)
 
 - Status da API Pix (`CobRStatus`, 2.10.0): `CRIADA`, `ATIVA`, `CONCLUIDA`,
-  `EXPIRADA`, `REJEITADA`, `CANCELADA`. O recebedor só cancela.
+  `EXPIRADA`, `REJEITADA`, `CANCELADA`. O recebedor só cancela: outro status no
+  `PATCH` é recusado.
 
   ```
   CRIADA ──▶ ATIVA ──▶ CONCLUIDA
@@ -442,6 +445,12 @@ Assim, o resultado da devolução de um Pix antigo, que já saiu da janela do
 Certificados, chaves privadas e client secrets são cifrados com AES-256-GCM
 usando `VINTEM_MASTER_KEY`. Sem a master key, o Vintém não sobe. Nada disso é
 escrito em log — nem mascarado parcialmente.
+
+- **Chave diferente é recusada ao abrir o banco:** todo segredo guardado é decifrado
+  na abertura, e a falha diz qual conta ou destino não abriu. Sem isso, o erro só
+  apareceria na primeira chamada ao banco.
+- **Troca de chave:** `vintem chave trocar` recifra credenciais e segredos com
+  `VINTEM_MASTER_KEY_NOVA` numa transação só, com o servidor parado.
 
 ### RN-62 · Certificados
 

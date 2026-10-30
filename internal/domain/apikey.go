@@ -41,6 +41,8 @@ var (
 	ErrAPIKeyInvalida = errors.New("api key inválida")
 	// ErrNaoAutenticado indica token ausente, malformado, desconhecido ou revogado.
 	ErrNaoAutenticado = errors.New("não autenticado")
+	// ErrTokenWebhook é o ErrNaoAutenticado da rota de webhook, que não usa API key.
+	ErrTokenWebhook = fmt.Errorf("%w: token do webhook", ErrNaoAutenticado)
 	// ErrSemEscopo indica uma API key válida sem a permissão necessária.
 	ErrSemEscopo = errors.New("api key sem o escopo necessário")
 )

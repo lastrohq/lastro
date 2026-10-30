@@ -181,6 +181,56 @@ func (s Recorrencias) SolicitarConfirmacao(ctx context.Context, idRec string, de
 	return criada, nil
 }
 
+// ConsultarSolicitacao devolve a solicitação gravada. Acesso restrito a outra
+// conta não a enxerga, como na recorrência.
+func (s Recorrencias) ConsultarSolicitacao(ctx context.Context, id string) (domain.SolicitacaoRecorrencia, error) {
+	sol, err := s.Store.Solicitacoes().Buscar(ctx, id)
+	if err != nil {
+		return domain.SolicitacaoRecorrencia{}, err
+	}
+	if !AcessoDe(ctx).enxerga(sol.ContaID) {
+		return domain.SolicitacaoRecorrencia{}, fmt.Errorf("solicitação %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	return sol, nil
+}
+
+// CancelarSolicitacao desiste do pedido enquanto o pagador não respondeu
+// (RN-41). A recorrência continua CRIADA e pode pedir outra confirmação.
+func (s Recorrencias) CancelarSolicitacao(ctx context.Context, id string) (domain.SolicitacaoRecorrencia, error) {
+	sol, err := s.ConsultarSolicitacao(ctx, id)
+	if err != nil {
+		return domain.SolicitacaoRecorrencia{}, err
+	}
+	if err := domain.TransicoesSolicitacao.Validar(sol.Status, domain.SolicitacaoCancelada); err != nil {
+		return domain.SolicitacaoRecorrencia{}, fmt.Errorf("solicitação %s: %w", id, err)
+	}
+	conta, err := s.Store.Contas().Buscar(ctx, sol.ContaID)
+	if err != nil {
+		return domain.SolicitacaoRecorrencia{}, err
+	}
+	psp, err := pspRecorrencia(s.PSPs, conta)
+	if err != nil {
+		return domain.SolicitacaoRecorrencia{}, err
+	}
+	if _, err := psp.CancelarSolicitacao(ctx, conta, sol); err != nil {
+		return domain.SolicitacaoRecorrencia{}, erroDoPSP(err)
+	}
+	sol.Status = domain.SolicitacaoCancelada
+	err = s.Store.WithTx(ctx, func(tx ports.Store) error {
+		if err := tx.Solicitacoes().AtualizarStatus(ctx, sol.ID, sol.Status); err != nil {
+			return err
+		}
+		return tx.Outbox().Adicionar(ctx, domain.Evento{
+			ID: novoID(), Tipo: domain.EventoSolicitacaoRecorrencia, ContaID: sol.ContaID, OcorridoEm: s.Clock.Now(),
+			Dados: DadosSolicitacao{IDSolicRec: sol.ID, IDRec: sol.RecorrenciaID, ContaID: sol.ContaID, Status: string(sol.Status), ExpiraEm: sol.ExpiraEm},
+		})
+	})
+	if err != nil {
+		return domain.SolicitacaoRecorrencia{}, fmt.Errorf("o PSP cancelou a solicitação %s, mas isso não foi gravado: %w", sol.ID, err)
+	}
+	return sol, nil
+}
+
 // RegistrarAtualizacao aplica a mudança de status que o banco avisou (RN-40):
 // grava a recorrência, encerra as solicitações pendentes dela (RN-41) e
 // publica recorrencia.atualizada, numa transação só. Devolve se algo mudou.

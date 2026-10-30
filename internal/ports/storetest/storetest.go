@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -528,6 +529,17 @@ func Run(t *testing.T, novo func(t *testing.T) ports.Store) {
 		dc1, err := s.Destinos().DaConta(ctx, "c1")
 		if err != nil || len(dc1) != 2 || dc1[0].ID != "d1" || dc1[1].ID != "d2" || string(dc1[0].SegredoCifrado) != string([]byte{1}) {
 			t.Fatalf("DaConta(c1) = %+v, %v", dc1, err)
+		}
+		if err := s.Destinos().AtualizarSegredo(ctx, "d1", []byte("recifrado")); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Destinos().AtualizarSegredo(ctx, "nao-existe", []byte("x")); !errors.Is(err, ports.ErrNaoEncontrado) {
+			t.Fatalf("segredo de destino que não existe: %v", err)
+		}
+		if todos, _ := s.Destinos().Listar(ctx); !slices.ContainsFunc(todos, func(d domain.Destino) bool {
+			return d.ID == "d1" && string(d.SegredoCifrado) == "recifrado"
+		}) {
+			t.Fatalf("segredo não atualizado: %+v", todos)
 		}
 		if err := s.Destinos().Remover(ctx, "d2"); err != nil {
 			t.Fatal(err)

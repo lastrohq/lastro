@@ -165,3 +165,22 @@ func TestRetentativaCobrPelaAPI(t *testing.T) {
 		t.Fatalf("fora dos 7 dias: %d", st)
 	}
 }
+
+// O corpo vale: PATCH só cancela com status CANCELADA, e nunca por engano.
+func TestRevisaoQueNaoECancelamentoNaoCancela(t *testing.T) {
+	a := novaAPI(t)
+	idRec := a.recAprovada("99.90")
+	h := comCobr(a, "loja", "")
+	var c gen.CobRGerada
+	if st := a.chamar(http.MethodPut, "/cobr/"+txidCobr, corpoDaCobr(idRec, "99.90"), h, &c); st != http.StatusCreated {
+		t.Fatalf("criar: %d", st)
+	}
+	var p gen.Problema
+	if st := a.chamar(http.MethodPatch, "/cobr/"+txidCobr, `{"status":"CONCLUIDA"}`, h, &p); st != http.StatusBadRequest {
+		t.Fatalf("status que não é CANCELADA: %d", st)
+	}
+	var lida gen.CobRGerada
+	if st := a.chamar(http.MethodGet, "/cobr/"+txidCobr, "", h, &lida); st != http.StatusOK || lida.Status == "CANCELADA" {
+		t.Fatalf("a revisão cancelou a cobrança: %d %+v", st, lida)
+	}
+}

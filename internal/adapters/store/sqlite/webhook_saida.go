@@ -68,6 +68,17 @@ func (r destinos) DaConta(ctx context.Context, contaID string) ([]domain.Destino
 	return out, nil
 }
 
+func (r destinos) AtualizarSegredo(ctx context.Context, id string, cifrado []byte) error {
+	n, err := r.q.AtualizarSegredoDestino(ctx, db.AtualizarSegredoDestinoParams{SegredoCifrado: cifrado, ID: id})
+	if err != nil {
+		return traduzir(err, "destino "+id)
+	}
+	if n == 0 {
+		return fmt.Errorf("destino %s: %w", id, ports.ErrNaoEncontrado)
+	}
+	return nil
+}
+
 func (r destinos) Remover(ctx context.Context, id string) error {
 	n, err := r.q.RemoverDestino(ctx, id)
 	if err != nil {

@@ -76,14 +76,14 @@ func (s Webhooks) Configurar(ctx context.Context, contaID, urlPublica string) (s
 func (s Webhooks) contaDoToken(ctx context.Context, contaID, token string) (domain.Conta, error) {
 	esperado, err := s.Store.Contas().BuscarTokenWebhook(ctx, contaID)
 	if errors.Is(err, ports.ErrNaoEncontrado) {
-		return domain.Conta{}, domain.ErrNaoAutenticado
+		return domain.Conta{}, domain.ErrTokenWebhook
 	}
 	if err != nil {
 		return domain.Conta{}, err
 	}
 	h := sha256.Sum256([]byte(token))
 	if subtle.ConstantTimeCompare(h[:], esperado) != 1 {
-		return domain.Conta{}, domain.ErrNaoAutenticado
+		return domain.Conta{}, domain.ErrTokenWebhook
 	}
 	return s.Store.Contas().Buscar(ctx, contaID)
 }

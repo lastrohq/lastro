@@ -112,7 +112,7 @@ reenvio. Remover um destino manda as entregas pendentes dele para a DLQ.
 | `certificado.expirando` | Faltam 30 dias ou menos para o certificado vencer, ou ele já venceu | Certificado |
 | `recorrencia.criada` | Uma recorrência foi criada | Recorrência |
 | `recorrencia.atualizada` | O status da recorrência mudou | Recorrência |
-| `recorrencia.solicitacao` | O pedido de confirmação foi enviado ao pagador | Solicitação |
+| `recorrencia.solicitacao` | O pedido de confirmação foi enviado ao pagador ou cancelado por você | Solicitação |
 | `cobranca_recorrente.criada` | Uma cobrança recorrente foi criada | Cobrança recorrente |
 | `cobranca_recorrente.atualizada` | O status da cobrança recorrente mudou | Cobrança recorrente |
 | `cobranca_recorrente.tentativa` | Uma tentativa de liquidação é nova ou mudou | Cobrança recorrente, com `tentativa` |

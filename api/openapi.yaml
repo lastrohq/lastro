@@ -409,6 +409,64 @@ paths:
         "501":
           $ref: "#/components/responses/NaoSuportado"
 
+  /solicrec/{idSolicRec}:
+    parameters:
+      - name: idSolicRec
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: "^SC[0-9A-Z]{8}[0-9]{8}[a-zA-Z0-9]{11}$"
+    get:
+      tags: [Rec]
+      operationId: consultarSolicRec
+      summary: Consultar a solicitação de confirmação
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Solicitação encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolicRecGerada"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+    patch:
+      tags: [Rec]
+      operationId: cancelarSolicRec
+      summary: Cancelar a solicitação de confirmação
+      description: O recebedor só cancela, enquanto o pagador não respondeu (RN-41).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SolicRecRevisada"
+      responses:
+        default:
+          $ref: "#/components/responses/Erro"
+        "200":
+          description: Solicitação cancelada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolicRecGerada"
+        "400":
+          $ref: "#/components/responses/RequisicaoInvalida"
+        "401":
+          $ref: "#/components/responses/NaoAutenticado"
+        "403":
+          $ref: "#/components/responses/AcessoNegado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "501":
+          $ref: "#/components/responses/NaoSuportado"
+
   /cob:
     post:
       tags: [Cob]
@@ -1348,6 +1406,13 @@ components:
             status:
               type: string
               enum: [CRIADA, ENVIADA, RECEBIDA, ACEITA, REJEITADA, EXPIRADA, CANCELADA]
+    SolicRecRevisada:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [CANCELADA]
     CobRSolicitada:
       type: object
       required: [idRec, calendario, valor]

@@ -111,3 +111,38 @@ func TestRespostaDoPagadorDepoisDoRestart(t *testing.T) {
 		t.Fatalf("depois do restart: %s, %v", lida.Status, err)
 	}
 }
+
+func TestSolicitacaoCanceladaNaoTemResposta(t *testing.T) {
+	store, clock := fake.NewStore(), fake.NewClock(inicio)
+	ctx := context.Background()
+	_ = store.Contas().Criar(ctx, conta)
+	p := sandbox.New(clock, sandbox.ComStore(store))
+	criada, _ := p.CriarRecorrencia(ctx, conta, recSandbox(domain.SemRetentativa))
+	_ = store.Recorrencias().Criar(ctx, criada)
+	sol, err := p.SolicitarConfirmacao(ctx, conta, domain.SolicitacaoRecorrencia{RecorrenciaID: criada.ID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Solicitacoes().Criar(ctx, sol); err != nil {
+		t.Fatal(err)
+	}
+	cancelada, err := p.CancelarSolicitacao(ctx, conta, sol)
+	if err != nil || cancelada.Status != domain.SolicitacaoCancelada {
+		t.Fatalf("cancelar: %+v %v", cancelada, err)
+	}
+	if err := store.Solicitacoes().AtualizarStatus(ctx, sol.ID, domain.SolicitacaoCancelada); err != nil {
+		t.Fatal(err)
+	}
+	clock.Avancar(sandbox.AtrasoPadrao * 2)
+	if lida, _ := p.ConsultarRecorrencia(ctx, conta, criada.ID); lida.Status != domain.RecorrenciaCriada {
+		t.Fatalf("o pagador respondeu a uma solicitação cancelada: %s", lida.Status)
+	}
+	// Um pedido novo volta a ter resposta, e o restart lembra só dele.
+	if _, err := p.SolicitarConfirmacao(ctx, conta, domain.SolicitacaoRecorrencia{RecorrenciaID: criada.ID}); err != nil {
+		t.Fatal(err)
+	}
+	clock.Avancar(sandbox.AtrasoPadrao)
+	if lida, _ := p.ConsultarRecorrencia(ctx, conta, criada.ID); lida.Status != domain.RecorrenciaAprovada {
+		t.Fatalf("depois de pedir de novo: %s", lida.Status)
+	}
+}

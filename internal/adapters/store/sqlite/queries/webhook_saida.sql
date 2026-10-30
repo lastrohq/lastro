@@ -7,6 +7,9 @@ SELECT * FROM destinos_webhook ORDER BY criado_em, id;
 -- name: DestinosDaConta :many
 SELECT * FROM destinos_webhook WHERE conta_id IS NULL OR conta_id = ? ORDER BY criado_em, id;
 
+-- name: AtualizarSegredoDestino :execrows
+UPDATE destinos_webhook SET segredo_cifrado = ? WHERE id = ?;
+
 -- name: RemoverDestino :execrows
 DELETE FROM destinos_webhook WHERE id = ?;
 

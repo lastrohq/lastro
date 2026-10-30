@@ -39,8 +39,8 @@ Cada rota exige exatamente um escopo. Dê a cada aplicação só o que ela preci
 | `cobv:write` | `PUT /cobv/{txid}` e `PATCH /cobv/{txid}` |
 | `pix:read` | `GET /pix/{e2eid}/devolucao/{id}` |
 | `devolucao:write` | `PUT /pix/{e2eid}/devolucao/{id}` |
-| `rec:read` | `GET /rec/{idRec}` |
-| `rec:write` | `POST /rec` e `POST /solicrec` |
+| `rec:read` | `GET /rec/{idRec}` e `GET /solicrec/{idSolicRec}` |
+| `rec:write` | `POST /rec`, `POST /solicrec` e `PATCH /solicrec/{idSolicRec}` |
 | `cobr:read` | `GET /cobr/{txid}` |
 | `cobr:write` | `POST /cobr`, `PUT /cobr/{txid}`, `PATCH /cobr/{txid}` e `POST /cobr/{txid}/retentativa/{data}` |
 | `webhook:admin` | `GET /vintem/v1/webhooks/entregas` e `POST /vintem/v1/webhooks/entregas/{eventoId}/reenviar` |
