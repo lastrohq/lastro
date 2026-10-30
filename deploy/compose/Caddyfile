@@ -1,0 +1,3 @@
+{$VINTEM_DOMINIO} {
+	reverse_proxy vintem:8080
+}

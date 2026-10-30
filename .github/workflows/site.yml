@@ -4,10 +4,10 @@ name: Site de docs
 # Cloudflare (docs/site/wrangler.jsonc), com preview por branch.
 on:
   pull_request:
-    paths: ["docs/**", "api/openapi.yaml", "CONTRIBUTING.md", ".github/workflows/site.yml"]
+    paths: ["docs/**", "api/openapi.yaml", "deploy/compose/**", "CONTRIBUTING.md", ".github/workflows/site.yml"]
   push:
     branches: [develop]
-    paths: ["docs/**", "api/openapi.yaml", "CONTRIBUTING.md", ".github/workflows/site.yml"]
+    paths: ["docs/**", "api/openapi.yaml", "deploy/compose/**", "CONTRIBUTING.md", ".github/workflows/site.yml"]
   workflow_dispatch:
 
 permissions:

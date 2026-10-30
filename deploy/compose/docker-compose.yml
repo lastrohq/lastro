@@ -1,0 +1,32 @@
+# Vintém em produção, atrás do Caddy, que cuida do TLS. O .env ao lado define
+# VINTEM_VERSAO, VINTEM_DOMINIO e VINTEM_MASTER_KEY: veja https://vintem.dev/operar/producao/
+name: vintem
+
+services:
+  vintem:
+    image: ghcr.io/vintemhq/vintem:${VINTEM_VERSAO:?defina no .env}
+    restart: unless-stopped
+    environment:
+      VINTEM_MASTER_KEY: ${VINTEM_MASTER_KEY:?defina no .env}
+    volumes:
+      # A pasta do usuário da imagem, onde fica o vintem.db.
+      - dados:/home/nonroot
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [vintem]
+    environment:
+      VINTEM_DOMINIO: ${VINTEM_DOMINIO:?defina no .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_dados:/data
+      - caddy_config:/config
+
+volumes:
+  dados:
+  caddy_dados:
+  caddy_config:
