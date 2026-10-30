@@ -37,6 +37,37 @@ conjunto: o que era, o que virou, as decisões que deixou e o que ensinou.
 
 ---
 
+## Leva de 30/10/2026 (tarde) — v0.11.0: o que a documentação mostrou que faltava
+
+Escrever e testar as seções Conceitos e Operar mostrou problemas no produto, e esta leva os
+corrige. A chave mestra agora é conferida ao abrir o banco e pode ser trocada, a API ganhou a
+rota que a RN-41 prometia, e o `PATCH /cobr` parou de cancelar com qualquer status.
+
+Nenhuma issue foi aberta para estas correções:
+
+| PR → `develop` | O que entrou | Release → `main` |
+|---|---|---|
+| [#163](https://github.com/vintemhq/vintem/pull/163) `790e2aa` | Chave mestra diferente recusada ao abrir o banco, `vintem chave trocar` e aviso do `lastro.db` | [v0.11.0](https://github.com/vintemhq/vintem/releases/tag/v0.11.0) · [#166](https://github.com/vintemhq/vintem/pull/166) `abd1676` |
+| [#164](https://github.com/vintemhq/vintem/pull/164) `efdf8ff` | `GET` e `PATCH /solicrec/{idSolicRec}`, e `PATCH /cobr` só cancela com `CANCELADA` | [v0.11.0](https://github.com/vintemhq/vintem/releases/tag/v0.11.0) · [#166](https://github.com/vintemhq/vintem/pull/166) `abd1676` |
+| [#165](https://github.com/vintemhq/vintem/pull/165) `e02aab5` | Título próprio no erro de token do webhook e teste do comando do MCP | [v0.11.0](https://github.com/vintemhq/vintem/releases/tag/v0.11.0) · [#166](https://github.com/vintemhq/vintem/pull/166) `abd1676` |
+
+> Release [v0.11.0](https://github.com/vintemhq/vintem/releases/tag/v0.11.0) com binários, checksums e imagem `ghcr.io/vintemhq/vintem:0.11.0`, conferida com o
+> Compose da documentação, inclusive a troca da chave mestra com uma conta e um destino.
+
+### Um PATCH que cancelava com qualquer status
+
+`PATCH /cobr/{txid}` ignorava o corpo: `{"status":"CONCLUIDA"}` cancelava a cobrança. O teste que
+deveria pegar isso rodava numa cobrança já cancelada, então passava pelo motivo errado. O defeito
+apareceu ao escrever a rota irmã, `PATCH /solicrec`. Teste de recusa precisa partir de um estado em
+que a operação teria efeito.
+
+### Ficou aberto
+
+- Pix Automático continua só no sandbox: `CancelarSolicitacao` não tem implementação em banco real,
+  porque nenhum adapter declara `rec` ([#89](https://github.com/vintemhq/vintem/issues/89)).
+
+---
+
 ## Leva de 30/10/2026 — v0.10.0: o site explica como rodar, e a primeira contribuição de fora
 
 O site ganhou as seções Conceitos e Operar e as páginas de cada erro da API, e o

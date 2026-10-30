@@ -18,6 +18,7 @@ credenciais do seu banco, que permitem criar cobranças e devolver Pix em seu no
 
 Sem a chave, o Vintém não sobe. Uma chave mal formada, ou diferente da que gravou os
 dados, também é recusada ao abrir o banco, com o nome da conta ou do destino que não abriu.
+No Compose, o container fica reiniciando: veja o motivo em `docker compose logs vintem`.
 
 ### Trocar a chave mestra
 
