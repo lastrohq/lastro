@@ -24,6 +24,9 @@
 //     valor for o mesmo, e ErrJaExiste se for outro.
 //   - Devolução inexistente responde 400 devolucao_nao_encontrada, não 404
 //     (visto na homologação); o adapter devolve ErrNaoEncontrado.
+//   - O PUT da devolução recusa o campo descricao com 400 json_invalido, embora
+//     aceite natureza (visto em produção em 30/10/2026). A descrição não vai ao
+//     banco e continua gravada no Vintém.
 //   - GET /v2/pix filtra com fim inclusivo; o port pede [Inicio, Fim), e o
 //     adapter descarta o que cai exatamente em Fim.
 //

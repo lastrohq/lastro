@@ -3,6 +3,7 @@ package app_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -134,5 +135,44 @@ func TestWebhookConfigurarEReceber(t *testing.T) {
 	_, _ = wh.Configurar(ctx, "loja", "https://vintem.example.com")
 	if _, err := wh.Receber(ctx, "loja", token, []byte(corpo)); !errors.Is(err, domain.ErrNaoAutenticado) {
 		t.Fatal("token antigo continuou valendo")
+	}
+}
+
+// bancoQueChamaAURL faz como o Efí: chama a URL durante o registro e só aceita se
+// o token já valer. Com recusar, o banco recusa depois da chamada.
+type bancoQueChamaAURL struct {
+	*sandbox.PSP
+	wh      *app.Webhooks
+	recusar error
+}
+
+func (b *bancoQueChamaAURL) ConfigurarWebhook(ctx context.Context, conta domain.Conta, url string) error {
+	token := url[strings.LastIndex(url, "/")+1:]
+	if _, err := b.wh.Receber(ctx, conta.ID, token, []byte(`{"pix":[]}`)); errors.Is(err, domain.ErrNaoAutenticado) {
+		return fmt.Errorf("a URL informada respondeu 401: %w", err)
+	}
+	return b.recusar
+}
+
+func TestWebhookValeDuranteORegistroNoBanco(t *testing.T) {
+	c := novoCenario(t)
+	ctx := context.Background()
+	wh := &app.Webhooks{Store: c.store, Recebimentos: app.Recebimentos{Store: c.store, Clock: c.clock}}
+	banco := &bancoQueChamaAURL{PSP: sandbox.New(c.clock), wh: wh}
+	wh.PSPs = psp.NewRegistry(banco)
+
+	endereco, err := wh.Configurar(ctx, "loja", "https://vintem.example.com")
+	if err != nil {
+		t.Fatalf("o banco não conseguiu chamar a URL durante o registro: %v", err)
+	}
+	token := endereco[strings.LastIndex(endereco, "/")+1:]
+
+	// Se o banco recusar a URL nova, a antiga continua valendo lá, e aqui também.
+	banco.recusar = errors.New("banco fora do ar")
+	if _, err := wh.Configurar(ctx, "loja", "https://outra.example.com"); err == nil {
+		t.Fatal("o banco recusou, e o erro sumiu")
+	}
+	if _, err := wh.Receber(ctx, "loja", token, []byte(`{"pix":[]}`)); errors.Is(err, domain.ErrNaoAutenticado) {
+		t.Fatalf("o token anterior deixou de valer depois da recusa: %v", err)
 	}
 }

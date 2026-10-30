@@ -342,7 +342,9 @@ Valores de partida, do *Guia de implementação do Pix Automático* v1.3
   `https://<seu-vintem>/webhooks/pix/{conta}/{token}`. Ela é gerada por
   `vintem conta webhook <id> --url-publica https://...`, que também a registra no
   PSP. Só o hash do token é gravado; rodar de novo troca o token (e o antigo para
-  de valer). O token faz parte da URL: trate a URL como segredo.
+  de valer). O token faz parte da URL: trate a URL como segredo. Ele é gravado
+  **antes** de falar com o banco, porque o Efí chama a URL durante o registro; se o
+  banco recusar, o token anterior volta a valer.
 - A spec do BCB manda o banco acrescentar `/pix` à URL: os dois caminhos são aceitos.
 - A rota não exige API key (quem chama é o banco). Token ausente, errado ou fora
   do formato responde **401**, sem dizer qual dos três.
