@@ -2,11 +2,11 @@ import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import starlightOpenAPI, { openAPISidebarGroups } from "starlight-openapi";
 
-// Publicado no GitHub Pages (.github/workflows/site.yml). Com domínio próprio,
-// troque site/base por https://vintem.dev e "/".
+// Publicado no GitHub Pages (.github/workflows/site.yml), no domínio próprio
+// vintem.dev (DNS no Cloudflare apontando para o Pages).
 export default defineConfig({
-  site: "https://vintemhq.github.io",
-  base: "/vintem",
+  site: "https://vintem.dev",
+  base: "/",
   integrations: [
     starlight({
       title: "Vintém",

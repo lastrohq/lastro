@@ -5,7 +5,7 @@ description: vintem mcp dá a agentes de IA ferramentas para cobrar, consultar e
 
 `vintem mcp` é um servidor MCP por stdio. Ele chama a API do Vintém com a API
 key do agente, então os escopos valem: uma key só de leitura dá um agente que
-só consulta ([ADR-008](/vintem/gerado/adr/008-mcp-como-cliente-da-api/)).
+só consulta ([ADR-008](/gerado/adr/008-mcp-como-cliente-da-api/)).
 
 ## No Claude Code
 
