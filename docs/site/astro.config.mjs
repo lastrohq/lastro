@@ -19,6 +19,7 @@ export default defineConfig({
       plugins: [starlightOpenAPI([{ base: "api", schema: "../../api/openapi.yaml", sidebar: { label: "Referência da API" } }])],
       sidebar: [
         { label: "Começar", items: ["comecar/quickstart", "gerado/sandbox"] },
+        { label: "Conceitos", items: ["conceitos/como-funciona", "conceitos/contas-e-certificados", "conceitos/cobrancas", "conceitos/idempotencia", "conceitos/recebimentos-e-conciliacao", "conceitos/webhooks-de-saida", "conceitos/devolucoes", "conceitos/pix-automatico", "conceitos/api-keys-e-escopos"] },
         { label: "Bancos", items: ["gerado/efi", "gerado/inter", "gerado/sicoob", "gerado/bb"] },
         { label: "Integrar", items: ["integrar/sdk", "integrar/mcp", "integrar/painel"] },
         ...openAPISidebarGroups,
