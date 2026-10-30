@@ -218,7 +218,7 @@ func contaCriar(ctx context.Context, contas app.Contas, args []string, amb Ambie
 	var cred domain.Credenciais
 	fs.StringVar(&c.ID, "id", "", "identificador da conta ([a-z0-9-])")
 	fs.StringVar(&c.Nome, "nome", "", "nome para exibição")
-	fs.StringVar(&c.PSP, "psp", "", "adapter do banco (sandbox, efi, inter...)")
+	fs.StringVar(&c.PSP, "psp", "", "adapter do banco (sandbox, efi, inter, sicoob...)")
 	fs.StringVar(&c.ChavePix, "chave", "", "chave Pix que recebe as cobranças")
 	fs.StringVar(&ambiente, "ambiente", string(domain.Homologacao), "homologacao ou producao")
 	fs.StringVar(&cred.ClientID, "client-id", "", "client id do OAuth2 do banco")

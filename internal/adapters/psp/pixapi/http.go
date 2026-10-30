@@ -57,6 +57,9 @@ func (a *API) chamarCom(ctx context.Context, conta domain.Conta, metodo, caminho
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("Accept", "application/json")
+	if a.cfg.HeaderClientID != "" {
+		req.Header.Set(a.cfg.HeaderClientID, c.clientID)
+	}
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}

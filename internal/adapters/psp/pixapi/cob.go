@@ -62,6 +62,8 @@ type cobJSON struct {
 	Location           string      `json:"location,omitempty"`
 	Loc                *locJSON    `json:"loc,omitempty"`
 	PixCopiaECola      string      `json:"pixCopiaECola,omitempty"`
+	// Brcode é onde o Sicoob devolve o BR Code, em vez do pixCopiaECola.
+	Brcode string `json:"brcode,omitempty"`
 }
 
 func paraDevedor(d *domain.Devedor) *devedor {
@@ -116,8 +118,11 @@ func paraCobranca(conta domain.Conta, r cobJSON, base domain.Cobranca) (domain.C
 	case r.Loc != nil && r.Loc.Location != "":
 		c.Location = r.Loc.Location
 	}
-	if r.PixCopiaECola != "" {
+	switch {
+	case r.PixCopiaECola != "":
 		c.BRCode = r.PixCopiaECola
+	case r.Brcode != "":
+		c.BRCode = r.Brcode
 	}
 	if r.Revisao != nil {
 		c.Revisao = *r.Revisao

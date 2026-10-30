@@ -85,12 +85,13 @@ you gain today is ownership — your data, your webhooks, no lock-in, and moving
 to another bank without rewriting your integration. The fee drops with banks
 that cap or flatten the Pix fee for business accounts. The Inter adapter is
 ready to try (Inter has publicly stated 0.9% capped at R$ 1.50 for dynamic QR
-codes, but we could not confirm it on a current official price page); Sicoob
-and Banco do Brasil are next on the board.
+codes, but we could not confirm it on a current official price page). So is
+Sicoob, where the Pix fee is whatever your credit union negotiates; Banco do
+Brasil is next on the board.
 
 ## What it does
 
-- **One API, many banks** — Efí and Inter today; Sicoob and Banco do Brasil next. Every adapter passes the same [conformance suite](./CONTRIBUTING.md#suíte-de-conformidade).
+- **One API, many banks** — Efí, Inter and Sicoob today; Banco do Brasil next. Every adapter passes the same [conformance suite](./CONTRIBUTING.md#suíte-de-conformidade).
 - **Charges** — immediate (`cob`) and with due date (`cobv`), BR Code / QR generation built in.
 - **Pix Automático** — `rec`, `solicrec`, `cobr` and recurring webhooks.
 - **Webhooks that don't get lost** — normalized, signed ([Standard Webhooks](https://www.standardwebhooks.com/)), retried, plus a reconciliation job that recovers missed payments.
@@ -107,7 +108,8 @@ and Banco do Brasil are next on the board.
 | Lastro sandbox | `sandbox` | ✅ | ✅ | ✅ | ✅ | For testing without a business account ([guide, pt-BR](./docs/SANDBOX.md)) |
 | Efí | `efi` | ✅ | ✅ | ✅ | ✅ | Tested against Efí's homologation (charges, payment, refund); webhook registration still untested ([guide, pt-BR](./docs/EFI.md)) |
 | Banco Inter | `inter` | ✅ | ✅ | ✅ | ✅ | Written from Inter's official API spec; **not yet tested against Inter's sandbox** ([guide, pt-BR](./docs/INTER.md)) |
-| Sicoob, Banco do Brasil | — | | | | | Planned |
+| Sicoob | `sicoob` | ✅ | ✅ | ✅ | ✅ | Written from the BCB spec and public sandbox reports; **not yet tested with a member account** ([guide, pt-BR](./docs/SICOOB.md)) |
+| Banco do Brasil | — | | | | | Planned |
 
 ## Non-custodial
 
