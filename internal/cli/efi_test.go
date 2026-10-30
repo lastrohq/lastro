@@ -18,7 +18,7 @@ import (
 // credenciais entram cifradas pelo conta criar e chegam ao adapter pelo
 // MontarPSPs, como no binário.
 func TestContaEfiDePontaAPonta(t *testing.T) {
-	par := certificadotest.Gerar(t, "loja", validadeTeste)
+	par := certificadotest.Gerar(t, "loja", time.Now().Add(365*24*time.Hour))
 	srv := efitest.Novo(t, par.Certificado, "client-id-efi", "client-secret-efi")
 	amb, out := ambiente(t, envComBanco(t))
 	relogio := fake.NewClock(time.Date(2026, 10, 29, 12, 0, 0, 0, time.UTC))
